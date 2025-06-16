@@ -1,5 +1,18 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
+
+# ------------------------------------------------------------------
+# deploy-blazor.sh
+#
+# Builds the Blazor project and deploys its static assets to a remote server.
+# Usage:
+#   ./deploy-blazor.sh
+# Requires environment variables:
+#   Server__User         - SSH username
+#   Server__Host         - SSH hostname
+#   Server__RemoteBlazorDir - Remote directory for Blazor static files
+#   Server__Group        - Group for file ownership on remote
+# ------------------------------------------------------------------
 
 # Ensure required environment variables are set
 : "${Server__User:?Environment variable Server__User must be set}"
@@ -11,6 +24,12 @@ set -e
 PROJECT="BlazorWP.csproj"
 PUBLISH_ROOT="./publish"
 STATIC_DIR="$PUBLISH_ROOT/wwwroot"
+
+# Clean up any previous publish output
+if [ -d "$PUBLISH_ROOT" ]; then
+  echo "🧹 Removing existing publish directory at $PUBLISH_ROOT..."
+  rm -rf "$PUBLISH_ROOT"
+fi
 
 # Build the project
 echo "🔨  Building $PROJECT..."
