@@ -5,18 +5,21 @@ set -euo pipefail
 # deploy-blazor.sh
 #
 # Builds the Blazor project and deploys its static assets to a remote server.
+# Afterwards, triggers CMS plugin deployment.
 # Usage:
 #   ./deploy-blazor.sh
 # Requires environment variables:
-#   Server__User         - SSH username
-#   Server__Host         - SSH hostname
-#   Server__RemoteBlazorDir - Remote directory for Blazor static files
-#   Server__Group        - Group for file ownership on remote
+#   Server__User           - SSH username
+#   Server__Host           - SSH hostname
+#   Server__RemoteBlazorDir- Remote directory for Blazor static files
+#   Server__RemoteCmsDir   - Remote directory for WordPress CMS root
+#   Server__Group          - Group for file ownership on remote
 # ------------------------------------------------------------------
 
 # Ensure required environment variables are set
 : "${Server__User:?Environment variable Server__User must be set}"
 : "${Server__Host:?Environment variable Server__Host must be set}"
+: "${Server__RemoteCmsDir:?Environment variable Server__RemoteCmsDir must be set}"
 : "${Server__RemoteBlazorDir:?Environment variable Server__RemoteBlazorDir must be set}"
 : "${Server__Group:?Environment variable Server__Group must be set}"
 
@@ -62,6 +65,14 @@ EOF
 
 # ——— PERMISSIONS ———
 echo "🛡️ Setting group ownership to $Server__Group"
-ssh "$Server__User@$Server__Host" "chgrp -R $Server__Group '$Server__RemoteBlazorDir' '$REMOTE_WEB_ROOT/.htaccess'"
+ssh "${Server__User}@${Server__Host}" "chgrp -R $Server__Group '$Server__RemoteBlazorDir' '$REMOTE_WEB_ROOT/.htaccess'"
 
-echo "✅ Deployment complete!"
+# Final confirmation for Blazor
+echo "✅ Blazor deployment complete!"
+
+# ——— DEPLOY CMS PLUGINS ———
+echo "🔄 Deploying CMS plugins..."
+# Pass along CMS-specific env var; script should be executable
+bash ./deploy-cms-plugins.sh
+
+echo "🎉 Full deployment complete!"
