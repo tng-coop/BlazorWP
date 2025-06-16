@@ -13,5 +13,6 @@ Before running the script, you **must** set the following environment variables 
 ```bash
 export Server__User="your_ssh_username"
 export Server__Host="your.remote.host"
-export Server__RemoteDir="/absolute/path/to/your/web/blazor"
+export Server__RemoteBlazorDir="/absolute/path/to/your/web/blazor"
+export Server__RemoteCmsDir="/absolute/path/to/your/web/cms"
 export Server__Group="your_unix_group"
