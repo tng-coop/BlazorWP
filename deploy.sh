@@ -20,8 +20,29 @@ dotnet publish "$PROJECT" -c Release -o "$PUBLISH_ROOT"
 echo "📤  Syncing static assets to ${Server__User}@${Server__Host}:${Server__RemoteDir}..."
 rsync -avz --delete "$STATIC_DIR/" "${Server__User}@${Server__Host}:${Server__RemoteDir}"
 
-# Fix permissions on the server
-echo "🛡️  Setting group ownership to '${Server__Group}' on the server..."
-ssh "${Server__User}@${Server__Host}" "chgrp -R ${Server__Group} '${Server__RemoteDir}' && echo '🔒  chgrp complete.'"
+# ——— UPDATE .htaccess ———
+REMOTE_WEB_ROOT="$(dirname "$Server__RemoteDir")"
+echo "🔄 Updating .htaccess in $REMOTE_WEB_ROOT"
+ssh "$Server__User@$Server__Host" "cat > '$REMOTE_WEB_ROOT/.htaccess'" << 'EOF'
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
 
-echo "✅  Deployment complete!"
+  # (a) Serve .wasm with correct MIME
+  AddType application/wasm .wasm
+
+  # (b) Let /cms/* be handled by WordPress
+  RewriteRule ^cms(/|$) - [L]
+
+  # (c) If the request matches a real file or dir under web/blazor, serve it:
+  RewriteCond %{DOCUMENT_ROOT}/blazor%{REQUEST_URI} -f [OR]
+  RewriteCond %{DOCUMENT_ROOT}/blazor%{REQUEST_URI} -d
+  RewriteRule ^ blazor%{REQUEST_URI} [L]
+</IfModule>
+EOF
+
+# ——— PERMISSIONS ———
+echo "🛡️ Setting group ownership to $Server__Group"
+ssh "$Server__User@$Server__Host" "chgrp -R $Server__Group '$Server__RemoteDir' '$REMOTE_WEB_ROOT/.htaccess'"
+
+echo "✅ Deployment complete!"
