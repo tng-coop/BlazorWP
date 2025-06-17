@@ -19,10 +19,12 @@
       KeyExpression="@(n => n.Id)"
       ChildrenExpression="@(n => n.DataItem.Children)"
       TitleExpression="@(n => n.DataItem.Title)"
+      SelectedKeys="@selectedKeys"
       OnDrop="HandleDrop" OnDragStart="HandleDragStart" OnDragEnd="HandleDragEnd">
 </Tree>
 
 @code {
+    private string[] selectedKeys = [];
     private List<AntTreeNode> treeData = new()
     {
         new AntTreeNode
@@ -80,6 +82,7 @@
             }
         }
 
+        selectedKeys = [target.Id.ToString()];
         StateHasChanged();
         Console.WriteLine($"Moved '{source.Title}' {(args.DropBelow ? "after" : "into")} '{target.Title}'");
     }
