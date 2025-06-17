@@ -6,7 +6,7 @@
 
 <div class="mb-3">
     <label for="wpUrl" class="form-label">WordPress site URL</label>
-    <input id="wpUrl" class="form-control" @bind="userUrl" placeholder="https://example.com" />
+    <input id="wpUrl" class="form-control" @bind="userUrl" @onkeydown="HandleKeyDown" placeholder="https://example.com" />
 </div>
 <button class="btn btn-primary" @onclick="CheckApi">Check API</button>
 
@@ -101,6 +101,14 @@
         if (string.IsNullOrEmpty(status))
         {
             status = "Failed to verify endpoint.";
+        }
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await CheckApi();
         }
     }
 }
