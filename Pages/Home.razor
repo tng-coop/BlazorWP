@@ -97,8 +97,15 @@
                 await InvokeAsync(StateHasChanged);
 
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-                var response = await Http.GetAsync(endpoint, cts.Token);
-                logs.Add($"Status {(int)response.StatusCode}");
+                var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
+                logs.Add($"-> {request}");
+                await InvokeAsync(StateHasChanged);
+
+                var response = await Http.SendAsync(request, cts.Token);
+                logs.Add($"<- {response}");
+                var bytes = await response.Content.ReadAsByteArrayAsync();
+                var hex = BitConverter.ToString(bytes.Take(256).ToArray());
+                logs.Add($"<- Body: {hex}");
                 await InvokeAsync(StateHasChanged);
                 if (response.IsSuccessStatusCode)
                 {
