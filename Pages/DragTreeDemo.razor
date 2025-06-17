@@ -1,0 +1,105 @@
+@page "/drag-tree-demo"
+@using BlazorWP.Data
+@using PanoramicData.Blazor
+@using PanoramicData.Blazor.Arguments
+
+<h3>PDTree Drag-and-Drop Demo</h3>
+<p class="text-muted">Drag nodes to reorder or move between groups.</p>
+
+<PDDragContext>
+    <PDTree @ref="_tree"
+            TItem="TreeItem"
+            DataProvider="_dataProvider"
+            KeyField="x => x.Id"
+            ParentKeyField="x => x.ParentId"
+            TextField="x => x.Name"
+            AllowDrag="true"
+            AllowDrop="true"
+            AllowDropInBetween="true"
+            Drop="OnDrop"
+            Sort="(a,b) => a.Order.CompareTo(b.Order)"
+            ShowLines="true"
+            ShowRoot="true">
+    </PDTree>
+</PDDragContext>
+
+@code {
+    private PDTree<TreeItem> _tree = null!;
+    private readonly TreeDataProvider _dataProvider = new();
+
+    private void OnDrop(DropEventArgs args)
+    {
+        var targetItem = (args.Target as TreeNode<TreeItem>)?.Data;
+        TreeItem? sourceItem = null;
+        if (args.Payload is List<TreeItem> items && items.Count > 0)
+        {
+            sourceItem = items[0];
+        }
+
+        if (sourceItem != null && targetItem != null)
+        {
+            ReOrder(sourceItem, targetItem, args.Before);
+        }
+    }
+
+    private void ReOrder(TreeItem source, TreeItem target, bool? before)
+    {
+        if (source.IsGroup)
+        {
+            if (!target.IsGroup)
+            {
+                return;
+            }
+        }
+        else if (target.IsGroup && before != null)
+        {
+            return;
+        }
+
+        var sourceNode = _tree.RootNode.Find(source.Id.ToString());
+        var targetNode = _tree.RootNode.Find(target.Id.ToString());
+        if (sourceNode?.ParentNode?.Nodes is null || targetNode?.ParentNode?.Nodes is null)
+        {
+            return;
+        }
+
+        sourceNode.ParentNode.Nodes.Remove(sourceNode);
+
+        if (source.IsGroup || !target.IsGroup)
+        {
+            var tIdx = targetNode.ParentNode.Nodes.IndexOf(targetNode);
+            targetNode.ParentNode.Nodes.Insert(before == true ? tIdx : tIdx + 1, sourceNode);
+            sourceNode.ParentNode = targetNode.ParentNode;
+            ReOrderNodes(targetNode.ParentNode.Nodes);
+        }
+        else
+        {
+            targetNode.Nodes?.Add(sourceNode);
+            sourceNode.ParentNode = targetNode;
+            ReOrderNodes(targetNode.Nodes);
+        }
+    }
+
+    private static void ReOrderNodes(IEnumerable<TreeNode<TreeItem>>? nodes)
+    {
+        if (nodes != null)
+        {
+            var index = 0;
+            foreach (var node in nodes)
+            {
+                if (node.Data != null)
+                {
+                    node.Data.Order = ++index;
+                }
+            }
+        }
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _tree.ExpandAll();
+        }
+    }
+}
