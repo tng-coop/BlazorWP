@@ -1,0 +1,67 @@
+@page "/ant-tree-demo"
+
+<PageTitle>Ant Design Tree Demo</PageTitle>
+
+<h3>Ant Design Tree Drag-and-Drop Demo</h3>
+<p class="text-muted">
+    This example demonstrates using the Ant Design <code>Tree</code> component with
+    drag-and-drop enabled. Drag a node to reorder it or nest it under another
+    node.
+</p>
+<ul>
+    <li>Set <code>Draggable="true"</code> to enable dragging.</li>
+    <li>The tree automatically highlights valid drop targets and expands collapsed nodes on hover.</li>
+    <li>Handle <code>OnDrop</code> to react when a node has been moved.</li>
+</ul>
+
+<Tree TItem="AntTreeNode" DataSource="@treeData" Draggable="true"
+      KeyExpression="@(n => n.Id)"
+      ChildrenExpression="@(n => n.Children)"
+      TitleExpression="@(n => n.Title)"
+      OnDrop="HandleDrop" OnDragStart="HandleDragStart" OnDragEnd="HandleDragEnd">
+</Tree>
+
+@code {
+    private List<AntTreeNode> treeData = new()
+    {
+        new AntTreeNode
+        {
+            Id = 1,
+            Title = "Parent 1",
+            Children = new()
+            {
+                new AntTreeNode { Id = 2, Title = "Child 1-1" },
+                new AntTreeNode { Id = 3, Title = "Child 1-2" }
+            }
+        },
+        new AntTreeNode
+        {
+            Id = 4,
+            Title = "Parent 2"
+        }
+    };
+
+    private void HandleDrop(TreeEventArgs<AntTreeNode> args)
+    {
+        var dragged = args.Node.DataItem.Title;
+        var target = args.TargetNode.DataItem.Title;
+        Console.WriteLine($"Moved '{dragged}' {(args.DropBelow ? "after" : "into")} '{target}'");
+    }
+
+    private void HandleDragStart(TreeEventArgs<AntTreeNode> args)
+    {
+        Console.WriteLine($"Dragging '{args.Node.DataItem.Title}'");
+    }
+
+    private void HandleDragEnd(TreeEventArgs<AntTreeNode> args)
+    {
+        Console.WriteLine($"Finished dragging '{args.Node.DataItem.Title}'");
+    }
+
+    public class AntTreeNode
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public List<AntTreeNode> Children { get; set; } = new();
+    }
+}
