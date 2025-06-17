@@ -4,12 +4,12 @@
 
 <MudMenu PositionAtCursor="true" ActivationEvent="MouseEvent.RightClick">
     <ActivatorContent>
-        <MudTreeView>
-            <MudTreeViewItem Text="Parent 1" Expanded="true" Icon="@Icons.Material.Filled.Folder">
-                <MudTreeViewItem Text="Child 1" Icon="@Icons.Material.Filled.Description" />
-                <MudTreeViewItem Text="Child 2" Icon="@Icons.Material.Filled.Description" />
+        <MudTreeView T="string">
+            <MudTreeViewItem T="string" Text="Parent 1" Expanded="true" Icon="@Icons.Material.Filled.Folder">
+                <MudTreeViewItem T="string" Text="Child 1" Icon="@Icons.Material.Filled.Description" />
+                <MudTreeViewItem T="string" Text="Child 2" Icon="@Icons.Material.Filled.Description" />
             </MudTreeViewItem>
-            <MudTreeViewItem Text="Parent 2" Icon="@Icons.Material.Filled.Folder" />
+            <MudTreeViewItem T="string" Text="Parent 2" Icon="@Icons.Material.Filled.Folder" />
         </MudTreeView>
     </ActivatorContent>
     <ChildContent>
