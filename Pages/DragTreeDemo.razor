@@ -14,19 +14,25 @@
             KeyField="x => x.Id"
             ParentKeyField="x => x.ParentId"
             TextField="x => x.Name"
+            IconCssClass="GetIconCssClass"
             AllowDrag="true"
             AllowDrop="true"
             AllowDropInBetween="true"
             Drop="OnDrop"
             Sort="(a,b) => a.Order.CompareTo(b.Order)"
             ShowLines="true"
-            ShowRoot="true">
+            ShowRoot="true"
+            Ready="OnReady">
     </PDTree>
 </PDDragContext>
 
 @code {
     private PDTree<TreeItem> _tree = null!;
     private readonly TreeDataProvider _dataProvider = new();
+
+    private void OnReady() => _tree.ExpandAll();
+
+    private static string GetIconCssClass(TreeItem item, int _) => item.IsGroup ? "fas fa-fw fa-building" : "fas fa-fw fa-user";
 
     private void OnDrop(DropEventArgs args)
     {
@@ -96,11 +102,4 @@
         }
     }
 
-    protected override void OnAfterRender(bool firstRender)
-    {
-        if (firstRender)
-        {
-            _tree.ExpandAll();
-        }
-    }
 }
