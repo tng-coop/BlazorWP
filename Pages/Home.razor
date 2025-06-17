@@ -15,6 +15,19 @@
     <p class="mt-3">Verified endpoint: @verifiedEndpoint</p>
 }
 
+@if (logs.Any())
+{
+    <div class="mt-3">
+        <h5>Communication Log</h5>
+        <ul>
+            @foreach (var entry in logs)
+            {
+                <li>@entry</li>
+            }
+        </ul>
+    </div>
+}
+
 @if (!string.IsNullOrEmpty(status))
 {
     <p class="mt-3">@status</p>
@@ -24,6 +37,7 @@
     private string? userUrl;
     private string? status;
     private string? verifiedEndpoint;
+    private List<string> logs = new();
 
     [Inject]
     private HttpClient Http { get; set; } = default!;
@@ -46,6 +60,7 @@
     private async Task CheckApi()
     {
         status = null;
+        logs.Clear();
 
         if (string.IsNullOrWhiteSpace(userUrl))
         {
@@ -69,6 +84,8 @@
 
         foreach (var candidate in candidates)
         {
+            logs.Add($"Checking {candidate}");
+            await InvokeAsync(StateHasChanged);
             try
             {
                 if (!Uri.TryCreate(candidate, UriKind.Absolute, out var baseUri))
@@ -82,8 +99,13 @@
                 };
                 var endpoint = builder.Uri.ToString().TrimEnd('/');
 
+                logs.Add($"Requesting {endpoint}");
+                await InvokeAsync(StateHasChanged);
+
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
                 var response = await Http.GetAsync(endpoint, cts.Token);
+                logs.Add($"Status {(int)response.StatusCode}");
+                await InvokeAsync(StateHasChanged);
                 if (response.IsSuccessStatusCode)
                 {
                     verifiedEndpoint = endpoint;
@@ -94,6 +116,8 @@
             }
             catch (Exception ex)
             {
+                logs.Add($"Error: {ex.Message}");
+                await InvokeAsync(StateHasChanged);
                 status = $"Error: {ex.Message}";
             }
         }
