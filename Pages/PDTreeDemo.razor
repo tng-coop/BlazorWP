@@ -1,0 +1,42 @@
+@page "/pdtree-demo"
+@using BlazorWP.Data
+
+<h3>PDTree Reparent Demo</h3>
+
+<PDDragContext>
+    <PDTree @ref="_tree"
+            AllowDrag="true"
+            AllowDrop="true"
+            AllowDropInBetween="true"
+            DataProvider="_provider"
+            Drop="OnDrop"
+            KeyField="x => x.Id"
+            ParentKeyField="x => x.ParentId"
+            TextField="x => x.Name"
+            Sort="(a,b) => a.Order.CompareTo(b.Order)"
+            ShowLines="true"
+            ShowRoot="true"
+            TItem="TreeItem">
+    </PDTree>
+</PDDragContext>
+
+@code {
+    private PDTree<TreeItem>? _tree;
+    private readonly SimpleTreeProvider _provider = new();
+
+    private void OnDrop(DropEventArgs args)
+    {
+        var targetItem = (args.Target as TreeNode<TreeItem>)?.Data;
+        TreeItem? sourceItem = null;
+        if (args.Payload is List<TreeItem> items && items.Count > 0)
+        {
+            sourceItem = items[0];
+        }
+
+        if (sourceItem != null && targetItem != null)
+        {
+            _provider.ReOrder(sourceItem, targetItem, args.Before);
+            _tree?.Refresh();
+        }
+    }
+}
