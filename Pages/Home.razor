@@ -98,7 +98,8 @@
 
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
                 var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
-                logs.Add($"-> {request}");
+                var rawRequest = await FormatRawRequest(request);
+                logs.Add($"-> {rawRequest}");
                 await InvokeAsync(StateHasChanged);
 
                 var response = await Http.SendAsync(request, cts.Token);
@@ -166,6 +167,38 @@
             encoding = Encoding.UTF8;
         }
         sb.Append(encoding.GetString(bytes));
+        return sb.ToString();
+    }
+
+    private static async Task<string> FormatRawRequest(HttpRequestMessage request)
+    {
+        var sb = new StringBuilder();
+        var uri = request.RequestUri ?? new Uri("/", UriKind.Relative);
+        sb.Append($"{request.Method} {uri.PathAndQuery} HTTP/{request.Version.Major}.{request.Version.Minor}\r\n");
+
+        // Host header
+        if (!request.Headers.Contains("Host") && uri.Host.Length > 0)
+        {
+            sb.Append($"Host: {uri.Host}\r\n");
+        }
+
+        foreach (var header in request.Headers)
+        {
+            sb.Append($"{header.Key}: {string.Join(", ", header.Value)}\r\n");
+        }
+        if (request.Content != null)
+        {
+            foreach (var header in request.Content.Headers)
+            {
+                sb.Append($"{header.Key}: {string.Join(", ", header.Value)}\r\n");
+            }
+        }
+        sb.Append("\r\n");
+        if (request.Content != null)
+        {
+            var bytes = await request.Content.ReadAsByteArrayAsync();
+            sb.Append(Encoding.UTF8.GetString(bytes));
+        }
         return sb.ToString();
     }
 }
