@@ -36,7 +36,7 @@
 
     private void OnDrop(DropEventArgs args)
     {
-        var targetItem = (args.Target as TreeNode<TreeItem>)?.Data;
+        var targetItem = (args.Target as PanoramicData.Blazor.Models.TreeNode<TreeItem>)?.Data;
         TreeItem? sourceItem = null;
         if (args.Payload is List<TreeItem> items && items.Count > 0)
         {
@@ -87,7 +87,7 @@
         }
     }
 
-    private static void ReOrderNodes(IEnumerable<TreeNode<TreeItem>>? nodes)
+    private static void ReOrderNodes(IEnumerable<PanoramicData.Blazor.Models.TreeNode<TreeItem>>? nodes)
     {
         if (nodes != null)
         {
