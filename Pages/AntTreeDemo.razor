@@ -6,7 +6,8 @@
 <p class="text-muted">
     This example demonstrates using the Ant Design <code>Tree</code> component with
     drag-and-drop enabled. Drag a node to reorder it or nest it under another
-    node.
+    node. Dropping a node directly on top of another will place it in that
+    folder.
 </p>
 <ul>
     <li>Set <code>Draggable="true"</code> to enable dragging.</li>
@@ -43,9 +44,40 @@
 
     private void HandleDrop(TreeEventArgs<AntTreeNode> args)
     {
-        var dragged = args.Node.DataItem.Title;
-        var target = args.TargetNode.DataItem.Title;
-        Console.WriteLine($"Moved '{dragged}' {(args.DropBelow ? "after" : "into")} '{target}'");
+        if (args.Node == null || args.TargetNode == null)
+        {
+            return;
+        }
+
+        var source = args.Node.DataItem;
+        var target = args.TargetNode.DataItem;
+
+        if (source == target)
+        {
+            return;
+        }
+
+        MoveNode(treeData, source, target);
+        Console.WriteLine($"Moved '{source.Title}' into '{target.Title}'");
+    }
+
+    private static bool MoveNode(List<AntTreeNode> nodes, AntTreeNode source, AntTreeNode target)
+    {
+        foreach (var node in nodes)
+        {
+            if (node.Children.Remove(source))
+            {
+                target.Children.Add(source);
+                return true;
+            }
+
+            if (MoveNode(node.Children, source, target))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void HandleDragStart(TreeEventArgs<AntTreeNode> args)
