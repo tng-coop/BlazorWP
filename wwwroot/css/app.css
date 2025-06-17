@@ -123,3 +123,11 @@ code {
     overflow-y: auto;
 }
 
+.json-view {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 4px;
+    font-family: monospace;
+    white-space: pre;
+    overflow-x: auto;
+}

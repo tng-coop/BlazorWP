@@ -1,0 +1,61 @@
+@page "/api"
+@inject HttpClient Http
+@inject IJSRuntime JS
+
+<PageTitle>API Viewer</PageTitle>
+
+<h1>WordPress API Viewer</h1>
+
+@if (loading)
+{
+    <p><em>Loading...</em></p>
+}
+else if (error != null)
+{
+    <p class="text-danger">@error</p>
+}
+else if (formattedJson != null)
+{
+    <pre class="json-view">@formattedJson</pre>
+}
+else
+{
+    <p>No WordPress endpoint verified. Visit <NavLink href="/">Home</NavLink> first.</p>
+}
+
+@code {
+    private string? formattedJson;
+    private string? error;
+    private bool loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var endpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
+        if (string.IsNullOrEmpty(endpoint))
+        {
+            loading = false;
+            return;
+        }
+
+        var rootEndpoint = endpoint;
+        if (rootEndpoint.EndsWith("/wp/v2", StringComparison.OrdinalIgnoreCase))
+        {
+            rootEndpoint = rootEndpoint[..^"/wp/v2".Length];
+        }
+
+        try
+        {
+            var json = await Http.GetStringAsync(rootEndpoint);
+            using var doc = JsonDocument.Parse(json);
+            formattedJson = JsonSerializer.Serialize(doc.RootElement, new JsonSerializerOptions { WriteIndented = true });
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+}
