@@ -1,0 +1,90 @@
+@page "/drag-tree-demo"
+@using PanoramicData.Blazor
+@using PanoramicData.Blazor.Models
+
+<h3>PDTree Reparent Demo</h3>
+<p>Drag a person onto another group to change its parent or reorder groups.</p>
+
+<PDDragContext>
+    <PDTree @ref="Tree"
+            AllowDrag="true"
+            AllowDrop="true"
+            AllowDropInBetween="true"
+            ShowLines="true"
+            ShowRoot="true"
+            Drop="OnDrop">
+        <NodeTemplate>
+            @context.Data?.Name
+        </NodeTemplate>
+    </PDTree>
+</PDDragContext>
+
+@code {
+    private PDTree<TreeItem>? Tree;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (!firstRender || Tree is null)
+        {
+            return;
+        }
+        // Build sample tree
+        TreeNode<TreeItem> sales = new() { Key = "2", Data = new TreeItem { Id = 2, Name = "Sales", IsGroup = true } };
+        sales.Nodes = new()
+        {
+            new TreeNode<TreeItem> { Key = "11", Data = new TreeItem { Id = 11, Name = "Alice" }, ParentNode = sales },
+            new TreeNode<TreeItem> { Key = "16", Data = new TreeItem { Id = 16, Name = "Fred" }, ParentNode = sales }
+        };
+        foreach (var n in sales.Nodes) n.ParentNode = sales;
+
+        TreeNode<TreeItem> marketing = new() { Key = "3", Data = new TreeItem { Id = 3, Name = "Marketing", IsGroup = true } };
+        marketing.Nodes = new()
+        {
+            new TreeNode<TreeItem> { Key = "12", Data = new TreeItem { Id = 12, Name = "Bob" }, ParentNode = marketing },
+            new TreeNode<TreeItem> { Key = "18", Data = new TreeItem { Id = 18, Name = "Harry" }, ParentNode = marketing }
+        };
+        foreach (var n in marketing.Nodes) n.ParentNode = marketing;
+
+        Tree!.RootNode.Nodes = new() { sales, marketing };
+        sales.ParentNode = Tree.RootNode;
+        marketing.ParentNode = Tree.RootNode;
+    }
+
+    private void OnDrop(DropEventArgs args)
+    {
+        if (Tree is null) return;
+        if (args.Target is not TreeNode<TreeItem> targetNode) return;
+        var sourceItem = (args.Payload as List<TreeItem>)?.FirstOrDefault();
+        if (sourceItem is null) return;
+        var sourceNode = Tree.RootNode.Find(sourceItem.Id.ToString());
+        if (sourceNode?.ParentNode?.Nodes is null) return;
+
+        // Remove from old parent
+        sourceNode.ParentNode.Nodes.Remove(sourceNode);
+
+        var targetItem = targetNode.Data;
+        if (targetItem?.IsGroup == true && args.Before == null)
+        {
+            targetNode.Nodes ??= new();
+            targetNode.Nodes.Add(sourceNode);
+            sourceNode.ParentNode = targetNode;
+        }
+        else
+        {
+            var destParent = targetNode.ParentNode;
+            if (destParent?.Nodes is null) return;
+            var idx = destParent.Nodes.IndexOf(targetNode);
+            destParent.Nodes.Insert(args.Before == true ? idx : idx + 1, sourceNode);
+            sourceNode.ParentNode = destParent;
+        }
+
+        StateHasChanged();
+    }
+
+    public class TreeItem
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public bool IsGroup { get; set; }
+    }
+}
