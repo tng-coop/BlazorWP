@@ -2,6 +2,59 @@
 
 <PageTitle>Home</PageTitle>
 
-<h1>Hello, world!</h1>
+<h1>WordPress analysis</h1>
 
-Welcome to your new app.
+<div class="mb-3">
+    <label for="wpUrl" class="form-label">WordPress site URL</label>
+    <input id="wpUrl" class="form-control" @bind="userUrl" placeholder="https://example.com" />
+</div>
+<button class="btn btn-primary" @onclick="CheckApi">Check API</button>
+
+@if (!string.IsNullOrEmpty(status))
+{
+    <p class="mt-3">@status</p>
+}
+
+@code {
+    private string? userUrl;
+    private string? status;
+
+    [Inject]
+    private HttpClient Http { get; set; } = default!;
+
+    private async Task CheckApi()
+    {
+        status = null;
+
+        if (string.IsNullOrWhiteSpace(userUrl))
+        {
+            status = "Please enter a URL.";
+            return;
+        }
+
+        try
+        {
+            var baseUri = new Uri(userUrl!, UriKind.Absolute);
+            var builder = new UriBuilder(baseUri)
+            {
+                Path = baseUri.AbsolutePath.TrimEnd('/') + "/wp-json/wp/v2"
+            };
+            var endpoint = builder.Uri.ToString().TrimEnd('/');
+
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            var response = await Http.GetAsync(endpoint, cts.Token);
+            if (response.IsSuccessStatusCode)
+            {
+                status = $"Success! v2 endpoint is {endpoint}";
+            }
+            else
+            {
+                status = $"Failed: {response.StatusCode}";
+            }
+        }
+        catch (Exception ex)
+        {
+            status = $"Error: {ex.Message}";
+        }
+    }
+}
