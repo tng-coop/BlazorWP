@@ -10,6 +10,11 @@
 </div>
 <button class="btn btn-primary" @onclick="CheckApi">Check API</button>
 
+@if (!string.IsNullOrEmpty(verifiedEndpoint))
+{
+    <p class="mt-3">Verified endpoint: @verifiedEndpoint</p>
+}
+
 @if (!string.IsNullOrEmpty(status))
 {
     <p class="mt-3">@status</p>
@@ -18,9 +23,25 @@
 @code {
     private string? userUrl;
     private string? status;
+    private string? verifiedEndpoint;
 
     [Inject]
     private HttpClient Http { get; set; } = default!;
+
+    [Inject]
+    private IJSRuntime JS { get; set; } = default!;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            verifiedEndpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
+            if (!string.IsNullOrEmpty(verifiedEndpoint))
+            {
+                StateHasChanged();
+            }
+        }
+    }
 
     private async Task CheckApi()
     {
@@ -32,29 +53,54 @@
             return;
         }
 
-        try
-        {
-            var baseUri = new Uri(userUrl!, UriKind.Absolute);
-            var builder = new UriBuilder(baseUri)
-            {
-                Path = baseUri.AbsolutePath.TrimEnd('/') + "/wp-json/wp/v2"
-            };
-            var endpoint = builder.Uri.ToString().TrimEnd('/');
+        var trimmed = userUrl!.Trim();
+        var candidates = new List<string>();
 
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-            var response = await Http.GetAsync(endpoint, cts.Token);
-            if (response.IsSuccessStatusCode)
+        if (trimmed.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            candidates.Add(trimmed);
+        }
+        else
+        {
+            candidates.Add($"https://{trimmed}");
+            candidates.Add($"http://{trimmed}");
+        }
+
+        foreach (var candidate in candidates)
+        {
+            try
             {
-                status = $"Success! v2 endpoint is {endpoint}";
+                if (!Uri.TryCreate(candidate, UriKind.Absolute, out var baseUri))
+                {
+                    continue;
+                }
+
+                var builder = new UriBuilder(baseUri)
+                {
+                    Path = baseUri.AbsolutePath.TrimEnd('/') + "/wp-json/wp/v2"
+                };
+                var endpoint = builder.Uri.ToString().TrimEnd('/');
+
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                var response = await Http.GetAsync(endpoint, cts.Token);
+                if (response.IsSuccessStatusCode)
+                {
+                    verifiedEndpoint = endpoint;
+                    await JS.InvokeVoidAsync("localStorage.setItem", "wpEndpoint", verifiedEndpoint);
+                    status = $"Success! v2 endpoint is {endpoint}";
+                    return;
+                }
             }
-            else
+            catch (Exception ex)
             {
-                status = $"Failed: {response.StatusCode}";
+                status = $"Error: {ex.Message}";
             }
         }
-        catch (Exception ex)
+
+        if (string.IsNullOrEmpty(status))
         {
-            status = $"Error: {ex.Message}";
+            status = "Failed to verify endpoint.";
         }
     }
 }
