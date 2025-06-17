@@ -17,7 +17,7 @@
 <Tree TItem="AntTreeNode" DataSource="@treeData" Draggable="true"
       KeyExpression="@(n => n.Id)"
       ChildrenExpression="@(n => n.DataItem.Children)"
-      TitleExpression="@(n => n.Title)"
+      TitleExpression="@(n => n.DataItem.Title)"
       OnDrop="HandleDrop" OnDragStart="HandleDragStart" OnDragEnd="HandleDragEnd">
 </Tree>
 
