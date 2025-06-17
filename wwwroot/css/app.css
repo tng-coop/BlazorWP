@@ -131,3 +131,7 @@ code {
     white-space: pre;
     overflow-x: auto;
 }
+
+.pdtreenode_content.drop-target {
+    background-color: #80bfff;
+}
