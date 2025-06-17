@@ -44,7 +44,9 @@
 
     private void HandleDrop(TreeEventArgs<AntTreeNode> args)
     {
-        if (args.Node == null || args.TargetNode == null)
+        // Ant Design Tree does not automatically update the data structure on
+        // drop.  We need to move the dragged item ourselves.
+        if (args.Node?.DataItem == null || args.TargetNode?.DataItem == null)
         {
             return;
         }
@@ -52,26 +54,73 @@
         var source = args.Node.DataItem;
         var target = args.TargetNode.DataItem;
 
-        if (source == target)
+        // Prevent dropping a node onto itself or one of its children
+        if (source == target || IsDescendantOf(source, target))
         {
             return;
         }
 
-        MoveNode(treeData, source, target);
-        Console.WriteLine($"Moved '{source.Title}' into '{target.Title}'");
+        // Remove the dragged node from its current parent/root
+        var currentParent = FindParentList(treeData, source, out _);
+        currentParent?.Remove(source);
+
+        if (!args.DropBelow)
+        {
+            // Dropped directly onto target - make it a child
+            target.Children.Add(source);
+        }
+        else
+        {
+            // Dropped after target - insert as a sibling
+            var list = FindParentList(treeData, target, out _);
+            if (list != null)
+            {
+                var insertIndex = list.IndexOf(target) + 1;
+                list.Insert(insertIndex, source);
+            }
+        }
+
+        StateHasChanged();
+        Console.WriteLine($"Moved '{source.Title}' {(args.DropBelow ? "after" : "into")} '{target.Title}'");
     }
 
-    private static bool MoveNode(List<AntTreeNode> nodes, AntTreeNode source, AntTreeNode target)
+    private static List<AntTreeNode>? FindParentList(List<AntTreeNode> nodes, AntTreeNode search, out AntTreeNode? parent)
     {
+        if (nodes.Contains(search))
+        {
+            parent = null;
+            return nodes;
+        }
+
         foreach (var node in nodes)
         {
-            if (node.Children.Remove(source))
+            if (node.Children.Contains(search))
             {
-                target.Children.Add(source);
-                return true;
+                parent = node;
+                return node.Children;
             }
 
-            if (MoveNode(node.Children, source, target))
+            var result = FindParentList(node.Children, search, out parent);
+            if (result != null)
+            {
+                return result;
+            }
+        }
+
+        parent = null;
+        return null;
+    }
+
+    private static bool IsDescendantOf(AntTreeNode child, AntTreeNode parent)
+    {
+        if (parent.Children.Contains(child))
+        {
+            return true;
+        }
+
+        foreach (var node in parent.Children)
+        {
+            if (IsDescendantOf(child, node))
             {
                 return true;
             }
