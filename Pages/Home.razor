@@ -205,6 +205,7 @@
 
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
                 var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
+                request.SetBrowserRequestCredentials(BrowserRequestCredentials.Include);
                 var rawRequest = await FormatRawRequest(request);
                 logs.Add($"-> {rawRequest}");
                 await InvokeAsync(StateHasChanged);
@@ -356,7 +357,9 @@
             var url = CombineUrl(site, fav.Path);
             fav.RequestUrl = url;
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-            var response = await Http.GetAsync(url, cts.Token);
+            var request = new HttpRequestMessage(HttpMethod.Get, url);
+            request.SetBrowserRequestCredentials(BrowserRequestCredentials.Include);
+            var response = await Http.SendAsync(request, cts.Token);
             fav.Result = await FormatRawResponse(response);
         }
         catch (Exception ex)
