@@ -137,8 +137,9 @@
                 }
                 foreach (var pair in data)
                 {
-                    foreach (var path in pair.Value)
+                    foreach (var raw in pair.Value)
                     {
+                        var path = NormalizePath(raw);
                         if (!dict.TryGetValue(path, out var set))
                         {
                             set = new HashSet<string>();
@@ -367,6 +368,7 @@
 
     private static string CombineUrl(string site, string path)
     {
+        path = NormalizePath(path);
         if (site.EndsWith("/wp-json/wp/v2", StringComparison.OrdinalIgnoreCase) &&
             path.StartsWith("/wp/v2", StringComparison.OrdinalIgnoreCase))
         {
@@ -375,6 +377,36 @@
         }
 
         return site.TrimEnd('/') + (path.StartsWith("/") ? path : "/" + path);
+    }
+
+    private static string NormalizePath(string path)
+    {
+        if (string.IsNullOrEmpty(path))
+        {
+            return path;
+        }
+
+        if (path.StartsWith("/routes/", StringComparison.OrdinalIgnoreCase))
+        {
+            path = path["/routes".Length..];
+        }
+        else if (path.StartsWith("routes/", StringComparison.OrdinalIgnoreCase))
+        {
+            path = "/" + path["routes/".Length..];
+        }
+
+        var idx = path.IndexOf("/routes/", StringComparison.OrdinalIgnoreCase);
+        if (idx >= 0)
+        {
+            var prefix = path[..idx];
+            var after = path[(idx + "/routes".Length)..];
+            if (after.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                path = prefix + after[prefix.Length..];
+            }
+        }
+
+        return path;
     }
 
     public class FavoriteEndpoint

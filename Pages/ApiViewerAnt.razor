@@ -77,14 +77,16 @@ else
             data[endpoint] = list;
         }
 
-        if (list.Contains(node.Path))
+        var normalized = NormalizePath(node.Path);
+
+        if (list.Contains(normalized))
         {
-            list.Remove(node.Path);
+            list.Remove(normalized);
             node.IsFavorite = false;
         }
         else
         {
-            list.Add(node.Path);
+            list.Add(normalized);
             node.IsFavorite = true;
         }
 
@@ -188,6 +190,36 @@ else
                 MarkFavorites(node.Children, favorites);
             }
         }
+    }
+
+    private static string NormalizePath(string path)
+    {
+        if (string.IsNullOrEmpty(path))
+        {
+            return path;
+        }
+
+        if (path.StartsWith("/routes/", StringComparison.OrdinalIgnoreCase))
+        {
+            path = path["/routes".Length..];
+        }
+        else if (path.StartsWith("routes/", StringComparison.OrdinalIgnoreCase))
+        {
+            path = "/" + path["routes/".Length..];
+        }
+
+        var idx = path.IndexOf("/routes/", StringComparison.OrdinalIgnoreCase);
+        if (idx >= 0)
+        {
+            var prefix = path[..idx];
+            var after = path[(idx + "/routes".Length)..];
+            if (after.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                path = prefix + after[prefix.Length..];
+            }
+        }
+
+        return path;
     }
 
     public class AntJsonNode
