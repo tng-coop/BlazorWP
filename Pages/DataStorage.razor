@@ -46,13 +46,11 @@ else
     protected override async Task OnInitializedAsync()
     {
         items = new();
-        foreach (var key in new[] { "wpEndpoint" })
+        var keys = await JS.InvokeAsync<string[]>("blazorwpStorage.keys");
+        foreach (var key in keys)
         {
             var value = await JS.InvokeAsync<string?>("localStorage.getItem", key);
-            if (value != null)
-            {
-                items[key] = value;
-            }
+            items[key] = value;
         }
     }
 }

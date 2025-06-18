@@ -34,17 +34,20 @@ else
     private string? error;
     private bool loading = true;
     private List<AntJsonNode>? rootNodes;
-    private RenderFragment<TreeNode<AntJsonNode>> TitleWithFavorite => node => @<div class="d-flex justify-content-between align-items-center"><span>@node.DataItem.Title</span><button class="btn btn-link btn-sm" @onclick="() => AddFavorite(node.DataItem)" title="Add to favorites">☆</button></div>;
+    private RenderFragment<TreeNode<AntJsonNode>> TitleWithFavorite => node => @<div class="d-flex justify-content-between align-items-center"><span>@node.DataItem.Title</span><button class="btn btn-link btn-sm" @onclick="async () => await AddFavorite(node.DataItem)" title="Add to favorites">☆</button></div>;
 
     private async Task AddFavorite(AntJsonNode node)
     {
+        Console.WriteLine($"[AddFavorite] Adding {node.Path}");
         var endpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
+        Console.WriteLine($"[AddFavorite] Endpoint: {endpoint}");
         if (string.IsNullOrEmpty(endpoint))
         {
             return;
         }
 
         var json = await JS.InvokeAsync<string?>("localStorage.getItem", "favoriteApis");
+        Console.WriteLine($"[AddFavorite] Current JSON: {json}");
         Dictionary<string, List<string>> data;
         if (!string.IsNullOrEmpty(json))
         {
@@ -73,6 +76,8 @@ else
             list.Add(node.Path);
             var serialized = JsonSerializer.Serialize(data);
             await JS.InvokeVoidAsync("localStorage.setItem", "favoriteApis", serialized);
+            var verify = await JS.InvokeAsync<string?>("localStorage.getItem", "favoriteApis");
+            Console.WriteLine($"[AddFavorite] Stored JSON: {verify}");
         }
     }
 
