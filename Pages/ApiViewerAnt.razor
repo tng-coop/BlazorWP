@@ -34,20 +34,26 @@ else
     private string? error;
     private bool loading = true;
     private List<AntJsonNode>? rootNodes;
-    private RenderFragment<TreeNode<AntJsonNode>> TitleWithFavorite => node => @<div class="d-flex justify-content-between align-items-center"><span>@node.DataItem.Title</span><button class="btn btn-link btn-sm" @onclick="async () => await AddFavorite(node.DataItem)" title="Add to favorites">☆</button></div>;
+    private RenderFragment<TreeNode<AntJsonNode>> TitleWithFavorite => node =>
+        @<div class="d-flex justify-content-between align-items-center">
+            <span>@node.DataItem.Title</span>
+            <button class="btn btn-link btn-sm" @onclick="async () => await ToggleFavorite(node.DataItem)" title="Toggle favorite">
+                @(node.DataItem.IsFavorite ? "★" : "☆")
+            </button>
+        </div>;
 
-    private async Task AddFavorite(AntJsonNode node)
+    private async Task ToggleFavorite(AntJsonNode node)
     {
-        Console.WriteLine($"[AddFavorite] Adding {node.Path}");
+        Console.WriteLine($"[ToggleFavorite] Toggling {node.Path}");
         var endpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
-        Console.WriteLine($"[AddFavorite] Endpoint: {endpoint}");
+        Console.WriteLine($"[ToggleFavorite] Endpoint: {endpoint}");
         if (string.IsNullOrEmpty(endpoint))
         {
             return;
         }
 
         var json = await JS.InvokeAsync<string?>("localStorage.getItem", "favoriteApis");
-        Console.WriteLine($"[AddFavorite] Current JSON: {json}");
+        Console.WriteLine($"[ToggleFavorite] Current JSON: {json}");
         Dictionary<string, List<string>> data;
         if (!string.IsNullOrEmpty(json))
         {
@@ -71,14 +77,20 @@ else
             data[endpoint] = list;
         }
 
-        if (!list.Contains(node.Path))
+        if (list.Contains(node.Path))
+        {
+            list.Remove(node.Path);
+            node.IsFavorite = false;
+        }
+        else
         {
             list.Add(node.Path);
-            var serialized = JsonSerializer.Serialize(data);
-            await JS.InvokeVoidAsync("localStorage.setItem", "favoriteApis", serialized);
-            var verify = await JS.InvokeAsync<string?>("localStorage.getItem", "favoriteApis");
-            Console.WriteLine($"[AddFavorite] Stored JSON: {verify}");
+            node.IsFavorite = true;
         }
+
+        var serialized = JsonSerializer.Serialize(data);
+        await JS.InvokeVoidAsync("localStorage.setItem", "favoriteApis", serialized);
+        await InvokeAsync(StateHasChanged);
     }
 
     protected override async Task OnInitializedAsync()
@@ -103,6 +115,15 @@ else
             formattedJson = JsonSerializer.Serialize(doc.RootElement, new JsonSerializerOptions { WriteIndented = true });
             var root = BuildNode(doc.RootElement, "root", "");
             rootNodes = root.Children;
+
+            var favJson = await JS.InvokeAsync<string?>("localStorage.getItem", "favoriteApis");
+            if (!string.IsNullOrEmpty(favJson) &&
+                JsonSerializer.Deserialize<Dictionary<string, List<string>>>(favJson) is { } favData &&
+                favData.TryGetValue(endpoint, out var favs))
+            {
+                var set = new HashSet<string>(favs);
+                MarkFavorites(rootNodes, set);
+            }
         }
         catch (Exception ex)
         {
@@ -142,11 +163,28 @@ else
         return node;
     }
 
+    private static void MarkFavorites(IEnumerable<AntJsonNode> nodes, HashSet<string> favorites)
+    {
+        foreach (var node in nodes)
+        {
+            if (favorites.Contains(node.Path))
+            {
+                node.IsFavorite = true;
+            }
+
+            if (node.Children.Count > 0)
+            {
+                MarkFavorites(node.Children, favorites);
+            }
+        }
+    }
+
     public class AntJsonNode
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Title { get; set; } = string.Empty;
         public string Path { get; set; } = string.Empty;
         public List<AntJsonNode> Children { get; set; } = new();
+        public bool IsFavorite { get; set; }
     }
 }
