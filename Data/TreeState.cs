@@ -7,7 +7,7 @@ namespace BlazorWP.Data;
 public class TreeState
 {
     public List<AntJsonNode>? Nodes { get; private set; }
-    public IEnumerable<string> ExpandedKeys { get; set; } = Array.Empty<string>();
+    public string[] ExpandedKeys { get; set; } = Array.Empty<string>();
     public string? SelectedKey { get; set; }
 
     private readonly HttpClient _http;
