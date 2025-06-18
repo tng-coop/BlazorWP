@@ -24,7 +24,7 @@ else if (error != null)
               TitleExpression="n => n.DataItem.Title"
               ExpandedKeys="TreeState.ExpandedKeys.ToArray()"
               SelectedKeys="new[] { TreeState.SelectedKey }"
-              OnExpandChanged="OnExpand"
+              ExpandedKeysChanged="OnExpand"
               SelectedKeysChanged="OnSelect"></Tree>
     }
 else if (formattedJson != null)
