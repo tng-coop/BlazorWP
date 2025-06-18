@@ -143,7 +143,17 @@ else
             case JsonValueKind.Object:
                 foreach (var prop in element.EnumerateObject())
                 {
-                    var childPath = string.IsNullOrEmpty(path) ? prop.Name : (prop.Name.StartsWith("/") ? $"{path}{prop.Name}" : $"{path}/{prop.Name}");
+                    string childPath;
+                    if (path == "routes" && prop.Name.StartsWith("/"))
+                    {
+                        childPath = prop.Name;
+                    }
+                    else
+                    {
+                        childPath = string.IsNullOrEmpty(path)
+                            ? prop.Name
+                            : (prop.Name.StartsWith("/") ? $"{path}{prop.Name}" : $"{path}/{prop.Name}");
+                    }
                     node.Children.Add(BuildNode(prop.Value, prop.Name, childPath));
                 }
                 break;
