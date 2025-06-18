@@ -19,7 +19,7 @@
             AllowDrop="true"
             AllowDropInBetween="true"
             Drop="OnDrop"
-            Sort="(a,b) => a.Order.CompareTo(b.Order)"
+            Sort="SortNodes"
             ShowLines="true"
             ShowRoot="true"
             Ready="OnReady">
@@ -46,7 +46,18 @@
         if (sourceItem != null && targetItem != null)
         {
             ReOrder(sourceItem, targetItem, args.Before);
+            _tree.Refresh();
         }
+    }
+
+    private static int SortNodes(TreeItem a, TreeItem b)
+    {
+        if (a.IsGroup != b.IsGroup)
+        {
+            return a.IsGroup ? 1 : -1;
+        }
+
+        return a.Order.CompareTo(b.Order);
     }
 
     private void ReOrder(TreeItem source, TreeItem target, bool? before)
