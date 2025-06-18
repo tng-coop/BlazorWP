@@ -1,0 +1,119 @@
+@page "/api-mud"
+@using System.Text.Json
+@inject HttpClient Http
+@inject IJSRuntime JS
+
+<PageTitle>Mud API Viewer</PageTitle>
+
+<h1>MudBlazor API Viewer</h1>
+
+@if (loading)
+{
+    <p><em>Loading...</em></p>
+}
+else if (error != null)
+{
+    <p class="text-danger">@error</p>
+}
+else if (rootNode != null)
+{
+    <MudTreeView>
+        @foreach (var child in rootNode.Children)
+        {
+            @BuildMudItem(child)
+        }
+    </MudTreeView>
+}
+else if (formattedJson != null)
+{
+    <pre class="json-view">@formattedJson</pre>
+}
+else
+{
+    <p>No WordPress endpoint verified. Visit <NavLink href="/">Home</NavLink> first.</p>
+}
+
+@code {
+    private string? formattedJson;
+    private string? error;
+    private bool loading = true;
+    private JsonTreeNode? rootNode;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var endpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
+        if (string.IsNullOrEmpty(endpoint))
+        {
+            loading = false;
+            return;
+        }
+
+        var rootEndpoint = endpoint;
+        if (rootEndpoint.EndsWith("/wp/v2", StringComparison.OrdinalIgnoreCase))
+        {
+            rootEndpoint = rootEndpoint[..^"/wp/v2".Length];
+        }
+
+        try
+        {
+            var json = await Http.GetStringAsync(rootEndpoint);
+            using var doc = JsonDocument.Parse(json);
+            formattedJson = JsonSerializer.Serialize(doc.RootElement, new JsonSerializerOptions { WriteIndented = true });
+            rootNode = BuildNode(doc.RootElement, "root");
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private static JsonTreeNode BuildNode(JsonElement element, string name)
+    {
+        var node = new JsonTreeNode { Name = name };
+        switch (element.ValueKind)
+        {
+            case JsonValueKind.Object:
+                foreach (var prop in element.EnumerateObject())
+                {
+                    node.Children.Add(BuildNode(prop.Value, prop.Name));
+                }
+                break;
+            case JsonValueKind.Array:
+                var index = 0;
+                foreach (var val in element.EnumerateArray())
+                {
+                    node.Children.Add(BuildNode(val, $"[{index}]"));
+                    index++;
+                }
+                break;
+            default:
+                node.IsLeaf = true;
+                node.Value = element.ToString();
+                break;
+        }
+        return node;
+    }
+
+    private RenderFragment BuildMudItem(JsonTreeNode node) => builder =>
+    {
+        var seq = 0;
+        builder.OpenComponent<MudTreeViewItem>(seq++);
+        builder.AddAttribute(seq++, "Text", node.Display);
+        builder.AddAttribute(seq++, "Icon", node.IsLeaf ? Icons.Material.Filled.Description : Icons.Material.Filled.Folder);
+        if (node.Children.Count > 0)
+        {
+            builder.AddAttribute(seq++, "ChildContent", (RenderFragment)(b =>
+            {
+                foreach (var child in node.Children)
+                {
+                    b.AddContent(seq++, BuildMudItem(child));
+                }
+            }));
+        }
+        builder.CloseComponent();
+    };
+}
