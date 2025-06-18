@@ -1,4 +1,7 @@
 @page "/api"
+@using BlazorWP.Data
+@using PanoramicData.Blazor
+@using System.Text.Json
 @inject HttpClient Http
 @inject IJSRuntime JS
 
@@ -14,6 +17,20 @@ else if (error != null)
 {
     <p class="text-danger">@error</p>
 }
+else if (_dataProvider != null)
+{
+    <PDTree @ref="_tree"
+            TItem="JsonTreeItem"
+            DataProvider="_dataProvider"
+            KeyField="x => x.Id"
+            ParentKeyField="x => x.ParentId"
+            TextField="x => x.Display"
+            IconCssClass="GetIconCssClass"
+            ShowLines="true"
+            ShowRoot="false"
+            Ready="OnReady">
+    </PDTree>
+}
 else if (formattedJson != null)
 {
     <pre class="json-view">@formattedJson</pre>
@@ -27,6 +44,8 @@ else
     private string? formattedJson;
     private string? error;
     private bool loading = true;
+    private PDTree<JsonTreeItem>? _tree;
+    private JsonTreeDataProvider? _dataProvider;
 
     protected override async Task OnInitializedAsync()
     {
@@ -48,14 +67,58 @@ else
             var json = await Http.GetStringAsync(rootEndpoint);
             using var doc = JsonDocument.Parse(json);
             formattedJson = JsonSerializer.Serialize(doc.RootElement, new JsonSerializerOptions { WriteIndented = true });
+            var items = new List<JsonTreeItem>();
+            BuildItems(doc.RootElement, "root", null, items);
+            _dataProvider = new JsonTreeDataProvider(items);
         }
         catch (Exception ex)
         {
             error = ex.Message;
         }
-        finally
+    finally
+    {
+        loading = false;
+    }
+    }
+
+    private static void BuildItems(JsonElement element, string name, string? parentId, List<JsonTreeItem> items)
+    {
+        var item = new JsonTreeItem
         {
-            loading = false;
+            Id = Guid.NewGuid().ToString(),
+            ParentId = parentId,
+            Name = name
+        };
+
+        switch (element.ValueKind)
+        {
+            case JsonValueKind.Object:
+                item.IsLeaf = false;
+                items.Add(item);
+                foreach (var prop in element.EnumerateObject())
+                {
+                    BuildItems(prop.Value, prop.Name, item.Id, items);
+                }
+                break;
+            case JsonValueKind.Array:
+                item.IsLeaf = false;
+                items.Add(item);
+                var index = 0;
+                foreach (var val in element.EnumerateArray())
+                {
+                    BuildItems(val, $"[{index}]", item.Id, items);
+                    index++;
+                }
+                break;
+            default:
+                item.IsLeaf = true;
+                item.Value = element.ToString();
+                items.Add(item);
+                break;
         }
     }
+
+    private static string GetIconCssClass(JsonTreeItem item, int _) => item.IsLeaf ? "fas fa-fw fa-file" : "fas fa-fw fa-folder";
+
+    private void OnReady() => _tree?.ExpandAll();
 }
