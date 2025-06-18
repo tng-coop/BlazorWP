@@ -19,16 +19,42 @@
     <p class="mt-3">Verified endpoint: @verifiedEndpoint</p>
 }
 
-@if (favoriteApis.Any())
+@if (favoriteEndpoints.Any())
 {
     <div class="mt-3">
         <h5>Favorite APIs</h5>
-        <ul>
-            @foreach (var api in favoriteApis)
+        <div class="accordion" id="favAccordion">
+            @for (int i = 0; i < favoriteEndpoints.Count; i++)
             {
-                <li>@api</li>
+                var fav = favoriteEndpoints[i];
+                var collapseId = $"favcollapse{i}";
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading@i">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#@collapseId" aria-expanded="false" aria-controls="@collapseId">
+                            @fav.Path
+                        </button>
+                    </h2>
+                    <div id="@collapseId" class="accordion-collapse collapse">
+                        <div class="accordion-body">
+                            <strong>Recorded under:</strong>
+                            <ul>
+                                @foreach (var site in fav.Sites)
+                                {
+                                    <li class="d-flex justify-content-between align-items-center">
+                                        <span>@site</span>
+                                        <button class="btn btn-sm btn-primary" @onclick="() => InvokeGet(fav, site)">GET</button>
+                                    </li>
+                                }
+                            </ul>
+                            @if (!string.IsNullOrEmpty(fav.Result))
+                            {
+                                <pre class="json-view mt-2">@fav.Result</pre>
+                            }
+                        </div>
+                    </div>
+                </div>
             }
-        </ul>
+        </div>
     </div>
 }
 
@@ -50,7 +76,7 @@
     private string? status;
     private string? verifiedEndpoint;
     private List<string> logs = new();
-    private List<string> favoriteApis = new();
+    private List<FavoriteEndpoint> favoriteEndpoints = new();
 
     [Inject]
     private HttpClient Http { get; set; } = default!;
@@ -63,19 +89,16 @@
         if (firstRender)
         {
             verifiedEndpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
-            if (!string.IsNullOrEmpty(verifiedEndpoint))
-            {
-                await LoadFavorites();
-                StateHasChanged();
-            }
+            await LoadFavorites();
+            StateHasChanged();
         }
     }
 
     private async Task LoadFavorites()
     {
-        favoriteApis.Clear();
+        favoriteEndpoints.Clear();
         var json = await JS.InvokeAsync<string?>("localStorage.getItem", "favoriteApis");
-        if (string.IsNullOrEmpty(json) || string.IsNullOrEmpty(verifiedEndpoint))
+        if (string.IsNullOrEmpty(json))
         {
             return;
         }
@@ -83,9 +106,24 @@
         try
         {
             var data = JsonSerializer.Deserialize<Dictionary<string, List<string>>>(json);
-            if (data != null && data.TryGetValue(verifiedEndpoint!, out var list))
+            if (data != null)
             {
-                favoriteApis = list;
+                var dict = new Dictionary<string, HashSet<string>>();
+                foreach (var pair in data)
+                {
+                    foreach (var path in pair.Value)
+                    {
+                        if (!dict.TryGetValue(path, out var set))
+                        {
+                            set = new HashSet<string>();
+                            dict[path] = set;
+                        }
+                        set.Add(pair.Key);
+                    }
+                }
+                favoriteEndpoints = dict.OrderBy(kv => kv.Key)
+                    .Select(kv => new FavoriteEndpoint { Path = kv.Key, Sites = kv.Value.ToList() })
+                    .ToList();
             }
         }
         catch
@@ -269,5 +307,40 @@
         }
 
         return url.TrimEnd('/') + "/wp-login.php";
+    }
+
+    private async Task InvokeGet(FavoriteEndpoint fav, string site)
+    {
+        try
+        {
+            var url = CombineUrl(site, fav.Path);
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            var response = await Http.GetAsync(url, cts.Token);
+            fav.Result = await FormatRawResponse(response);
+        }
+        catch (Exception ex)
+        {
+            fav.Result = $"Error: {ex.Message}";
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private static string CombineUrl(string site, string path)
+    {
+        if (site.EndsWith("/wp-json/wp/v2", StringComparison.OrdinalIgnoreCase) &&
+            path.StartsWith("/wp/v2", StringComparison.OrdinalIgnoreCase))
+        {
+            var baseUrl = site[..^"/wp/v2".Length];
+            return baseUrl.TrimEnd('/') + path;
+        }
+
+        return site.TrimEnd('/') + (path.StartsWith("/") ? path : "/" + path);
+    }
+
+    public class FavoriteEndpoint
+    {
+        public string Path { get; set; } = string.Empty;
+        public List<string> Sites { get; set; } = new();
+        public string? Result { get; set; }
     }
 }
