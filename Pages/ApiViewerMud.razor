@@ -15,14 +15,14 @@ else if (error != null)
 {
     <p class="text-danger">@error</p>
 }
-else if (rootNode != null)
-{
-    <MudTreeView>
-        @foreach (var child in rootNode.Children)
-        {
-            @BuildMudItem(child)
-        }
-    </MudTreeView>
+    else if (rootNode != null)
+    {
+        <MudTreeView T="JsonTreeNode">
+            @foreach (var child in rootNode.Children)
+            {
+                @BuildMudItem(child)
+            }
+        </MudTreeView>
 }
 else if (formattedJson != null)
 {
@@ -101,7 +101,7 @@ else
     private RenderFragment BuildMudItem(JsonTreeNode node) => builder =>
     {
         var seq = 0;
-        builder.OpenComponent<MudTreeViewItem>(seq++);
+        builder.OpenComponent<MudTreeViewItem<JsonTreeNode>>(seq++);
         builder.AddAttribute(seq++, "Text", node.Display);
         builder.AddAttribute(seq++, "Icon", node.IsLeaf ? Icons.Material.Filled.Description : Icons.Material.Filled.Folder);
         if (node.Children.Count > 0)
