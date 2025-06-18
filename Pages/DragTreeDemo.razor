@@ -30,7 +30,11 @@
     private PDTree<TreeItem> _tree = null!;
     private readonly TreeDataProvider _dataProvider = new();
 
-    private void OnReady() => _tree.ExpandAll();
+    private void OnReady()
+    {
+        _tree.ExpandAll();
+        LogTree();
+    }
 
     private static string GetIconCssClass(TreeItem item, int _) => item.IsGroup ? "fas fa-fw fa-building" : "fas fa-fw fa-user";
 
@@ -47,6 +51,7 @@
         {
             ReOrder(sourceItem, targetItem, args.Before);
             await _tree.RefreshAsync();
+            LogTree();
         }
     }
 
@@ -129,6 +134,40 @@
                 if (node.Data != null)
                 {
                     node.Data.Order = ++index;
+                }
+            }
+        }
+    }
+
+    private void LogTree()
+    {
+        if (_tree.RootNode?.Nodes == null)
+        {
+            return;
+        }
+
+        Console.WriteLine("Current tree order:");
+        foreach (var line in SerializeNodes(_tree.RootNode.Nodes, 0))
+        {
+            Console.WriteLine(line);
+        }
+    }
+
+    private static IEnumerable<string> SerializeNodes(IEnumerable<PanoramicData.Blazor.Models.TreeNode<TreeItem>> nodes, int level)
+    {
+        foreach (var node in nodes)
+        {
+            if (node.Data != null)
+            {
+                var indent = new string(' ', level * 2);
+                yield return $"{indent}{node.Data}";
+            }
+
+            if (node.Nodes != null)
+            {
+                foreach (var child in SerializeNodes(node.Nodes, level + 1))
+                {
+                    yield return child;
                 }
             }
         }
