@@ -9,6 +9,10 @@
     <input id="wpUrl" class="form-control" @bind="userUrl" @onkeydown="HandleKeyDown" placeholder="https://example.com" />
 </div>
 <button class="btn btn-primary" @onclick="CheckApi">Check API</button>
+@if (!string.IsNullOrEmpty(verifiedEndpoint))
+{
+    <button class="btn btn-secondary ms-2" @onclick="OpenLogin">Login to WordPress</button>
+}
 
 @if (!string.IsNullOrEmpty(verifiedEndpoint))
 {
@@ -200,5 +204,31 @@
             sb.Append(Encoding.UTF8.GetString(bytes));
         }
         return sb.ToString();
+    }
+
+    private async Task OpenLogin()
+    {
+        if (string.IsNullOrEmpty(verifiedEndpoint))
+        {
+            return;
+        }
+
+        var loginUrl = GetLoginUrl(verifiedEndpoint);
+        await JS.InvokeVoidAsync("open", loginUrl, "_blank", "noopener,noreferrer,width=800,height=600");
+    }
+
+    private static string GetLoginUrl(string endpoint)
+    {
+        var url = endpoint;
+        if (url.EndsWith("/wp-json/wp/v2", StringComparison.OrdinalIgnoreCase))
+        {
+            url = url[..^"/wp-json/wp/v2".Length];
+        }
+        else if (url.EndsWith("/wp/v2", StringComparison.OrdinalIgnoreCase))
+        {
+            url = url[..^"/wp/v2".Length];
+        }
+
+        return url.TrimEnd('/') + "/wp-login.php";
     }
 }
