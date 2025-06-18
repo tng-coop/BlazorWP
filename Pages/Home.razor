@@ -19,6 +19,19 @@
     <p class="mt-3">Verified endpoint: @verifiedEndpoint</p>
 }
 
+@if (favoriteApis.Any())
+{
+    <div class="mt-3">
+        <h5>Favorite APIs</h5>
+        <ul>
+            @foreach (var api in favoriteApis)
+            {
+                <li>@api</li>
+            }
+        </ul>
+    </div>
+}
+
 @if (logs.Any())
 {
     <div class="mt-3">
@@ -37,6 +50,7 @@
     private string? status;
     private string? verifiedEndpoint;
     private List<string> logs = new();
+    private List<string> favoriteApis = new();
 
     [Inject]
     private HttpClient Http { get; set; } = default!;
@@ -51,8 +65,32 @@
             verifiedEndpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
             if (!string.IsNullOrEmpty(verifiedEndpoint))
             {
+                await LoadFavorites();
                 StateHasChanged();
             }
+        }
+    }
+
+    private async Task LoadFavorites()
+    {
+        favoriteApis.Clear();
+        var json = await JS.InvokeAsync<string?>("localStorage.getItem", "favoriteApis");
+        if (string.IsNullOrEmpty(json) || string.IsNullOrEmpty(verifiedEndpoint))
+        {
+            return;
+        }
+
+        try
+        {
+            var data = JsonSerializer.Deserialize<Dictionary<string, List<string>>>(json);
+            if (data != null && data.TryGetValue(verifiedEndpoint!, out var list))
+            {
+                favoriteApis = list;
+            }
+        }
+        catch
+        {
+            // ignore deserialization errors
         }
     }
 
@@ -114,6 +152,7 @@
                 {
                     verifiedEndpoint = endpoint;
                     await JS.InvokeVoidAsync("localStorage.setItem", "wpEndpoint", verifiedEndpoint);
+                    await LoadFavorites();
                     status = $"Success! v2 endpoint is {endpoint}";
                     return;
                 }
