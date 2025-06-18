@@ -144,7 +144,8 @@ else
                 foreach (var prop in element.EnumerateObject())
                 {
                     string childPath;
-                    if (path == "routes" && prop.Name.StartsWith("/"))
+                    var isRoutes = path == "routes" || path.EndsWith("/routes");
+                    if (isRoutes && prop.Name.StartsWith("/"))
                     {
                         childPath = prop.Name;
                     }
