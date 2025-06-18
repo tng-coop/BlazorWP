@@ -119,8 +119,10 @@ code {
     border-radius: 4px;
     font-family: monospace;
     white-space: pre-line;
-    max-height: 300px;
+    height: 300px;
+    width: 300px;
     overflow-y: auto;
+    resize:both;
 }
 
 .json-view {
