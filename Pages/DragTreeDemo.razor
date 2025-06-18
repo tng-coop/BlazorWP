@@ -65,7 +65,24 @@
 
         var sourceNode = _tree.RootNode.Find(source.Id.ToString());
         var targetNode = _tree.RootNode.Find(target.Id.ToString());
-        if (sourceNode?.ParentNode?.Nodes is null || targetNode?.ParentNode?.Nodes is null)
+        if (sourceNode?.ParentNode?.Nodes is null || targetNode == null)
+        {
+            return;
+        }
+
+        // Handle folder dropped onto folder to make it a child
+        if (source.IsGroup && target.IsGroup && before == null)
+        {
+            sourceNode.ParentNode.Nodes.Remove(sourceNode);
+            targetNode.Nodes?.Add(sourceNode);
+            sourceNode.ParentNode = targetNode;
+            source.ParentId = target.Id;
+            ReOrderNodes(targetNode.Nodes);
+            _ = _dataProvider.UpdateAsync(source, new Dictionary<string, object?> { ["ParentId"] = source.ParentId }, CancellationToken.None);
+            return;
+        }
+
+        if (targetNode.ParentNode?.Nodes is null)
         {
             return;
         }
@@ -77,13 +94,17 @@
             var tIdx = targetNode.ParentNode.Nodes.IndexOf(targetNode);
             targetNode.ParentNode.Nodes.Insert(before == true ? tIdx : tIdx + 1, sourceNode);
             sourceNode.ParentNode = targetNode.ParentNode;
+            source.ParentId = (targetNode.ParentNode.Data as TreeItem)?.Id;
             ReOrderNodes(targetNode.ParentNode.Nodes);
+            _ = _dataProvider.UpdateAsync(source, new Dictionary<string, object?> { ["ParentId"] = source.ParentId }, CancellationToken.None);
         }
         else
         {
             targetNode.Nodes?.Add(sourceNode);
             sourceNode.ParentNode = targetNode;
+            source.ParentId = target.Id;
             ReOrderNodes(targetNode.Nodes);
+            _ = _dataProvider.UpdateAsync(source, new Dictionary<string, object?> { ["ParentId"] = source.ParentId }, CancellationToken.None);
         }
     }
 

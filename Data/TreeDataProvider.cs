@@ -49,7 +49,18 @@ public class TreeDataProvider : IDataProviderService<TreeItem>
         => Task.FromResult(new OperationResponse { Success = true });
 
     public Task<OperationResponse> UpdateAsync(TreeItem item, IDictionary<string, object?> delta, CancellationToken cancellationToken)
-        => Task.FromResult(new OperationResponse { Success = true });
+    {
+        var existing = _items.FirstOrDefault(x => x.Id == item.Id);
+        if (existing != null)
+        {
+            existing.ParentId = item.ParentId;
+            existing.Order = item.Order;
+            existing.Name = item.Name;
+            existing.IsGroup = item.IsGroup;
+        }
+
+        return Task.FromResult(new OperationResponse { Success = true });
+    }
 
     public Task<OperationResponse> CreateAsync(TreeItem item, CancellationToken cancellationToken)
         => Task.FromResult(new OperationResponse { Success = true });
