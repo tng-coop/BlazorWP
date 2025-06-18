@@ -1,5 +1,6 @@
 function setupPDTreeHighlight() {
   const counters = new WeakMap();
+  let draggingIsFolder = false;
 
   const addHighlight = (node) => {
     const count = counters.get(node) || 0;
@@ -21,10 +22,25 @@ function setupPDTreeHighlight() {
   };
 
   document.addEventListener(
+    'dragstart',
+    function (e) {
+      const node = e.target.closest('.pdtreenode_content');
+      if (node) {
+        draggingIsFolder = !!node.querySelector('.fa-building');
+      }
+    },
+    true
+  );
+
+  document.addEventListener(
     'dragenter',
     function (e) {
       const node = e.target.closest('.pdtreenode_content');
       if (node) {
+        const nodeIsFolder = !!node.querySelector('.fa-building');
+        if (draggingIsFolder && !nodeIsFolder) {
+          return;
+        }
         addHighlight(node);
       }
     },
@@ -61,6 +77,7 @@ function setupPDTreeHighlight() {
         counters.set(el, 0);
         el.classList.remove('drop-target');
       });
+    draggingIsFolder = false;
   });
 }
 
