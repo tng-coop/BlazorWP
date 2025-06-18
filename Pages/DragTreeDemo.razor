@@ -112,7 +112,7 @@
         {
             var sourceParentNodes = sourceNode.ParentNode.Nodes;
             sourceParentNodes.Remove(sourceNode);
-            targetNode.Nodes?.Add(sourceNode);
+            targetNode.Nodes?.Insert(0, sourceNode);
             sourceNode.ParentNode = targetNode;
             source.ParentId = target.Id;
             ReOrderNodes(sourceParentNodes);
@@ -141,7 +141,7 @@
         }
         else
         {
-            targetNode.Nodes?.Add(sourceNode);
+            targetNode.Nodes?.Insert(0, sourceNode);
             sourceNode.ParentNode = targetNode;
             source.ParentId = target.Id;
             ReOrderNodes(originalParentNodes);
