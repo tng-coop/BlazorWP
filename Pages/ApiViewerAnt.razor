@@ -17,7 +17,8 @@ else if (error != null)
 }
     else if (rootNodes != null)
     {
-        <Tree TItem="AntJsonNode" DataSource="@rootNodes" KeyExpression="n => n.Id" ChildrenExpression="n => n.DataItem.Children" TitleExpression="n => n.DataItem.Title"></Tree>
+        <Tree TItem="AntJsonNode" DataSource="@rootNodes" KeyExpression="n => n.Id" ChildrenExpression="n => n.DataItem.Children"
+              TitleTemplate="@TitleWithFavorite"></Tree>
     }
 else if (formattedJson != null)
 {
@@ -33,6 +34,47 @@ else
     private string? error;
     private bool loading = true;
     private List<AntJsonNode>? rootNodes;
+    private RenderFragment<TreeNode<AntJsonNode>> TitleWithFavorite => node => @<div class="d-flex justify-content-between align-items-center"><span>@node.DataItem.Title</span><button class="btn btn-link btn-sm" @onclick="() => AddFavorite(node.DataItem)" title="Add to favorites">☆</button></div>;
+
+    private async Task AddFavorite(AntJsonNode node)
+    {
+        var endpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
+        if (string.IsNullOrEmpty(endpoint))
+        {
+            return;
+        }
+
+        var json = await JS.InvokeAsync<string?>("localStorage.getItem", "favoriteApis");
+        Dictionary<string, List<string>> data;
+        if (!string.IsNullOrEmpty(json))
+        {
+            try
+            {
+                data = JsonSerializer.Deserialize<Dictionary<string, List<string>>>(json) ?? new();
+            }
+            catch
+            {
+                data = new();
+            }
+        }
+        else
+        {
+            data = new();
+        }
+
+        if (!data.TryGetValue(endpoint, out var list))
+        {
+            list = new List<string>();
+            data[endpoint] = list;
+        }
+
+        if (!list.Contains(node.Path))
+        {
+            list.Add(node.Path);
+            var serialized = JsonSerializer.Serialize(data);
+            await JS.InvokeVoidAsync("localStorage.setItem", "favoriteApis", serialized);
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -54,7 +96,7 @@ else
             var json = await Http.GetStringAsync(rootEndpoint);
             using var doc = JsonDocument.Parse(json);
             formattedJson = JsonSerializer.Serialize(doc.RootElement, new JsonSerializerOptions { WriteIndented = true });
-            var root = BuildNode(doc.RootElement, "root");
+            var root = BuildNode(doc.RootElement, "root", "");
             rootNodes = root.Children;
         }
         catch (Exception ex)
@@ -67,22 +109,24 @@ else
         }
     }
 
-    private static AntJsonNode BuildNode(JsonElement element, string name)
+    private static AntJsonNode BuildNode(JsonElement element, string name, string path)
     {
-        var node = new AntJsonNode { Id = Guid.NewGuid().ToString(), Title = name };
+        var node = new AntJsonNode { Id = Guid.NewGuid().ToString(), Title = name, Path = path };
         switch (element.ValueKind)
         {
             case JsonValueKind.Object:
                 foreach (var prop in element.EnumerateObject())
                 {
-                    node.Children.Add(BuildNode(prop.Value, prop.Name));
+                    var childPath = string.IsNullOrEmpty(path) ? prop.Name : (prop.Name.StartsWith("/") ? $"{path}{prop.Name}" : $"{path}/{prop.Name}");
+                    node.Children.Add(BuildNode(prop.Value, prop.Name, childPath));
                 }
                 break;
             case JsonValueKind.Array:
                 var index = 0;
                 foreach (var val in element.EnumerateArray())
                 {
-                    node.Children.Add(BuildNode(val, $"[{index}]"));
+                    var childPath = $"{path}/{index}";
+                    node.Children.Add(BuildNode(val, $"[{index}]", childPath));
                     index++;
                 }
                 break;
@@ -97,6 +141,7 @@ else
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Title { get; set; } = string.Empty;
+        public string Path { get; set; } = string.Empty;
         public List<AntJsonNode> Children { get; set; } = new();
     }
 }
