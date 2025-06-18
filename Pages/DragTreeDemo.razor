@@ -110,10 +110,12 @@
         // Handle folder dropped onto folder to make it a child
         if (source.IsGroup && target.IsGroup && before == null)
         {
-            sourceNode.ParentNode.Nodes.Remove(sourceNode);
+            var sourceParentNodes = sourceNode.ParentNode.Nodes;
+            sourceParentNodes.Remove(sourceNode);
             targetNode.Nodes?.Add(sourceNode);
             sourceNode.ParentNode = targetNode;
             source.ParentId = target.Id;
+            ReOrderNodes(sourceParentNodes);
             ReOrderNodes(targetNode.Nodes);
             _ = _dataProvider.UpdateAsync(source, new Dictionary<string, object?> { ["ParentId"] = source.ParentId }, CancellationToken.None);
             return;
@@ -124,7 +126,8 @@
             return;
         }
 
-        sourceNode.ParentNode.Nodes.Remove(sourceNode);
+        var originalParentNodes = sourceNode.ParentNode.Nodes;
+        originalParentNodes.Remove(sourceNode);
 
         if (source.IsGroup || !target.IsGroup)
         {
@@ -132,6 +135,7 @@
             targetNode.ParentNode.Nodes.Insert(before == true ? tIdx : tIdx + 1, sourceNode);
             sourceNode.ParentNode = targetNode.ParentNode;
             source.ParentId = (targetNode.ParentNode.Data as TreeItem)?.Id;
+            ReOrderNodes(originalParentNodes);
             ReOrderNodes(targetNode.ParentNode.Nodes);
             _ = _dataProvider.UpdateAsync(source, new Dictionary<string, object?> { ["ParentId"] = source.ParentId }, CancellationToken.None);
         }
@@ -140,6 +144,7 @@
             targetNode.Nodes?.Add(sourceNode);
             sourceNode.ParentNode = targetNode;
             source.ParentId = target.Id;
+            ReOrderNodes(originalParentNodes);
             ReOrderNodes(targetNode.Nodes);
             _ = _dataProvider.UpdateAsync(source, new Dictionary<string, object?> { ["ParentId"] = source.ParentId }, CancellationToken.None);
         }
