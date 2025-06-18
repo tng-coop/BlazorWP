@@ -1,7 +1,7 @@
 @page "/api-ant"
 @using System.Text.Json
-@inject HttpClient Http
-@inject IJSRuntime JS
+@using BlazorWP.Data
+@inject TreeState TreeState
 
 <PageTitle>Ant Design API Viewer</PageTitle>
 
@@ -15,9 +15,17 @@ else if (error != null)
 {
     <p class="text-danger">@error</p>
 }
-    else if (rootNodes != null)
+    else if (TreeState.Nodes != null)
     {
-        <Tree TItem="AntJsonNode" DataSource="@rootNodes" KeyExpression="n => n.Id" ChildrenExpression="n => n.DataItem.Children" TitleExpression="n => n.DataItem.Title"></Tree>
+        <Tree TItem="AntJsonNode"
+              DataSource="@TreeState.Nodes"
+              KeyExpression="n => n.Id"
+              ChildrenExpression="n => n.DataItem.Children"
+              TitleExpression="n => n.DataItem.Title"
+              ExpandedKeys="TreeState.ExpandedKeys"
+              SelectedKeys="new[] { TreeState.SelectedKey }"
+              OnExpand="OnExpand"
+              OnSelect="OnSelect"></Tree>
     }
 else if (formattedJson != null)
 {
@@ -32,30 +40,15 @@ else
     private string? formattedJson;
     private string? error;
     private bool loading = true;
-    private List<AntJsonNode>? rootNodes;
 
     protected override async Task OnInitializedAsync()
     {
-        var endpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
-        if (string.IsNullOrEmpty(endpoint))
-        {
-            loading = false;
-            return;
-        }
-
-        var rootEndpoint = endpoint;
-        if (rootEndpoint.EndsWith("/wp/v2", StringComparison.OrdinalIgnoreCase))
-        {
-            rootEndpoint = rootEndpoint[..^"/wp/v2".Length];
-        }
-
         try
         {
-            var json = await Http.GetStringAsync(rootEndpoint);
-            using var doc = JsonDocument.Parse(json);
-            formattedJson = JsonSerializer.Serialize(doc.RootElement, new JsonSerializerOptions { WriteIndented = true });
-            var root = BuildNode(doc.RootElement, "root");
-            rootNodes = root.Children;
+            await TreeState.EnsureLoadedAsync();
+            formattedJson = TreeState.Nodes != null
+                ? JsonSerializer.Serialize(TreeState.Nodes, new JsonSerializerOptions { WriteIndented = true })
+                : null;
         }
         catch (Exception ex)
         {
@@ -67,36 +60,7 @@ else
         }
     }
 
-    private static AntJsonNode BuildNode(JsonElement element, string name)
-    {
-        var node = new AntJsonNode { Id = Guid.NewGuid().ToString(), Title = name };
-        switch (element.ValueKind)
-        {
-            case JsonValueKind.Object:
-                foreach (var prop in element.EnumerateObject())
-                {
-                    node.Children.Add(BuildNode(prop.Value, prop.Name));
-                }
-                break;
-            case JsonValueKind.Array:
-                var index = 0;
-                foreach (var val in element.EnumerateArray())
-                {
-                    node.Children.Add(BuildNode(val, $"[{index}]"));
-                    index++;
-                }
-                break;
-            default:
-                node.Title = $"{name}: {element}";
-                break;
-        }
-        return node;
-    }
+    private void OnExpand(IEnumerable<string> keys, object info) => TreeState.ExpandedKeys = keys;
 
-    public class AntJsonNode
-    {
-        public string Id { get; set; } = Guid.NewGuid().ToString();
-        public string Title { get; set; } = string.Empty;
-        public List<AntJsonNode> Children { get; set; } = new();
-    }
+    private void OnSelect(string[] keys, object info) => TreeState.SelectedKey = keys.FirstOrDefault();
 }

@@ -4,6 +4,7 @@ using BlazorWP;
 using MudBlazor.Services;
 using PanoramicData.Blazor.Extensions;
 using AntDesign;
+using BlazorWP.Data;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -13,5 +14,6 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.
 builder.Services.AddMudServices();
 builder.Services.AddPanoramicDataBlazor();
 builder.Services.AddAntDesign();
+builder.Services.AddScoped<TreeState>();
 
 await builder.Build().RunAsync();
