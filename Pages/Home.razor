@@ -255,7 +255,8 @@
     {
         var sb = new StringBuilder();
         var uri = request.RequestUri ?? new Uri("/", UriKind.Relative);
-        sb.Append($"{request.Method} {uri.PathAndQuery} HTTP/{request.Version.Major}.{request.Version.Minor}\r\n");
+        var requestUri = uri.IsAbsoluteUri ? uri.ToString() : uri.PathAndQuery;
+        sb.Append($"{request.Method} {requestUri} HTTP/{request.Version.Major}.{request.Version.Minor}\r\n");
 
         // Host header
         if (!request.Headers.Contains("Host") && uri.Host.Length > 0)
