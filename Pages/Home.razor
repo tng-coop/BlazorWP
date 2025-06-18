@@ -8,6 +8,19 @@
     <label for="wpUrl" class="form-label">WordPress site URL</label>
     <input id="wpUrl" class="form-control" @bind="userUrl" @bind:event="oninput" @onkeydown="HandleKeyDown" placeholder="https://example.com" />
 </div>
+@if (knownSites.Any())
+{
+    <div class="mb-3">
+        <label for="siteSelect" class="form-label">Saved endpoints</label>
+        <select id="siteSelect" class="form-select" @onchange="SelectSite" @bind="selectedSite">
+            <option value="">-- select --</option>
+            @foreach (var site in knownSites)
+            {
+                <option value="@site">@site</option>
+            }
+        </select>
+    </div>
+}
 <button class="btn btn-primary" @onclick="CheckApi">Check API</button>
 @if (!string.IsNullOrEmpty(verifiedEndpoint))
 {
@@ -48,6 +61,10 @@
                             </ul>
                             @if (!string.IsNullOrEmpty(fav.Result))
                             {
+                                @if (!string.IsNullOrEmpty(fav.RequestUrl))
+                                {
+                                    <div class="mt-2"><strong>URL:</strong> @fav.RequestUrl</div>
+                                }
                                 <pre class="json-view mt-2">@fav.Result</pre>
                             }
                         </div>
@@ -77,6 +94,8 @@
     private string? verifiedEndpoint;
     private List<string> logs = new();
     private List<FavoriteEndpoint> favoriteEndpoints = new();
+    private List<string> knownSites = new();
+    private string? selectedSite;
 
     [Inject]
     private HttpClient Http { get; set; } = default!;
@@ -89,6 +108,7 @@
         if (firstRender)
         {
             verifiedEndpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
+            selectedSite = verifiedEndpoint;
             await LoadFavorites();
             StateHasChanged();
         }
@@ -97,6 +117,7 @@
     private async Task LoadFavorites()
     {
         favoriteEndpoints.Clear();
+        knownSites.Clear();
         var json = await JS.InvokeAsync<string?>("localStorage.getItem", "favoriteApis");
         if (string.IsNullOrEmpty(json))
         {
@@ -109,6 +130,11 @@
             if (data != null)
             {
                 var dict = new Dictionary<string, HashSet<string>>();
+                knownSites = data.Keys.OrderBy(k => k).ToList();
+                if (!string.IsNullOrEmpty(verifiedEndpoint) && !knownSites.Contains(verifiedEndpoint))
+                {
+                    knownSites.Insert(0, verifiedEndpoint);
+                }
                 foreach (var pair in data)
                 {
                     foreach (var path in pair.Value)
@@ -189,6 +215,7 @@
                 if (response.IsSuccessStatusCode)
                 {
                     verifiedEndpoint = endpoint;
+                    selectedSite = endpoint;
                     await JS.InvokeVoidAsync("localStorage.setItem", "wpEndpoint", verifiedEndpoint);
                     await LoadFavorites();
                     status = $"Success! v2 endpoint is {endpoint}";
@@ -214,6 +241,17 @@
         if (e.Key == "Enter")
         {
             await CheckApi();
+        }
+    }
+
+    private async Task SelectSite(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString();
+        if (!string.IsNullOrEmpty(value))
+        {
+            selectedSite = value;
+            verifiedEndpoint = value;
+            await JS.InvokeVoidAsync("localStorage.setItem", "wpEndpoint", value);
         }
     }
 
@@ -315,6 +353,7 @@
         try
         {
             var url = CombineUrl(site, fav.Path);
+            fav.RequestUrl = url;
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
             var response = await Http.GetAsync(url, cts.Token);
             fav.Result = await FormatRawResponse(response);
@@ -343,5 +382,6 @@
         public string Path { get; set; } = string.Empty;
         public List<string> Sites { get; set; } = new();
         public string? Result { get; set; }
+        public string? RequestUrl { get; set; }
     }
 }
