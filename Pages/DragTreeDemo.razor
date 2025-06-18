@@ -34,7 +34,7 @@
 
     private static string GetIconCssClass(TreeItem item, int _) => item.IsGroup ? "fas fa-fw fa-building" : "fas fa-fw fa-user";
 
-    private void OnDrop(DropEventArgs args)
+    private async Task OnDrop(DropEventArgs args)
     {
         var targetItem = (args.Target as PanoramicData.Blazor.Models.TreeNode<TreeItem>)?.Data;
         TreeItem? sourceItem = null;
@@ -46,7 +46,7 @@
         if (sourceItem != null && targetItem != null)
         {
             ReOrder(sourceItem, targetItem, args.Before);
-            _tree.Refresh();
+            await _tree.RefreshAsync();
         }
     }
 
