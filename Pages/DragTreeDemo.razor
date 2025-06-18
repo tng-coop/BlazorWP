@@ -19,7 +19,7 @@
             AllowDrop="true"
             AllowDropInBetween="true"
             Drop="OnDrop"
-            Sort="(a,b) => a.Order.CompareTo(b.Order)"
+            Sort="SortTreeItems"
             ShowLines="true"
             ShowRoot="true"
             Ready="OnReady">
@@ -106,6 +106,16 @@
             ReOrderNodes(targetNode.Nodes);
             _ = _dataProvider.UpdateAsync(source, new Dictionary<string, object?> { ["ParentId"] = source.ParentId }, CancellationToken.None);
         }
+    }
+
+    private static int SortTreeItems(TreeItem a, TreeItem b)
+    {
+        if (a.IsGroup == b.IsGroup)
+        {
+            return a.Order.CompareTo(b.Order);
+        }
+
+        return a.IsGroup ? 1 : -1;
     }
 
     private static void ReOrderNodes(IEnumerable<PanoramicData.Blazor.Models.TreeNode<TreeItem>>? nodes)
