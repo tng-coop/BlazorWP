@@ -22,10 +22,10 @@ else if (error != null)
               KeyExpression="n => n.Id"
               ChildrenExpression="n => n.DataItem.Children"
               TitleExpression="n => n.DataItem.Title"
-              ExpandedKeys="TreeState.ExpandedKeys"
+              ExpandedKeys="TreeState.ExpandedKeys.ToArray()"
               SelectedKeys="new[] { TreeState.SelectedKey }"
-              OnExpand="OnExpand"
-              OnSelect="OnSelect"></Tree>
+              OnExpandChanged="OnExpand"
+              SelectedKeysChanged="OnSelect"></Tree>
     }
 else if (formattedJson != null)
 {
@@ -60,7 +60,13 @@ else
         }
     }
 
-    private void OnExpand(IEnumerable<string> keys, object info) => TreeState.ExpandedKeys = keys;
+    private void OnExpand(string[] keys)
+    {
+        TreeState.ExpandedKeys = keys;
+    }
 
-    private void OnSelect(string[] keys, object info) => TreeState.SelectedKey = keys.FirstOrDefault();
+    private void OnSelect(string[] keys)
+    {
+        TreeState.SelectedKey = keys.FirstOrDefault();
+    }
 }
