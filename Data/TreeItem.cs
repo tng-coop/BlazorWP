@@ -8,5 +8,5 @@ public class TreeItem
     public string Name { get; set; } = string.Empty;
     public bool IsGroup { get; set; }
 
-    public override string ToString() => $"{Id} - {Name} (order {Order})";
+    public override string ToString() => $"{Id} - {Name} {(IsGroup ? "[Folder]" : "[Person]")} (order {Order})";
 }

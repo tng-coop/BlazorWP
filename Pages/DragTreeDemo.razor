@@ -26,14 +26,33 @@
     </PDTree>
 </PDDragContext>
 
+@if (actionLogs.Any())
+{
+    <div class="mt-3">
+        <h5>Drag Log</h5>
+        <pre class="log-box">@string.Join("\n", actionLogs)</pre>
+    </div>
+}
+
+@if (treeLines.Any())
+{
+    <div class="mt-3">
+        <h5>Current Tree Order</h5>
+        <pre class="log-box">@string.Join("\n", treeLines)</pre>
+    </div>
+}
+
 @code {
     private PDTree<TreeItem> _tree = null!;
     private readonly TreeDataProvider _dataProvider = new();
+    private List<string> actionLogs = new();
+    private List<string> treeLines = new();
 
     private void OnReady()
     {
         _tree.ExpandAll();
         LogTree();
+        Log("Tree ready");
     }
 
     private static string GetIconCssClass(TreeItem item, int _) => item.IsGroup ? "fas fa-fw fa-building" : "fas fa-fw fa-user";
@@ -52,6 +71,8 @@
             ReOrder(sourceItem, targetItem, args.Before);
             await _tree.RefreshAsync();
             LogTree();
+            var position = args.Before == null ? "into" : args.Before.Value ? "before" : "after";
+            Log($"Moved '{sourceItem.Name}' {position} '{targetItem.Name}'");
         }
     }
 
@@ -146,11 +167,20 @@
             return;
         }
 
+        treeLines = SerializeNodes(_tree.RootNode.Nodes, 0).ToList();
         Console.WriteLine("Current tree order:");
-        foreach (var line in SerializeNodes(_tree.RootNode.Nodes, 0))
+        foreach (var line in treeLines)
         {
             Console.WriteLine(line);
         }
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void Log(string message)
+    {
+        actionLogs.Add(message);
+        Console.WriteLine(message);
+        InvokeAsync(StateHasChanged);
     }
 
     private static IEnumerable<string> SerializeNodes(IEnumerable<PanoramicData.Blazor.Models.TreeNode<TreeItem>> nodes, int level)
