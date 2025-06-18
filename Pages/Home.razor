@@ -12,7 +12,7 @@
 {
     <div class="mb-3">
         <label for="siteSelect" class="form-label">Saved endpoints</label>
-        <select id="siteSelect" class="form-select" @onchange="SelectSite" @bind="selectedSite">
+        <select id="siteSelect" class="form-select" @bind="selectedSite" @bind:event="onchange">
             <option value="">-- select --</option>
             @foreach (var site in knownSites)
             {
