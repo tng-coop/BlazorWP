@@ -1,6 +1,7 @@
 @page "/pcl-demo"
 @using WordPressPCL
 @inject IJSRuntime JS
+@inject JwtService JwtService
 
 <PageTitle>PCL Demo</PageTitle>
 
@@ -43,6 +44,7 @@ else
     private WordPressClient? client;
     private string? baseUrl;
     private List<ApiEndpoint> endpoints = new();
+    private string? jwtToken;
 
     protected override async Task OnInitializedAsync()
     {
@@ -54,6 +56,11 @@ else
 
         baseUrl = endpoint.TrimEnd('/') + "/wp-json/";
         client = new WordPressClient(baseUrl);
+        jwtToken = await JwtService.GetCurrentJwtAsync();
+        if (!string.IsNullOrEmpty(jwtToken))
+        {
+            client.Auth.SetJWToken(jwtToken);
+        }
 
         endpoints = new()
         {
@@ -80,6 +87,12 @@ else
             return;
         }
 
+        jwtToken = await JwtService.GetCurrentJwtAsync();
+        if (!string.IsNullOrEmpty(jwtToken))
+        {
+            client.Auth.SetJWToken(jwtToken);
+        }
+
         try
         {
             var data = await ep.Loader(client);
@@ -99,13 +112,25 @@ else
             return;
         }
 
+        jwtToken = await JwtService.GetCurrentJwtAsync();
         var command = GetCurlCommand(ep);
         await JS.InvokeVoidAsync("navigator.clipboard.writeText", command);
     }
 
     private string GetCurlCommand(ApiEndpoint ep)
     {
-        return baseUrl == null ? string.Empty : $"curl {baseUrl}{ep.Path}";
+        if (baseUrl == null)
+        {
+            return string.Empty;
+        }
+
+        var urlPart = $"{baseUrl}{ep.Path}";
+        if (string.IsNullOrEmpty(jwtToken))
+        {
+            return $"curl {urlPart}";
+        }
+
+        return $"curl -H \"Authorization: Bearer {jwtToken}\" {urlPart}";
     }
 
     private class ApiEndpoint
