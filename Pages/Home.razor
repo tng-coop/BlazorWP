@@ -133,6 +133,7 @@
         {
             verifiedEndpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
             selectedSite = verifiedEndpoint;
+            jwtToken = await JS.InvokeAsync<string?>("localStorage.getItem", "jwtToken");
             await LoadFavorites();
             StateHasChanged();
         }
@@ -388,6 +389,10 @@
                     if (doc.RootElement.TryGetProperty("token", out var tokenEl))
                     {
                         jwtToken = tokenEl.GetString();
+                        if (!string.IsNullOrEmpty(jwtToken))
+                        {
+                            await JS.InvokeVoidAsync("localStorage.setItem", "jwtToken", jwtToken);
+                        }
                     }
                     else
                     {
