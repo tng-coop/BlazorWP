@@ -105,10 +105,16 @@ else
         }
 
         var rootEndpoint = endpoint;
-        if (rootEndpoint.EndsWith("/wp/v2", StringComparison.OrdinalIgnoreCase))
+        if (rootEndpoint.EndsWith("/wp-json/wp/v2", StringComparison.OrdinalIgnoreCase))
         {
-            rootEndpoint = rootEndpoint[..^"/wp/v2".Length];
+            rootEndpoint = rootEndpoint[..^"/wp-json/wp/v2".Length];
         }
+        else if (rootEndpoint.EndsWith("/wp-json", StringComparison.OrdinalIgnoreCase))
+        {
+            rootEndpoint = rootEndpoint[..^"/wp-json".Length];
+        }
+
+        rootEndpoint = rootEndpoint.TrimEnd('/') + "/wp-json";
 
         try
         {

@@ -223,13 +223,13 @@
                 {
                     Path = baseUri.AbsolutePath.TrimEnd('/') + "/wp-json/wp/v2"
                 };
-                var endpoint = builder.Uri.ToString().TrimEnd('/');
+                var apiEndpoint = builder.Uri.ToString().TrimEnd('/');
 
-                logs.Add($"Requesting {endpoint}");
+                logs.Add($"Requesting {apiEndpoint}");
                 await InvokeAsync(StateHasChanged);
 
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-                var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
+                var request = new HttpRequestMessage(HttpMethod.Get, apiEndpoint);
                 var rawRequest = await FormatRawRequest(request);
                 logs.Add($"-> {rawRequest}");
                 await InvokeAsync(StateHasChanged);
@@ -240,11 +240,12 @@
                 await InvokeAsync(StateHasChanged);
                 if (response.IsSuccessStatusCode)
                 {
-                    verifiedEndpoint = endpoint;
-                    selectedSite = endpoint;
-                    await JS.InvokeVoidAsync("localStorage.setItem", "wpEndpoint", verifiedEndpoint);
+                    var root = baseUri.ToString().TrimEnd('/');
+                    verifiedEndpoint = root;
+                    selectedSite = root;
+                    await JS.InvokeVoidAsync("localStorage.setItem", "wpEndpoint", root);
                     await LoadFavorites();
-                    status = $"Success! v2 endpoint is {endpoint}";
+                    status = $"Success! v2 endpoint is {apiEndpoint}";
                     return;
                 }
             }
