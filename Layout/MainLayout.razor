@@ -9,7 +9,10 @@
 
     <main>
         <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+            @if (!string.IsNullOrEmpty(currentEndpoint))
+            {
+                <span>@currentEndpoint</span>
+            }
         </div>
 
         <article class="content px-4">
@@ -17,3 +20,23 @@
         </article>
     </main>
 </div>
+
+@code {
+    [Inject]
+    private IJSRuntime JS { get; set; } = default!;
+
+    private string? currentEndpoint;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        var endpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
+        if (endpoint != currentEndpoint)
+        {
+            currentEndpoint = endpoint;
+            if (!firstRender)
+            {
+                StateHasChanged();
+            }
+        }
+    }
+}
