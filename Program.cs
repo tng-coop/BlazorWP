@@ -17,8 +17,12 @@ namespace BlazorWP
             builder.RootComponents.Add<HeadOutlet>("head::after");
 
             // 3) Your services
+            builder.Services.AddScoped<JwtAuthMessageHandler>();
             builder.Services.AddScoped(sp =>
-                new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
+            {
+                var handler = sp.GetRequiredService<JwtAuthMessageHandler>();
+                return new HttpClient(handler) { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) };
+            });
             builder.Services.AddMudServices();
             builder.Services.AddPanoramicDataBlazor();
             builder.Services.AddAntDesign();
