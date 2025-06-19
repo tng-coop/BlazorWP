@@ -40,6 +40,13 @@
     <div class="mt-2">
         <strong>JWT:</strong> <code>@jwtToken</code>
     </div>
+    @if (!string.IsNullOrEmpty(jwtDecoded))
+    {
+        <div class="mt-2">
+            <strong>JWT Payload:</strong>
+            <pre class="json-view">@jwtDecoded</pre>
+        </div>
+    }
 }
 @if (!string.IsNullOrEmpty(jwtError))
 {
@@ -119,6 +126,7 @@
     private string jwtUsername = string.Empty;
     private string jwtPassword = string.Empty;
     private string? jwtToken;
+    private string? jwtDecoded;
     private string? jwtError;
 
     private class JwtInfo
@@ -148,15 +156,18 @@
                     jwtToken = info.Token;
                     jwtUsername = info.Username;
                     jwtPassword = info.Password;
+                    jwtDecoded = DecodeJwt(jwtToken);
                 }
                 else
                 {
                     jwtToken = await JS.InvokeAsync<string?>("localStorage.getItem", "jwtToken");
+                    jwtDecoded = DecodeJwt(jwtToken);
                 }
             }
             else
             {
                 jwtToken = await JS.InvokeAsync<string?>("localStorage.getItem", "jwtToken");
+                jwtDecoded = DecodeJwt(jwtToken);
             }
             await LoadFavorites();
             StateHasChanged();
@@ -274,10 +285,12 @@
                         jwtToken = info.Token;
                         jwtUsername = info.Username;
                         jwtPassword = info.Password;
+                        jwtDecoded = DecodeJwt(jwtToken);
                     }
                     else
                     {
                         jwtToken = null;
+                        jwtDecoded = null;
                     }
                     await LoadFavorites();
                     status = $"Success! v2 endpoint is {apiEndpoint}";
@@ -320,10 +333,12 @@
                 jwtToken = info.Token;
                 jwtUsername = info.Username;
                 jwtPassword = info.Password;
+                jwtDecoded = DecodeJwt(jwtToken);
             }
             else
             {
                 jwtToken = null;
+                jwtDecoded = null;
             }
             }
         }
@@ -411,6 +426,7 @@
         showJwtLogin = !showJwtLogin;
         jwtError = null;
         jwtToken = null;
+        jwtDecoded = null;
     }
 
     private async Task JwtLoginAsync()
@@ -438,6 +454,7 @@
                         jwtToken = tokenEl.GetString();
                         if (!string.IsNullOrEmpty(jwtToken))
                         {
+                            jwtDecoded = DecodeJwt(jwtToken);
                             var info = new JwtInfo
                             {
                                 Username = jwtUsername,
@@ -450,12 +467,14 @@
                     else
                     {
                         jwtToken = json;
+                        jwtDecoded = DecodeJwt(jwtToken);
                     }
                     jwtError = null;
                 }
                 catch
                 {
                     jwtToken = json;
+                    jwtDecoded = DecodeJwt(jwtToken);
                     jwtError = null;
                 }
             }
@@ -463,12 +482,14 @@
             {
                 jwtError = json;
                 jwtToken = null;
+                jwtDecoded = null;
             }
         }
         catch (Exception ex)
         {
             jwtError = ex.Message;
             jwtToken = null;
+            jwtDecoded = null;
         }
     }
 
@@ -555,6 +576,39 @@
         var oldKey = GetOldJwtInfoKey(endpoint);
         await JS.InvokeVoidAsync("localStorage.removeItem", oldKey);
         await JS.InvokeVoidAsync("localStorage.removeItem", GetJwtTokenKey(endpoint));
+    }
+
+    private static string? DecodeJwt(string token)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return null;
+        }
+
+        var parts = token.Split('.');
+        if (parts.Length < 2)
+        {
+            return null;
+        }
+
+        try
+        {
+            var payload = parts[1]
+                .Replace('-', '+')
+                .Replace('_', '/');
+            switch (payload.Length % 4)
+            {
+                case 2: payload += "=="; break;
+                case 3: payload += "="; break;
+            }
+            var bytes = Convert.FromBase64String(payload);
+            using var doc = JsonDocument.Parse(bytes);
+            return JsonSerializer.Serialize(doc, new JsonSerializerOptions { WriteIndented = true });
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private async Task InvokeGet(FavoriteEndpoint fav, string site)
