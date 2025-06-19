@@ -29,9 +29,9 @@ else
 
 @code {
     private string? code;
-    private OAuthProvider? Google;
-    private OAuthProvider? GitHub;
-    private OAuthProvider? Line;
+    private OAuthProvider Google = default!;
+    private OAuthProvider GitHub = default!;
+    private OAuthProvider Line = default!;
 
     protected override void OnInitialized()
     {
