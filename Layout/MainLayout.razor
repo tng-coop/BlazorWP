@@ -9,7 +9,16 @@
 
     <main>
         <div class="top-row px-4">
-            @if (!string.IsNullOrEmpty(currentEndpoint))
+            @if (endpoints.Any())
+            {
+                <select class="form-select form-select-sm" style="max-width: 20rem;" value="@currentEndpoint" @onchange="OnEndpointChanged">
+                    @foreach (var ep in endpoints)
+                    {
+                        <option value="@ep">@ep</option>
+                    }
+                </select>
+            }
+            else if (!string.IsNullOrEmpty(currentEndpoint))
             {
                 <span>@currentEndpoint</span>
             }
@@ -26,17 +35,53 @@
     private IJSRuntime JS { get; set; } = default!;
 
     private string? currentEndpoint;
+    private List<string> endpoints = new();
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         var endpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
-        if (endpoint != currentEndpoint)
+
+        var json = await JS.InvokeAsync<string?>("localStorage.getItem", "siteinfo");
+        var newEndpoints = new List<string>();
+        if (!string.IsNullOrEmpty(json))
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(json);
+                foreach (var prop in doc.RootElement.EnumerateObject())
+                {
+                    newEndpoints.Add(prop.Name);
+                }
+            }
+            catch
+            {
+                // ignore malformed data
+            }
+        }
+
+        bool changed = !newEndpoints.SequenceEqual(endpoints);
+        if (changed)
+        {
+            endpoints = newEndpoints;
+        }
+
+        if (endpoint != currentEndpoint || changed)
         {
             currentEndpoint = endpoint;
             if (!firstRender)
             {
                 StateHasChanged();
             }
+        }
+    }
+
+    private async Task OnEndpointChanged(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString();
+        if (!string.IsNullOrEmpty(value))
+        {
+            await JS.InvokeVoidAsync("localStorage.setItem", "wpEndpoint", value);
+            currentEndpoint = value;
         }
     }
 }

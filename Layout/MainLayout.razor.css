@@ -27,6 +27,11 @@ main {
         text-decoration: none;
     }
 
+    .top-row select {
+        margin-left: 1.5rem;
+        max-width: 20rem;
+    }
+
     .top-row ::deep a:hover, .top-row ::deep .btn-link:hover {
         text-decoration: underline;
     }
