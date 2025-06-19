@@ -27,7 +27,12 @@
 {
     <div class="mt-2">
         <input class="form-control mb-2" placeholder="Username" @bind="jwtUsername" />
-        <input class="form-control mb-2" type="password" placeholder="Password" @bind="jwtPassword" />
+        <div class="input-group mb-2">
+            <input class="form-control" type="@PasswordInputType" placeholder="Password" @bind="jwtPassword" />
+            <button class="btn btn-outline-secondary" type="button" @onclick="TogglePasswordVisibility">
+                <i class="bi @PasswordToggleIcon" aria-hidden="true"></i>
+            </button>
+        </div>
         <button class="btn btn-primary" @onclick="JwtLoginAsync">Login</button>
     </div>
 }
@@ -156,6 +161,9 @@ This token was minted by https://yasuaki.com at 2025-06-19 06:43:23 UTC (15:43 J
     private List<FavoriteEndpoint> favoriteEndpoints = new();
     private List<string> knownSites = new();
     private bool showJwtLogin;
+    private bool passwordVisible;
+    private string PasswordInputType => passwordVisible ? "text" : "password";
+    private string PasswordToggleIcon => passwordVisible ? "bi-eye-slash" : "bi-eye";
     private string jwtUsername = string.Empty;
     private string jwtPassword = string.Empty;
     private string? jwtToken;
@@ -436,6 +444,11 @@ This token was minted by https://yasuaki.com at 2025-06-19 06:43:23 UTC (15:43 J
         jwtError = null;
         jwtToken = null;
         jwtDecoded = null;
+    }
+
+    private void TogglePasswordVisibility()
+    {
+        passwordVisible = !passwordVisible;
     }
 
     private async Task JwtLoginAsync()
