@@ -320,6 +320,14 @@ This token was minted by https://yasuaki.com at 2025-06-19 06:43:23 UTC (15:43 J
                     verifiedEndpoint = root;
                     userUrl = root;
                     await JS.InvokeVoidAsync("localStorage.setItem", "wpEndpoint", root);
+
+                    var siteInfo = await LoadSiteInfoAsync();
+                    if (!siteInfo.ContainsKey(root))
+                    {
+                        siteInfo[root] = new JwtInfo();
+                        await SaveSiteInfoAsync(siteInfo);
+                    }
+
                     var info = await LoadJwtInfoAsync(root);
                     if (info != null)
                     {
