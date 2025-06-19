@@ -438,12 +438,22 @@ This token was minted by https://yasuaki.com at 2025-06-19 06:43:23 UTC (15:43 J
         await JS.InvokeVoidAsync("open", loginUrl, "_blank", "noopener,noreferrer,width=800,height=600");
     }
 
-    private void ToggleJwtLogin()
+    private async Task ToggleJwtLogin()
     {
         showJwtLogin = !showJwtLogin;
         jwtError = null;
         jwtToken = null;
         jwtDecoded = null;
+
+        if (showJwtLogin && !string.IsNullOrEmpty(verifiedEndpoint))
+        {
+            var info = await LoadJwtInfoAsync(verifiedEndpoint);
+            if (info != null)
+            {
+                jwtUsername = info.Username;
+                jwtPassword = info.Password;
+            }
+        }
     }
 
     private void TogglePasswordVisibility()
