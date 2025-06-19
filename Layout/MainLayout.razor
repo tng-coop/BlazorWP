@@ -15,6 +15,10 @@
             {
                 <span>@currentEndpoint</span>
             }
+            @if (!string.IsNullOrEmpty(currentUsername))
+            {
+                <span class="ms-2">@currentUsername</span>
+            }
         </div>
 
         <article class="content px-4">
@@ -28,21 +32,39 @@
     private IJSRuntime JS { get; set; } = default!;
 
     private string? currentEndpoint;
+    private string? currentUsername;
     private DotNetObjectReference<MainLayout>? _objRef;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         var endpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
+        string? username = null;
+        if (!string.IsNullOrEmpty(endpoint))
+        {
+            username = await GetUsernameAsync(endpoint);
+        }
+
+        var changed = false;
         if (endpoint != currentEndpoint)
         {
             currentEndpoint = endpoint;
-            StateHasChanged();
+            changed = true;
+        }
+        if (username != currentUsername)
+        {
+            currentUsername = username;
+            changed = true;
         }
 
         if (firstRender)
         {
             _objRef = DotNetObjectReference.Create(this);
             await JS.InvokeVoidAsync("wpEndpointSync.register", _objRef);
+        }
+
+        if (changed)
+        {
+            StateHasChanged();
         }
     }
 
@@ -54,6 +76,30 @@
             currentEndpoint = endpoint;
             InvokeAsync(StateHasChanged);
         }
+    }
+
+    private async Task<string?> GetUsernameAsync(string endpoint)
+    {
+        var json = await JS.InvokeAsync<string?>("localStorage.getItem", "siteinfo");
+        if (string.IsNullOrEmpty(json))
+        {
+            return null;
+        }
+
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.TryGetProperty(endpoint, out var info) &&
+                info.TryGetProperty("Username", out var user))
+            {
+                return user.GetString();
+            }
+        }
+        catch
+        {
+        }
+
+        return null;
     }
 
     public async ValueTask DisposeAsync()
