@@ -26,7 +26,6 @@ else
             <tr>
                 <th>Key</th>
                 <th>Value</th>
-                <th>Last Updated</th>
                 <th></th>
             </tr>
         </thead>
@@ -36,7 +35,6 @@ else
                 <tr>
                     <td>@item.Key</td>
                     <td>@item.Value</td>
-                    <td>@(item.LastUpdated ?? "n/a")</td>
                     <td>
                         <button class="btn btn-danger btn-sm" @onclick="() => DeleteItem(item.Key)">Delete</button>
                     </td>
@@ -59,8 +57,7 @@ else
             items.Add(new StoredItem
             {
                 Key = key,
-                Value = info.Value,
-                LastUpdated = info.LastUpdated
+                Value = info.Value
             });
         }
     }
@@ -78,14 +75,12 @@ else
     private class ItemInfo
     {
         public string? Value { get; set; }
-        public string? LastUpdated { get; set; }
     }
 
     private class StoredItem
     {
         public string Key { get; set; } = string.Empty;
         public string? Value { get; set; }
-        public string? LastUpdated { get; set; }
     }
 }
 
