@@ -13,6 +13,7 @@
     <PackageReference Include="PanoramicData.Blazor" Version="9.0.71" />
     <PackageReference Include="AntDesign" Version="1.4.1.1" />
     <PackageReference Include="Microsoft.Web.LibraryManager.Build" Version="2.1.113" PrivateAssets="all" />
+    <PackageReference Include="WordPressPCL" Version="2.1.0" />
   </ItemGroup>
 
 </Project>
