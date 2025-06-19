@@ -26,6 +26,8 @@ else
             <tr>
                 <th>Key</th>
                 <th>Value</th>
+                <th>Last Updated</th>
+                <th></th>
             </tr>
         </thead>
         <tbody>
@@ -34,6 +36,10 @@ else
                 <tr>
                     <td>@item.Key</td>
                     <td>@item.Value</td>
+                    <td>@(item.LastUpdated ?? "n/a")</td>
+                    <td>
+                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteItem(item.Key)">Delete</button>
+                    </td>
                 </tr>
             }
         </tbody>
@@ -41,7 +47,7 @@ else
 }
 
 @code {
-    private Dictionary<string, string?>? items;
+    private List<StoredItem>? items;
 
     protected override async Task OnInitializedAsync()
     {
@@ -49,9 +55,37 @@ else
         var keys = await JS.InvokeAsync<string[]>("blazorwpStorage.keys");
         foreach (var key in keys)
         {
-            var value = await JS.InvokeAsync<string?>("localStorage.getItem", key);
-            items[key] = value;
+            var info = await JS.InvokeAsync<ItemInfo>("blazorwpStorage.itemInfo", key);
+            items.Add(new StoredItem
+            {
+                Key = key,
+                Value = info.Value,
+                LastUpdated = info.LastUpdated
+            });
         }
+    }
+
+    private async Task DeleteItem(string key)
+    {
+        if (items != null)
+        {
+            items.RemoveAll(i => i.Key == key);
+        }
+        await JS.InvokeVoidAsync("blazorwpStorage.delete", key);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private class ItemInfo
+    {
+        public string? Value { get; set; }
+        public string? LastUpdated { get; set; }
+    }
+
+    private class StoredItem
+    {
+        public string Key { get; set; } = string.Empty;
+        public string? Value { get; set; }
+        public string? LastUpdated { get; set; }
     }
 }
 
