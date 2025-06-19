@@ -219,44 +219,57 @@ This token was minted by https://yasuaki.com at 2025-06-19 06:43:23 UTC (15:43 J
     {
         favoriteEndpoints.Clear();
         knownSites.Clear();
-        var json = await JS.InvokeAsync<string?>("localStorage.getItem", "favoriteApis");
-        if (string.IsNullOrEmpty(json))
-        {
-            return;
-        }
 
-        try
+        Dictionary<string, List<string>>? favData = null;
+        var favJson = await JS.InvokeAsync<string?>("localStorage.getItem", "favoriteApis");
+        if (!string.IsNullOrEmpty(favJson))
         {
-            var data = JsonSerializer.Deserialize<Dictionary<string, List<string>>>(json);
-            if (data != null)
+            try
             {
-                var dict = new Dictionary<string, HashSet<string>>();
-                knownSites = data.Keys.OrderBy(k => k).ToList();
-                if (!string.IsNullOrEmpty(verifiedEndpoint) && !knownSites.Contains(verifiedEndpoint))
-                {
-                    knownSites.Insert(0, verifiedEndpoint);
-                }
-                foreach (var pair in data)
-                {
-                    foreach (var raw in pair.Value)
-                    {
-                        var path = NormalizePath(raw);
-                        if (!dict.TryGetValue(path, out var set))
-                        {
-                            set = new HashSet<string>();
-                            dict[path] = set;
-                        }
-                        set.Add(pair.Key);
-                    }
-                }
-                favoriteEndpoints = dict.OrderBy(kv => kv.Key)
-                    .Select(kv => new FavoriteEndpoint { Path = kv.Key, Sites = kv.Value.ToList() })
-                    .ToList();
+                favData = JsonSerializer.Deserialize<Dictionary<string, List<string>>>(favJson);
+            }
+            catch
+            {
+                // ignore deserialization errors
             }
         }
-        catch
+
+        if (favData != null)
         {
-            // ignore deserialization errors
+            var dict = new Dictionary<string, HashSet<string>>();
+            knownSites = favData.Keys.ToList();
+            foreach (var pair in favData)
+            {
+                foreach (var raw in pair.Value)
+                {
+                    var path = NormalizePath(raw);
+                    if (!dict.TryGetValue(path, out var set))
+                    {
+                        set = new HashSet<string>();
+                        dict[path] = set;
+                    }
+                    set.Add(pair.Key);
+                }
+            }
+            favoriteEndpoints = dict.OrderBy(kv => kv.Key)
+                .Select(kv => new FavoriteEndpoint { Path = kv.Key, Sites = kv.Value.ToList() })
+                .ToList();
+        }
+
+        var siteInfo = await LoadSiteInfoAsync();
+        foreach (var site in siteInfo.Keys)
+        {
+            if (!knownSites.Contains(site))
+            {
+                knownSites.Add(site);
+            }
+        }
+
+        knownSites = knownSites.OrderBy(k => k).ToList();
+        if (!string.IsNullOrEmpty(verifiedEndpoint))
+        {
+            knownSites.Remove(verifiedEndpoint);
+            knownSites.Insert(0, verifiedEndpoint);
         }
     }
 
