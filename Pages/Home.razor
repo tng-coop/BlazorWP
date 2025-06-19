@@ -133,7 +133,19 @@
         {
             verifiedEndpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
             selectedSite = verifiedEndpoint;
-            jwtToken = await JS.InvokeAsync<string?>("localStorage.getItem", "jwtToken");
+            if (!string.IsNullOrEmpty(verifiedEndpoint))
+            {
+                var key = GetJwtTokenKey(verifiedEndpoint);
+                jwtToken = await JS.InvokeAsync<string?>("localStorage.getItem", key);
+                if (string.IsNullOrEmpty(jwtToken))
+                {
+                    jwtToken = await JS.InvokeAsync<string?>("localStorage.getItem", "jwtToken");
+                }
+            }
+            else
+            {
+                jwtToken = await JS.InvokeAsync<string?>("localStorage.getItem", "jwtToken");
+            }
             await LoadFavorites();
             StateHasChanged();
         }
@@ -244,6 +256,8 @@
                     verifiedEndpoint = root;
                     selectedSite = root;
                     await JS.InvokeVoidAsync("localStorage.setItem", "wpEndpoint", root);
+                    var tokenKey = GetJwtTokenKey(root);
+                    jwtToken = await JS.InvokeAsync<string?>("localStorage.getItem", tokenKey);
                     await LoadFavorites();
                     status = $"Success! v2 endpoint is {apiEndpoint}";
                     return;
@@ -279,8 +293,10 @@
             selectedSite = value;
             verifiedEndpoint = value;
             await JS.InvokeVoidAsync("localStorage.setItem", "wpEndpoint", value);
+            var tokenKey = GetJwtTokenKey(value);
+            jwtToken = await JS.InvokeAsync<string?>("localStorage.getItem", tokenKey);
+            }
         }
-    }
 
     private static async Task<string> FormatRawResponse(HttpResponseMessage response)
     {
@@ -392,7 +408,8 @@
                         jwtToken = tokenEl.GetString();
                         if (!string.IsNullOrEmpty(jwtToken))
                         {
-                            await JS.InvokeVoidAsync("localStorage.setItem", "jwtToken", jwtToken);
+                            var key = GetJwtTokenKey(verifiedEndpoint);
+                            await JS.InvokeVoidAsync("localStorage.setItem", key, jwtToken);
                         }
                     }
                     else
@@ -453,6 +470,9 @@
 
         return url.TrimEnd('/') + "/wp-json/jwt-auth/v1/token";
     }
+
+    private static string GetJwtTokenKey(string endpoint)
+        => $"jwtToken:{endpoint}";
 
     private async Task InvokeGet(FavoriteEndpoint fav, string site)
     {
