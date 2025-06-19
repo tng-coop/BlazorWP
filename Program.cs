@@ -9,6 +9,11 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
+// Ensure configuration from appsettings.json and appsettings.{Environment}.json
+// is loaded into builder.Configuration.
+builder.Configuration.AddJsonStream(
+    await builder.HostEnvironment.OpenAppSettingsStreamAsync());
+
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 builder.Services.AddMudServices();
 builder.Services.AddPanoramicDataBlazor();
