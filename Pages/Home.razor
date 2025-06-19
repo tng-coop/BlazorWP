@@ -510,12 +510,21 @@
         => $"jwtToken:{endpoint}";
 
     private static string GetJwtInfoKey(string endpoint)
+        => endpoint;
+
+    private static string GetOldJwtInfoKey(string endpoint)
         => $"jwtInfo:{endpoint}";
 
     private async Task<JwtInfo?> LoadJwtInfoAsync(string endpoint)
     {
         var key = GetJwtInfoKey(endpoint);
         var json = await JS.InvokeAsync<string?>("localStorage.getItem", key);
+        if (string.IsNullOrEmpty(json))
+        {
+            var oldKey = GetOldJwtInfoKey(endpoint);
+            json = await JS.InvokeAsync<string?>("localStorage.getItem", oldKey);
+        }
+
         if (string.IsNullOrEmpty(json))
         {
             // Backwards compatibility with old token-only storage
@@ -543,6 +552,9 @@
         var key = GetJwtInfoKey(endpoint);
         var json = JsonSerializer.Serialize(info);
         await JS.InvokeVoidAsync("localStorage.setItem", key, json);
+        var oldKey = GetOldJwtInfoKey(endpoint);
+        await JS.InvokeVoidAsync("localStorage.removeItem", oldKey);
+        await JS.InvokeVoidAsync("localStorage.removeItem", GetJwtTokenKey(endpoint));
     }
 
     private async Task InvokeGet(FavoriteEndpoint fav, string site)
