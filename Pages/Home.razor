@@ -25,6 +25,25 @@
 @if (!string.IsNullOrEmpty(verifiedEndpoint))
 {
     <button class="btn btn-secondary ms-2" @onclick="OpenLogin">Login to WordPress</button>
+    <button class="btn btn-info ms-2" @onclick="ToggleJwtLogin">JWT Login</button>
+}
+@if (showJwtLogin && !string.IsNullOrEmpty(verifiedEndpoint))
+{
+    <div class="mt-2">
+        <input class="form-control mb-2" placeholder="Username" @bind="jwtUsername" />
+        <input class="form-control mb-2" type="password" placeholder="Password" @bind="jwtPassword" />
+        <button class="btn btn-primary" @onclick="JwtLoginAsync">Login</button>
+    </div>
+}
+@if (!string.IsNullOrEmpty(jwtToken))
+{
+    <div class="mt-2">
+        <strong>JWT:</strong> <code>@jwtToken</code>
+    </div>
+}
+@if (!string.IsNullOrEmpty(jwtError))
+{
+    <p class="text-danger mt-2">@jwtError</p>
 }
 
 @if (!string.IsNullOrEmpty(verifiedEndpoint))
@@ -96,6 +115,11 @@
     private List<FavoriteEndpoint> favoriteEndpoints = new();
     private List<string> knownSites = new();
     private string? selectedSite;
+    private bool showJwtLogin;
+    private string jwtUsername = string.Empty;
+    private string jwtPassword = string.Empty;
+    private string? jwtToken;
+    private string? jwtError;
 
     [Inject]
     private HttpClient Http { get; set; } = default!;
@@ -334,6 +358,62 @@
         await JS.InvokeVoidAsync("open", loginUrl, "_blank", "noopener,noreferrer,width=800,height=600");
     }
 
+    private void ToggleJwtLogin()
+    {
+        showJwtLogin = !showJwtLogin;
+        jwtError = null;
+        jwtToken = null;
+    }
+
+    private async Task JwtLoginAsync()
+    {
+        if (string.IsNullOrEmpty(verifiedEndpoint))
+        {
+            return;
+        }
+
+        var url = GetJwtUrl(verifiedEndpoint);
+        var payload = JsonSerializer.Serialize(new { username = jwtUsername, password = jwtPassword });
+        using var content = new StringContent(payload, Encoding.UTF8, "application/json");
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Post, url) { Content = content };
+            var response = await Http.SendAsync(request);
+            var json = await response.Content.ReadAsStringAsync();
+            if (response.IsSuccessStatusCode)
+            {
+                try
+                {
+                    var doc = JsonDocument.Parse(json);
+                    if (doc.RootElement.TryGetProperty("token", out var tokenEl))
+                    {
+                        jwtToken = tokenEl.GetString();
+                    }
+                    else
+                    {
+                        jwtToken = json;
+                    }
+                    jwtError = null;
+                }
+                catch
+                {
+                    jwtToken = json;
+                    jwtError = null;
+                }
+            }
+            else
+            {
+                jwtError = json;
+                jwtToken = null;
+            }
+        }
+        catch (Exception ex)
+        {
+            jwtError = ex.Message;
+            jwtToken = null;
+        }
+    }
+
     private static string GetLoginUrl(string endpoint)
     {
         var url = endpoint;
@@ -347,6 +427,25 @@
         }
 
         return url.TrimEnd('/') + "/wp-login.php";
+    }
+
+    private static string GetJwtUrl(string endpoint)
+    {
+        var url = endpoint;
+        if (url.EndsWith("/wp-json/wp/v2", StringComparison.OrdinalIgnoreCase))
+        {
+            url = url[..^"/wp-json/wp/v2".Length];
+        }
+        else if (url.EndsWith("/wp-json", StringComparison.OrdinalIgnoreCase))
+        {
+            url = url[..^"/wp-json".Length];
+        }
+        else if (url.EndsWith("/wp/v2", StringComparison.OrdinalIgnoreCase))
+        {
+            url = url[..^"/wp/v2".Length];
+        }
+
+        return url.TrimEnd('/') + "/wp-json/jwt-auth/v1/token";
     }
 
     private async Task InvokeGet(FavoriteEndpoint fav, string site)
