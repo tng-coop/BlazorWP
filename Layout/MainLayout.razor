@@ -1,5 +1,7 @@
 @inherits LayoutComponentBase
 
+@implements IAsyncDisposable
+
 <MudPopoverProvider />
 
 <div class="page">
@@ -26,6 +28,7 @@
     private IJSRuntime JS { get; set; } = default!;
 
     private string? currentEndpoint;
+    private DotNetObjectReference<MainLayout>? _objRef;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -33,10 +36,32 @@
         if (endpoint != currentEndpoint)
         {
             currentEndpoint = endpoint;
-            if (!firstRender)
-            {
-                StateHasChanged();
-            }
+            StateHasChanged();
+        }
+
+        if (firstRender)
+        {
+            _objRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("wpEndpointSync.register", _objRef);
+        }
+    }
+
+    [JSInvokable]
+    public void UpdateEndpoint(string? endpoint)
+    {
+        if (endpoint != currentEndpoint)
+        {
+            currentEndpoint = endpoint;
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_objRef != null)
+        {
+            await JS.InvokeVoidAsync("wpEndpointSync.unregister");
+            _objRef.Dispose();
         }
     }
 }
