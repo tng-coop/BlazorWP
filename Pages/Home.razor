@@ -120,7 +120,7 @@ This token was minted by https://yasuaki.com at 2025-06-19 06:43:23 UTC (15:43 J
                                 {
                                     <li class="d-flex justify-content-between align-items-center">
                                         <span>@site</span>
-                                        <button class="btn btn-sm btn-primary" @onclick="() => InvokeGet(fav, site)">GET</button>
+                                        <button class="btn btn-sm btn-primary" @onclick="() => InvokeGet(fav, verifiedEndpoint ?? site)">GET</button>
                                     </li>
                                 }
                             </ul>
