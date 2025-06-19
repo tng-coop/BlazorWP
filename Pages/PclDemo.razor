@@ -64,7 +64,7 @@ else
             new ApiEndpoint("Taxonomies", async c => await c.Taxonomies.GetAllAsync()),
             new ApiEndpoint("Post Types", async c => await c.PostTypes.GetAllAsync()),
             new ApiEndpoint("Post Statuses", async c => await c.PostStatuses.GetAllAsync()),
-            new ApiEndpoint("Settings", async c => await c.Settings.GetAsync()),
+            // new ApiEndpoint("Settings", async c => await c.Settings.GetAsync()),
             new ApiEndpoint("Plugins", async c => await c.Plugins.GetAllAsync()),
             new ApiEndpoint("Themes", async c => await c.Themes.GetAllAsync())
         };
