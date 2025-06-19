@@ -12,12 +12,27 @@ public class JwtAuthMessageHandler : DelegatingHandler
         InnerHandler = new HttpClientHandler();
     }
 
+    private static bool ShouldSkipJwt(HttpRequestMessage request)
+    {
+        var uri = request.RequestUri;
+        if (uri == null)
+        {
+            return false;
+        }
+        var path = uri.AbsolutePath.TrimEnd('/');
+        return path.EndsWith("/wp-json/wp/v2", StringComparison.OrdinalIgnoreCase)
+            || path.EndsWith("/wp-json/jwt-auth/v1/token", StringComparison.OrdinalIgnoreCase);
+    }
+
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        var token = await _jwtService.GetCurrentJwtAsync();
-        if (!string.IsNullOrWhiteSpace(token))
+        if (!ShouldSkipJwt(request))
         {
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            var token = await _jwtService.GetCurrentJwtAsync();
+            if (!string.IsNullOrWhiteSpace(token))
+            {
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
         }
 
         return await base.SendAsync(request, cancellationToken);
