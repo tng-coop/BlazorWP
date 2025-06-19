@@ -578,7 +578,7 @@
         await JS.InvokeVoidAsync("localStorage.removeItem", GetJwtTokenKey(endpoint));
     }
 
-    private static string? DecodeJwt(string token)
+    private static string? DecodeJwt(string? token)
     {
         if (string.IsNullOrWhiteSpace(token))
         {
