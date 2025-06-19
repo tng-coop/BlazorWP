@@ -6,21 +6,17 @@
 
 <div class="mb-3">
     <label for="wpUrl" class="form-label">WordPress site URL</label>
-    <input id="wpUrl" class="form-control" @bind="userUrl" @bind:event="oninput" @onkeydown="HandleKeyDown" placeholder="https://example.com" />
-</div>
-@if (knownSites.Any())
-{
-    <div class="mb-3">
-        <label for="siteSelect" class="form-label">Saved endpoints</label>
-        <select id="siteSelect" class="form-select" @bind="selectedSite" @bind:event="onchange">
-            <option value="">-- select --</option>
+    <input id="wpUrl" list="siteSuggestions" class="form-control" @bind="userUrl" @bind:event="oninput" @onkeydown="HandleKeyDown" placeholder="https://example.com" />
+    @if (knownSites.Any())
+    {
+        <datalist id="siteSuggestions">
             @foreach (var site in knownSites)
             {
-                <option value="@site">@site</option>
+                <option value="@site"></option>
             }
-        </select>
-    </div>
-}
+        </datalist>
+    }
+</div>
 <button class="btn btn-primary" @onclick="CheckApi">Check API</button>
 @if (!string.IsNullOrEmpty(verifiedEndpoint))
 {
@@ -159,7 +155,6 @@ This token was minted by https://yasuaki.com at 2025-06-19 06:43:23 UTC (15:43 J
     private List<string> logs = new();
     private List<FavoriteEndpoint> favoriteEndpoints = new();
     private List<string> knownSites = new();
-    private string? selectedSite;
     private bool showJwtLogin;
     private string jwtUsername = string.Empty;
     private string jwtPassword = string.Empty;
@@ -185,7 +180,7 @@ This token was minted by https://yasuaki.com at 2025-06-19 06:43:23 UTC (15:43 J
         if (firstRender)
         {
             verifiedEndpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
-            selectedSite = verifiedEndpoint;
+            userUrl = verifiedEndpoint;
             if (!string.IsNullOrEmpty(verifiedEndpoint))
             {
                 var info = await LoadJwtInfoAsync(verifiedEndpoint);
@@ -315,7 +310,7 @@ This token was minted by https://yasuaki.com at 2025-06-19 06:43:23 UTC (15:43 J
                 {
                     var root = baseUri.ToString().TrimEnd('/');
                     verifiedEndpoint = root;
-                    selectedSite = root;
+                    userUrl = root;
                     await JS.InvokeVoidAsync("localStorage.setItem", "wpEndpoint", root);
                     var info = await LoadJwtInfoAsync(root);
                     if (info != null)
@@ -356,30 +351,6 @@ This token was minted by https://yasuaki.com at 2025-06-19 06:43:23 UTC (15:43 J
             await CheckApi();
         }
     }
-
-    private async Task SelectSite(ChangeEventArgs e)
-    {
-        var value = e.Value?.ToString();
-        if (!string.IsNullOrEmpty(value))
-        {
-            selectedSite = value;
-            verifiedEndpoint = value;
-            await JS.InvokeVoidAsync("localStorage.setItem", "wpEndpoint", value);
-            var info = await LoadJwtInfoAsync(value);
-            if (info != null)
-            {
-                jwtToken = info.Token;
-                jwtUsername = info.Username;
-                jwtPassword = info.Password;
-                jwtDecoded = DecodeJwt(jwtToken);
-            }
-            else
-            {
-                jwtToken = null;
-                jwtDecoded = null;
-            }
-            }
-        }
 
     private static async Task<string> FormatRawResponse(HttpResponseMessage response)
     {
