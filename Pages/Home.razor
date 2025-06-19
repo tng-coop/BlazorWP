@@ -45,6 +45,44 @@
         <div class="mt-2">
             <strong>JWT Payload:</strong>
             <pre class="json-view">@jwtDecoded</pre>
+            <details class="mt-2">
+                <summary>Interpretation</summary>
+                <pre>
+This JSON is the payload of a JWT (JSON Web Token). Here’s what each field means:
+
+iss (Issuer):
+The token was issued by the “authority” at
+https://yasuaki.com
+Any service that trusts tokens from that URL can accept this one.
+
+iat (Issued At):
+A Unix timestamp (seconds since January 1 1970 UTC) indicating when the token was created.
+
+1750315403 → 2025-06-19 06:43:23 UTC  
+                 = 2025-06-19 15:43:23 JST  
+(Asia/Tokyo is UTC+9.)
+
+nbf (Not Before):
+Tokens should not be considered valid before this time. In this case it’s identical to iat, so the token is valid immediately upon issuance.
+
+exp (Expiration):
+When the token stops being valid.
+
+1750920203 → 2025-06-26 06:43:23 UTC  
+                 = 2025-06-26 15:43:23 JST  
+After that moment, any service should reject the token.
+
+data (Custom Claims):
+Anything you want to carry. Here it has a user object with:
+{
+  "id": "1"
+}
+so the token “knows” it refers to user #1 in your system.
+
+In plain language:
+This token was minted by https://yasuaki.com at 2025-06-19 06:43:23 UTC (15:43 JST), becomes valid immediately, and stays valid until exactly one week later, 2025-06-26 06:43:23 UTC (15:43 JST). It carries a payload identifying “user 1.” Any service that sees it should verify its signature, check that “iss” matches the expected issuer, ensure the current time is between nbf and exp, and then trust that the bearer is user 1.
+                </pre>
+            </details>
         </div>
     }
 }
