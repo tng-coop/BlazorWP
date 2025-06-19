@@ -1,0 +1,116 @@
+@page "/edit"
+@inject HttpClient Http
+@inject IJSRuntime JS
+
+<PageTitle>Edit</PageTitle>
+
+<h1>Edit</h1>
+
+@if (!string.IsNullOrEmpty(status))
+{
+    <p>@status</p>
+}
+
+<button class="btn btn-primary" @onclick="CreatePost">Add Post</button>
+
+@code {
+    private string? status;
+
+    private async Task CreatePost()
+    {
+        var endpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
+        if (string.IsNullOrEmpty(endpoint))
+        {
+            status = "No WordPress endpoint configured.";
+            return;
+        }
+
+        var url = CombineUrl(endpoint, "/wp/v2/posts");
+        var payload = new
+        {
+            title = $"Hello World {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}",
+            content = $"Hello World {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}",
+            status = "publish"
+        };
+
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            var response = await Http.PostAsJsonAsync(url, payload, cancellationToken: cts.Token);
+            if (response.IsSuccessStatusCode)
+            {
+                status = "Post created";
+            }
+            else
+            {
+                status = $"Error: {response.StatusCode}";
+            }
+        }
+        catch (Exception ex)
+        {
+            status = $"Error: {ex.Message}";
+        }
+    }
+
+    private static string CombineUrl(string site, string path)
+    {
+        path = NormalizePath(path);
+        var trimmed = site.TrimEnd('/');
+
+        if (trimmed.EndsWith("/wp-json/wp/v2", StringComparison.OrdinalIgnoreCase) &&
+            path.StartsWith("/wp/v2", StringComparison.OrdinalIgnoreCase))
+        {
+            var baseUrl = trimmed[..^"/wp/v2".Length];
+            return baseUrl.TrimEnd('/') + path;
+        }
+
+        if (trimmed.EndsWith("/wp-json", StringComparison.OrdinalIgnoreCase) &&
+            path.StartsWith("/wp/v2", StringComparison.OrdinalIgnoreCase))
+        {
+            return trimmed + path;
+        }
+
+        if (!trimmed.Contains("/wp-json", StringComparison.OrdinalIgnoreCase) &&
+            path.StartsWith("/wp/v2", StringComparison.OrdinalIgnoreCase))
+        {
+            return trimmed + "/wp-json" + path;
+        }
+
+        return trimmed + (path.StartsWith("/") ? path : "/" + path);
+    }
+
+    private static string NormalizePath(string path)
+    {
+        if (string.IsNullOrEmpty(path))
+        {
+            return path;
+        }
+
+        if (path.StartsWith("~/"))
+        {
+            path = path[1..];
+        }
+
+        if (path.StartsWith("/routes/", StringComparison.OrdinalIgnoreCase))
+        {
+            path = path["/routes".Length..];
+        }
+        else if (path.StartsWith("routes/", StringComparison.OrdinalIgnoreCase))
+        {
+            path = "/" + path["routes/".Length..];
+        }
+
+        var idx = path.IndexOf("/routes/", StringComparison.OrdinalIgnoreCase);
+        if (idx >= 0)
+        {
+            var prefix = path[..idx];
+            var after = path[(idx + "/routes".Length)..];
+            if (after.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                path = prefix + after[prefix.Length..];
+            }
+        }
+
+        return path;
+    }
+}
