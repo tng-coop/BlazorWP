@@ -1,17 +1,7 @@
-using System;
-using System.Linq;
-using System.Net.Http;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using BlazorWP;
 using MudBlazor.Services;
 using PanoramicData.Blazor.Extensions;
-using AntDesign;
-using System.Diagnostics;
 
 namespace BlazorWP
 {
@@ -38,14 +28,6 @@ namespace BlazorWP
 
             // 6) Now that the JSON has been loaded, enumerate via ILogger
             var config = host.Services.GetRequiredService<IConfiguration>();
-            var logger = host.Services.GetRequiredService<ILogger<Program>>();
-
-            logger.LogDebug("==== Application Configuration Dump ====");
-            Console.WriteLine("==== Application Configuration Dump ====");
-            foreach (var kv in config.AsEnumerable())
-            {
-            }
-            logger.LogDebug("========================================");
 
             // 7) And finally run
             await host.RunAsync();
