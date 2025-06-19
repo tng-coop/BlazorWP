@@ -1,0 +1,104 @@
+@page "/pcl-demo"
+@using WordPressPCL
+@inject IJSRuntime JS
+
+<PageTitle>PCL Demo</PageTitle>
+
+<h1>PCL Demo</h1>
+
+@if (client == null)
+{
+    <p>No WordPress endpoint verified. Visit <NavLink href="/">Home</NavLink> first.</p>
+}
+else
+{
+    <div class="accordion" id="pclAccordion">
+        @for (int i = 0; i < endpoints.Count; i++)
+        {
+            var ep = endpoints[i];
+            var collapseId = $"pclcollapse{i}";
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="heading@i">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#@collapseId" aria-expanded="false" aria-controls="@collapseId">
+                        @ep.Name
+                    </button>
+                </h2>
+                <div id="@collapseId" class="accordion-collapse collapse">
+                    <div class="accordion-body">
+                        <button class="btn btn-sm btn-primary" @onclick="() => InvokeGet(ep)">GET</button>
+                        @if (!string.IsNullOrEmpty(ep.Result))
+                        {
+                            <pre class="json-view mt-2">@ep.Result</pre>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private WordPressClient? client;
+    private List<ApiEndpoint> endpoints = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var endpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
+        if (string.IsNullOrEmpty(endpoint))
+        {
+            return;
+        }
+
+        var baseUrl = endpoint.TrimEnd('/') + "/wp-json/";
+        client = new WordPressClient(baseUrl);
+
+        endpoints = new()
+        {
+            new ApiEndpoint("Posts", async c => await c.Posts.GetAllAsync()),
+            new ApiEndpoint("Pages", async c => await c.Pages.GetAllAsync()),
+            new ApiEndpoint("Comments", async c => await c.Comments.GetAllAsync()),
+            new ApiEndpoint("Categories", async c => await c.Categories.GetAllAsync()),
+            new ApiEndpoint("Tags", async c => await c.Tags.GetAllAsync()),
+            new ApiEndpoint("Users", async c => await c.Users.GetAllAsync()),
+            new ApiEndpoint("Media", async c => await c.Media.GetAllAsync()),
+            new ApiEndpoint("Taxonomies", async c => await c.Taxonomies.GetAllAsync()),
+            new ApiEndpoint("Post Types", async c => await c.PostTypes.GetAllAsync()),
+            new ApiEndpoint("Post Statuses", async c => await c.PostStatuses.GetAllAsync()),
+            new ApiEndpoint("Settings", async c => await c.Settings.GetAsync()),
+            new ApiEndpoint("Plugins", async c => await c.Plugins.GetAllAsync()),
+            new ApiEndpoint("Themes", async c => await c.Themes.GetAllAsync())
+        };
+    }
+
+    private async Task InvokeGet(ApiEndpoint ep)
+    {
+        if (client == null)
+        {
+            return;
+        }
+
+        try
+        {
+            var data = await ep.Loader(client);
+            ep.Result = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
+        }
+        catch (Exception ex)
+        {
+            ep.Result = $"Error: {ex.Message}";
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private class ApiEndpoint
+    {
+        public string Name { get; }
+        public Func<WordPressClient, Task<object?>> Loader { get; }
+        public string? Result { get; set; }
+
+        public ApiEndpoint(string name, Func<WordPressClient, Task<object?>> loader)
+        {
+            Name = name;
+            Loader = loader;
+        }
+    }
+}
