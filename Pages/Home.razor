@@ -568,14 +568,47 @@ This token was minted by https://yasuaki.com at 2025-06-19 06:43:23 UTC (15:43 J
     private static string GetJwtTokenKey(string endpoint)
         => $"jwtToken:{endpoint}";
 
+    private const string SiteInfoKey = "siteinfo";
+
     private static string GetJwtInfoKey(string endpoint)
         => endpoint;
 
     private static string GetOldJwtInfoKey(string endpoint)
         => $"jwtInfo:{endpoint}";
 
+    private async Task<Dictionary<string, JwtInfo>> LoadSiteInfoAsync()
+    {
+        var json = await JS.InvokeAsync<string?>("localStorage.getItem", SiteInfoKey);
+        if (string.IsNullOrEmpty(json))
+        {
+            return new();
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<Dictionary<string, JwtInfo>>(json) ?? new();
+        }
+        catch
+        {
+            return new();
+        }
+    }
+
+    private Task SaveSiteInfoAsync(Dictionary<string, JwtInfo> data)
+    {
+        var json = JsonSerializer.Serialize(data);
+        return JS.InvokeVoidAsync("localStorage.setItem", SiteInfoKey, json).AsTask();
+    }
+
     private async Task<JwtInfo?> LoadJwtInfoAsync(string endpoint)
     {
+        var data = await LoadSiteInfoAsync();
+        if (data.TryGetValue(endpoint, out var info))
+        {
+            return info;
+        }
+
+        // Fallback to old storage formats
         var key = GetJwtInfoKey(endpoint);
         var json = await JS.InvokeAsync<string?>("localStorage.getItem", key);
         if (string.IsNullOrEmpty(json))
@@ -586,34 +619,45 @@ This token was minted by https://yasuaki.com at 2025-06-19 06:43:23 UTC (15:43 J
 
         if (string.IsNullOrEmpty(json))
         {
-            // Backwards compatibility with old token-only storage
             var token = await JS.InvokeAsync<string?>("localStorage.getItem", GetJwtTokenKey(endpoint));
             if (!string.IsNullOrEmpty(token))
             {
-                return new JwtInfo { Token = token };
+                info = new JwtInfo { Token = token };
+                data[endpoint] = info;
+                await SaveSiteInfoAsync(data);
+                return info;
             }
             return null;
         }
 
         try
         {
-            return JsonSerializer.Deserialize<JwtInfo>(json);
+            info = JsonSerializer.Deserialize<JwtInfo>(json);
         }
         catch
         {
-            // if the stored value is just the token string
-            return new JwtInfo { Token = json };
+            info = new JwtInfo { Token = json };
         }
+
+        if (info != null)
+        {
+            data[endpoint] = info;
+            await SaveSiteInfoAsync(data);
+        }
+
+        return info;
     }
 
     private async Task SaveJwtInfoAsync(string endpoint, JwtInfo info)
     {
-        var key = GetJwtInfoKey(endpoint);
-        var json = JsonSerializer.Serialize(info);
-        await JS.InvokeVoidAsync("localStorage.setItem", key, json);
+        var data = await LoadSiteInfoAsync();
+        data[endpoint] = info;
+        await SaveSiteInfoAsync(data);
+
         var oldKey = GetOldJwtInfoKey(endpoint);
         await JS.InvokeVoidAsync("localStorage.removeItem", oldKey);
         await JS.InvokeVoidAsync("localStorage.removeItem", GetJwtTokenKey(endpoint));
+        await JS.InvokeVoidAsync("localStorage.removeItem", endpoint);
     }
 
     private static string? DecodeJwt(string? token)
