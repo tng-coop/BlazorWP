@@ -728,14 +728,28 @@ This token was minted by https://yasuaki.com at 2025-06-19 06:43:23 UTC (15:43 J
     private static string CombineUrl(string site, string path)
     {
         path = NormalizePath(path);
-        if (site.EndsWith("/wp-json/wp/v2", StringComparison.OrdinalIgnoreCase) &&
+        var trimmed = site.TrimEnd('/');
+
+        if (trimmed.EndsWith("/wp-json/wp/v2", StringComparison.OrdinalIgnoreCase) &&
             path.StartsWith("/wp/v2", StringComparison.OrdinalIgnoreCase))
         {
-            var baseUrl = site[..^"/wp/v2".Length];
+            var baseUrl = trimmed[..^"/wp/v2".Length];
             return baseUrl.TrimEnd('/') + path;
         }
 
-        return site.TrimEnd('/') + (path.StartsWith("/") ? path : "/" + path);
+        if (trimmed.EndsWith("/wp-json", StringComparison.OrdinalIgnoreCase) &&
+            path.StartsWith("/wp/v2", StringComparison.OrdinalIgnoreCase))
+        {
+            return trimmed + path;
+        }
+
+        if (!trimmed.Contains("/wp-json", StringComparison.OrdinalIgnoreCase) &&
+            path.StartsWith("/wp/v2", StringComparison.OrdinalIgnoreCase))
+        {
+            return trimmed + "/wp-json" + path;
+        }
+
+        return trimmed + (path.StartsWith("/") ? path : "/" + path);
     }
 
     private static string NormalizePath(string path)
