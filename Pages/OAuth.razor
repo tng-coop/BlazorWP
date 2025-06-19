@@ -41,6 +41,7 @@ else
         {
             code = c.ToString();
         }
+        Console.WriteLine("Google Client ID: " + Config["Authentication:Google:ClientId"]);
 
         Google = new OAuthProvider(
             "https://accounts.google.com/o/oauth2/v2/auth",
@@ -65,6 +66,8 @@ else
         var redirectUri = Nav.BaseUri.TrimEnd('/') + "/oauth";
         var url = provider.BuildAuthorizeUrl(pkce.CodeChallenge, redirectUri, state);
         JS.InvokeVoidAsync("sessionStorage.setItem", "pkce_" + state, pkce.CodeVerifier);
+        Console.WriteLine($"OAuth authorize URL:\n{url}");
+
         Nav.NavigateTo(url, true);
     }
 
