@@ -121,6 +121,13 @@
     private string? jwtToken;
     private string? jwtError;
 
+    private class JwtInfo
+    {
+        public string Username { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+        public string? Token { get; set; }
+    }
+
     [Inject]
     private HttpClient Http { get; set; } = default!;
 
@@ -135,9 +142,14 @@
             selectedSite = verifiedEndpoint;
             if (!string.IsNullOrEmpty(verifiedEndpoint))
             {
-                var key = GetJwtTokenKey(verifiedEndpoint);
-                jwtToken = await JS.InvokeAsync<string?>("localStorage.getItem", key);
-                if (string.IsNullOrEmpty(jwtToken))
+                var info = await LoadJwtInfoAsync(verifiedEndpoint);
+                if (info != null)
+                {
+                    jwtToken = info.Token;
+                    jwtUsername = info.Username;
+                    jwtPassword = info.Password;
+                }
+                else
                 {
                     jwtToken = await JS.InvokeAsync<string?>("localStorage.getItem", "jwtToken");
                 }
@@ -256,8 +268,17 @@
                     verifiedEndpoint = root;
                     selectedSite = root;
                     await JS.InvokeVoidAsync("localStorage.setItem", "wpEndpoint", root);
-                    var tokenKey = GetJwtTokenKey(root);
-                    jwtToken = await JS.InvokeAsync<string?>("localStorage.getItem", tokenKey);
+                    var info = await LoadJwtInfoAsync(root);
+                    if (info != null)
+                    {
+                        jwtToken = info.Token;
+                        jwtUsername = info.Username;
+                        jwtPassword = info.Password;
+                    }
+                    else
+                    {
+                        jwtToken = null;
+                    }
                     await LoadFavorites();
                     status = $"Success! v2 endpoint is {apiEndpoint}";
                     return;
@@ -293,8 +314,17 @@
             selectedSite = value;
             verifiedEndpoint = value;
             await JS.InvokeVoidAsync("localStorage.setItem", "wpEndpoint", value);
-            var tokenKey = GetJwtTokenKey(value);
-            jwtToken = await JS.InvokeAsync<string?>("localStorage.getItem", tokenKey);
+            var info = await LoadJwtInfoAsync(value);
+            if (info != null)
+            {
+                jwtToken = info.Token;
+                jwtUsername = info.Username;
+                jwtPassword = info.Password;
+            }
+            else
+            {
+                jwtToken = null;
+            }
             }
         }
 
@@ -408,8 +438,13 @@
                         jwtToken = tokenEl.GetString();
                         if (!string.IsNullOrEmpty(jwtToken))
                         {
-                            var key = GetJwtTokenKey(verifiedEndpoint);
-                            await JS.InvokeVoidAsync("localStorage.setItem", key, jwtToken);
+                            var info = new JwtInfo
+                            {
+                                Username = jwtUsername,
+                                Password = jwtPassword,
+                                Token = jwtToken
+                            };
+                            await SaveJwtInfoAsync(verifiedEndpoint, info);
                         }
                     }
                     else
@@ -473,6 +508,42 @@
 
     private static string GetJwtTokenKey(string endpoint)
         => $"jwtToken:{endpoint}";
+
+    private static string GetJwtInfoKey(string endpoint)
+        => $"jwtInfo:{endpoint}";
+
+    private async Task<JwtInfo?> LoadJwtInfoAsync(string endpoint)
+    {
+        var key = GetJwtInfoKey(endpoint);
+        var json = await JS.InvokeAsync<string?>("localStorage.getItem", key);
+        if (string.IsNullOrEmpty(json))
+        {
+            // Backwards compatibility with old token-only storage
+            var token = await JS.InvokeAsync<string?>("localStorage.getItem", GetJwtTokenKey(endpoint));
+            if (!string.IsNullOrEmpty(token))
+            {
+                return new JwtInfo { Token = token };
+            }
+            return null;
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<JwtInfo>(json);
+        }
+        catch
+        {
+            // if the stored value is just the token string
+            return new JwtInfo { Token = json };
+        }
+    }
+
+    private async Task SaveJwtInfoAsync(string endpoint, JwtInfo info)
+    {
+        var key = GetJwtInfoKey(endpoint);
+        var json = JsonSerializer.Serialize(info);
+        await JS.InvokeVoidAsync("localStorage.setItem", key, json);
+    }
 
     private async Task InvokeGet(FavoriteEndpoint fav, string site)
     {
