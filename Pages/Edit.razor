@@ -1,4 +1,5 @@
 @page "/edit"
+@using TinyMCE.Blazor
 @inject HttpClient Http
 @inject IJSRuntime JS
 
@@ -113,4 +114,25 @@
 
         return path;
     }
+}
+
+
+
+<Editor
+ScriptSrc="libman/tinymce/tinymce.min.js"
+  LicenseKey="gpl"      
+  Value="@_content"
+  Conf="@_editorConfig" />
+@code {
+  private string _content = "<p>Hello, world!</p>";
+
+  private readonly Dictionary<string, object> _editorConfig = new()
+  {
+    // disable the “Get all features” promo button
+    { "promotion", false },
+    // hide the “Build with TinyMCE” / “Powered by Tiny” link
+    { "branding",   false },
+    // (optional) remove the entire status bar
+    { "statusbar",  false }
+  };
 }
