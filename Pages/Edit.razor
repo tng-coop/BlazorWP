@@ -12,10 +12,15 @@
     <p>@status</p>
 }
 
+<div class="mb-3">
+    <label class="form-label" for="postTitle">Title</label>
+    <input id="postTitle" class="form-control" @bind="postTitle" />
+</div>
 <button class="btn btn-primary" @onclick="CreatePost">Add Post</button>
 
 @code {
     private string? status;
+    private string postTitle = string.Empty;
 
     private async Task CreatePost()
     {
@@ -27,10 +32,13 @@
         }
 
         var url = CombineUrl(endpoint, "/wp/v2/posts");
+        var title = string.IsNullOrWhiteSpace(postTitle)
+            ? $"Draft {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}"
+            : postTitle;
         var payload = new
         {
-            title = $"Hello World {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}",
-            content = $"Hello World {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}",
+            title,
+            content = _content,
             status = "publish"
         };
 
@@ -120,8 +128,8 @@
 
 <Editor
 ScriptSrc="libman/tinymce/tinymce.min.js"
-  LicenseKey="gpl"      
-  Value="@_content"
+  LicenseKey="gpl"
+  @bind-Value="_content"
   Conf="@_editorConfig" />
 @code {
   private string _content = "<p>Hello, world!</p>";
