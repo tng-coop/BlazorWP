@@ -37,10 +37,41 @@
 </div>
 
 @code {
+    private const string DraftKey = "currentDraft";
+
     private string? status;
     private string postTitle = string.Empty;
     private List<string> mediaSources = new();
     private string? selectedMediaSource;
+
+    private class DraftInfo
+    {
+        public int? PostId { get; set; }
+        public string? Title { get; set; }
+        public string? Content { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var json = await JS.InvokeAsync<string?>("localStorage.getItem", DraftKey);
+        if (!string.IsNullOrEmpty(json))
+        {
+            try
+            {
+                var info = JsonSerializer.Deserialize<DraftInfo>(json);
+                if (info != null)
+                {
+                    postId = info.PostId;
+                    postTitle = info.Title ?? string.Empty;
+                    _content = info.Content ?? string.Empty;
+                }
+            }
+            catch
+            {
+                // ignore deserialization errors
+            }
+        }
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -64,6 +95,7 @@
         if (string.IsNullOrEmpty(endpoint))
         {
             status = "No WordPress endpoint configured.";
+            await SaveLocalDraftAsync();
             return;
         }
 
@@ -115,6 +147,20 @@
         {
             status = $"Error: {ex.Message}";
         }
+
+        await SaveLocalDraftAsync();
+    }
+
+    private async Task SaveLocalDraftAsync()
+    {
+        var info = new DraftInfo
+        {
+            PostId = postId,
+            Title = postTitle,
+            Content = _content
+        };
+        var json = JsonSerializer.Serialize(info);
+        await JS.InvokeVoidAsync("localStorage.setItem", DraftKey, json);
     }
 
     private async Task OnMediaSourceChanged(ChangeEventArgs e)
