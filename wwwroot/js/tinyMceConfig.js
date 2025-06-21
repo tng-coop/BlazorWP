@@ -27,7 +27,7 @@ window.myTinyMceConfig = {
         return `<img src="${thumb}" data-full="${i.source_url}" style="width:100px;height:100px;object-fit:cover;margin:4px;cursor:pointer;" />`;
       }).join('');
 
-      const html = `<div style="display:flex;flex-wrap:wrap;">${images}</div>`;
+      const html = `<div id="tiny-media-grid" style="display:flex;flex-wrap:wrap;">${images}</div>`;
 
       const dlg = editor.windowManager.open({
         title: 'Media Library',
@@ -39,7 +39,7 @@ window.myTinyMceConfig = {
         buttons: []
       });
 
-      const panel = dlg.getEl().querySelector('div');
+      const panel = document.getElementById('tiny-media-grid');
       panel.addEventListener('click', function (e) {
         if (e.target.tagName === 'IMG') {
           const url = e.target.getAttribute('data-full');
