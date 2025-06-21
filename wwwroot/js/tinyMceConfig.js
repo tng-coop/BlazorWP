@@ -2,7 +2,8 @@ window.myTinyMceConfig = {
   promotion: false,
   branding: false,
   statusbar: false,
-  toolbar: 'undo redo | bold italic | customButton showInfoButton mediaLibraryButton',
+  plugins: 'code media',
+  toolbar: 'undo redo | bold italic | code mediaLibraryButton customButton showInfoButton',
   setup: function (editor) {
     editor.ui.registry.addButton('customButton', {
       text: 'Alert',
