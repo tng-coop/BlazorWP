@@ -25,7 +25,8 @@ window.myTinyMceConfig = {
         const thumb = (i.media_details && i.media_details.sizes && i.media_details.sizes.thumbnail)
           ? i.media_details.sizes.thumbnail.source_url
           : i.source_url;
-        return `<img src="${thumb}" data-full="${i.source_url}" style="width:100px;height:100px;object-fit:cover;margin:4px;cursor:pointer;" />`;
+        const desc = encodeURIComponent(i.description && i.description.rendered ? i.description.rendered : `<img src="${i.source_url}" />`);
+        return `<img src="${thumb}" data-desc="${desc}" style="width:100px;height:100px;object-fit:cover;margin:4px;cursor:pointer;" />`;
       }).join('');
 
       const html = `<div id="tiny-media-grid" style="display:flex;flex-wrap:wrap;">${images}</div>`;
@@ -43,8 +44,8 @@ window.myTinyMceConfig = {
       const panel = document.getElementById('tiny-media-grid');
       panel.addEventListener('click', function (e) {
         if (e.target.tagName === 'IMG') {
-          const url = e.target.getAttribute('data-full');
-          editor.insertContent(`<img src="${url}" />`);
+          const html = decodeURIComponent(e.target.getAttribute('data-desc'));
+          editor.insertContent(html);
           dlg.close();
         }
       });
