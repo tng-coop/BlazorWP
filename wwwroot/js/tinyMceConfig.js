@@ -49,14 +49,11 @@ window.myTinyMceConfig = {
       });
     }
 
+    const mediaSource = 'https://workers-coop.com/honbu/kanagawa';
+
     async function fetchMedia() {
-      const endpoint = localStorage.getItem('wpEndpoint');
       const token = localStorage.getItem('jwtToken');
-      if (!endpoint) {
-        alert('No WordPress endpoint configured.');
-        return;
-      }
-      const url = endpoint.replace(/\/?$/, '') + '/wp-json/wp/v2/media?per_page=100';
+      const url = mediaSource.replace(/\/?$/, '') + '/wp-json/wp/v2/media?per_page=100';
       try {
         const res = await fetch(url, {
           headers: token ? { 'Authorization': 'Bearer ' + token } : {}
