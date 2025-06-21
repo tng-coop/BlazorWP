@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.JSInterop;
+using System.Linq;
 
 namespace BlazorWP;
 
@@ -40,6 +41,12 @@ public class JwtService
         {
             return new();
         }
+    }
+
+    public async Task<List<string>> GetSiteInfoKeysAsync()
+    {
+        var data = await LoadSiteInfoAsync();
+        return data.Keys.OrderBy(k => k).ToList();
     }
 
     private Task SaveSiteInfoAsync(Dictionary<string, JwtInfo> data)

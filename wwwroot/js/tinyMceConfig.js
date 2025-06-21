@@ -5,6 +5,7 @@ window.myTinyMceConfig = {
   resize: 'both',
   plugins: 'code media',
   toolbar: 'undo redo | bold italic | code mediaLibraryButton customButton showInfoButton',
+  mediaSource: null,
   setup: function (editor) {
     editor.ui.registry.addButton('customButton', {
       text: 'Alert',
@@ -70,11 +71,18 @@ window.myTinyMceConfig = {
       });
     }
 
-    const mediaSource = 'https://workers-coop.com/honbu/kanagawa';
+    function getMediaSource() {
+      return window.myTinyMceConfig.mediaSource;
+    }
 
     async function fetchMedia(page = 1) {
+      const source = getMediaSource();
+      if (!source) {
+        alert('No media source selected');
+        return { items: [], totalPages: page };
+      }
       const token = localStorage.getItem('jwtToken');
-      const url = mediaSource.replace(/\/?$/, '') + `/wp-json/wp/v2/media?per_page=100&page=${page}`;
+      const url = source.replace(/\/?$/, '') + `/wp-json/wp/v2/media?per_page=100&page=${page}`;
       try {
         const res = await fetch(url, {
           headers: token ? { 'Authorization': 'Bearer ' + token } : {}
@@ -100,4 +108,8 @@ window.myTinyMceConfig = {
       }
     });
   }
+};
+
+window.setTinyMediaSource = function (url) {
+  window.myTinyMceConfig.mediaSource = url || null;
 };

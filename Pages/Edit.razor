@@ -18,29 +18,48 @@
     <label class="form-label" for="postTitle">Title</label>
     <input id="postTitle" class="form-control" @bind="postTitle" />
 </div>
+@if (mediaSources.Any())
+{
+    <div class="mb-3">
+        <label class="form-label" for="mediaSource">Media Source</label>
+        <select id="mediaSource" class="form-select" @bind="selectedMediaSource" @onchange="OnMediaSourceChanged">
+            <option value="">-- choose media site --</option>
+            @foreach (var site in mediaSources)
+            {
+                <option value="@site">@site</option>
+            }
+        </select>
+    </div>
+}
+
 <div class="d-flex align-items-center mb-2">
     <button class="btn btn-primary" @onclick="SaveDraft">Save Draft</button>
-    @if (!string.IsNullOrEmpty(jwtToken))
-    {
-        <span class="ms-2 small"><code>@jwtToken</code></span>
-    }
 </div>
 
 @code {
     private string? status;
     private string postTitle = string.Empty;
-    private string? jwtToken;
+    private List<string> mediaSources = new();
+    private string? selectedMediaSource;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        jwtToken = await JwtService.GetCurrentJwtAsync();
+        if (firstRender)
+        {
+            mediaSources = await JwtService.GetSiteInfoKeysAsync();
+            selectedMediaSource = await JS.InvokeAsync<string?>("localStorage.getItem", "mediaSource");
+            if (!string.IsNullOrEmpty(selectedMediaSource))
+            {
+                await JS.InvokeVoidAsync("setTinyMediaSource", selectedMediaSource);
+            }
+            StateHasChanged();
+        }
     }
 
     private int? postId;
 
     private async Task SaveDraft()
     {
-        jwtToken = await JwtService.GetCurrentJwtAsync();
         var endpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
         if (string.IsNullOrEmpty(endpoint))
         {
@@ -96,6 +115,20 @@
         {
             status = $"Error: {ex.Message}";
         }
+    }
+
+    private async Task OnMediaSourceChanged(ChangeEventArgs e)
+    {
+        selectedMediaSource = e.Value?.ToString();
+        if (string.IsNullOrEmpty(selectedMediaSource))
+        {
+            await JS.InvokeVoidAsync("localStorage.removeItem", "mediaSource");
+        }
+        else
+        {
+            await JS.InvokeVoidAsync("localStorage.setItem", "mediaSource", selectedMediaSource);
+        }
+        await JS.InvokeVoidAsync("setTinyMediaSource", selectedMediaSource);
     }
 
     private static string CombineUrl(string site, string path)
