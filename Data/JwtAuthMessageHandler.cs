@@ -21,7 +21,8 @@ public class JwtAuthMessageHandler : DelegatingHandler
         }
         var path = uri.AbsolutePath.TrimEnd('/');
         return path.EndsWith("/wp-json/wp/v2", StringComparison.OrdinalIgnoreCase)
-            || path.EndsWith("/wp-json/jwt-auth/v1/token", StringComparison.OrdinalIgnoreCase);
+            || path.EndsWith("/wp-json/jwt-auth/v1/token", StringComparison.OrdinalIgnoreCase)
+            || path.EndsWith("/jwt-auth/v1/token", StringComparison.OrdinalIgnoreCase);
     }
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
