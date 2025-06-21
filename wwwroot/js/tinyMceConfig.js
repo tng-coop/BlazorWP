@@ -1,7 +1,8 @@
 window.myTinyMceConfig = {
   promotion: false,
   branding: false,
-  statusbar: false,
+  statusbar: true,
+  resize: 'both',
   plugins: 'code media',
   toolbar: 'undo redo | bold italic | code mediaLibraryButton customButton showInfoButton',
   setup: function (editor) {
