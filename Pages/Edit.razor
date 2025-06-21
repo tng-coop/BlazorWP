@@ -1,5 +1,6 @@
 @page "/edit"
 @using TinyMCE.Blazor
+@using System.Text.Json
 @inject HttpClient Http
 @inject IJSRuntime JS
 @inject JwtService JwtService
@@ -18,7 +19,7 @@
     <input id="postTitle" class="form-control" @bind="postTitle" />
 </div>
 <div class="d-flex align-items-center mb-2">
-    <button class="btn btn-primary" @onclick="CreatePost">Add Post</button>
+    <button class="btn btn-primary" @onclick="SaveDraft">Save Draft</button>
     @if (!string.IsNullOrEmpty(jwtToken))
     {
         <span class="ms-2 small"><code>@jwtToken</code></span>
@@ -35,7 +36,9 @@
         jwtToken = await JwtService.GetCurrentJwtAsync();
     }
 
-    private async Task CreatePost()
+    private int? postId;
+
+    private async Task SaveDraft()
     {
         jwtToken = await JwtService.GetCurrentJwtAsync();
         var endpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
@@ -45,7 +48,6 @@
             return;
         }
 
-        var url = CombineUrl(endpoint, "/wp/v2/posts");
         var title = string.IsNullOrWhiteSpace(postTitle)
             ? $"Draft {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}"
             : postTitle;
@@ -53,8 +55,12 @@
         {
             title,
             content = _content,
-            status = "publish"
+            status = "draft"
         };
+
+        var url = postId == null
+            ? CombineUrl(endpoint, "/wp/v2/posts")
+            : CombineUrl(endpoint, $"/wp/v2/posts/{postId}");
 
         try
         {
@@ -62,7 +68,24 @@
             var response = await Http.PostAsJsonAsync(url, payload, cancellationToken: cts.Token);
             if (response.IsSuccessStatusCode)
             {
-                status = "Post created";
+                if (postId == null)
+                {
+                    var json = await response.Content.ReadAsStringAsync(cts.Token);
+                    try
+                    {
+                        using var doc = JsonDocument.Parse(json);
+                        postId = doc.RootElement.GetProperty("id").GetInt32();
+                    }
+                    catch
+                    {
+                        // ignore parse errors
+                    }
+                    status = "Draft created";
+                }
+                else
+                {
+                    status = "Draft updated";
+                }
             }
             else
             {
