@@ -21,16 +21,21 @@ window.myTinyMceConfig = {
       }
     });
 
-    function openMediaDialog(items) {
-      const images = items.map(i => {
+    function openMediaDialog(items, totalPages) {
+      let page = 1;
+
+      function itemHtml(i) {
         const thumb = (i.media_details && i.media_details.sizes && i.media_details.sizes.thumbnail)
           ? i.media_details.sizes.thumbnail.source_url
           : i.source_url;
         const desc = encodeURIComponent(i.description && i.description.rendered ? i.description.rendered : `<img src="${i.source_url}" />`);
         return `<img src="${thumb}" data-desc="${desc}" style="width:100px;height:100px;object-fit:cover;margin:4px;cursor:pointer;" />`;
-      }).join('');
+      }
 
-      const html = `<div id="tiny-media-grid" style="display:flex;flex-wrap:wrap;">${images}</div>`;
+      const images = items.map(itemHtml).join('');
+
+      const html = `<div id="tiny-media-grid" style="display:flex;flex-wrap:wrap;">${images}</div>` +
+        `<div style="margin-top:8px;text-align:center;"><button type="button" id="tiny-media-loadmore">Add More</button></div>`;
 
       const dlg = editor.windowManager.open({
         title: 'Media Library',
@@ -50,32 +55,48 @@ window.myTinyMceConfig = {
           dlg.close();
         }
       });
+
+      const loadMoreBtn = document.getElementById('tiny-media-loadmore');
+      loadMoreBtn.addEventListener('click', async function () {
+        page++;
+        const result = await fetchMedia(page);
+        result.items.forEach(i => {
+          panel.insertAdjacentHTML('beforeend', itemHtml(i));
+        });
+        totalPages = result.totalPages;
+        if (page >= totalPages || result.items.length === 0) {
+          this.disabled = true;
+        }
+      });
     }
 
     const mediaSource = 'https://workers-coop.com/honbu/kanagawa';
 
-    async function fetchMedia() {
+    async function fetchMedia(page = 1) {
       const token = localStorage.getItem('jwtToken');
-      const url = mediaSource.replace(/\/?$/, '') + '/wp-json/wp/v2/media?per_page=100';
+      const url = mediaSource.replace(/\/?$/, '') + `/wp-json/wp/v2/media?per_page=100&page=${page}`;
       try {
         const res = await fetch(url, {
           headers: token ? { 'Authorization': 'Bearer ' + token } : {}
         });
         if (!res.ok) {
           alert('Failed to load media: ' + res.status);
-          return;
+          return { items: [], totalPages: page };
         }
         const data = await res.json();
-        openMediaDialog(data);
+        const totalPages = parseInt(res.headers.get('X-WP-TotalPages') || page);
+        return { items: data, totalPages };
       } catch (err) {
         alert('Error loading media: ' + err);
+        return { items: [], totalPages: page };
       }
     }
 
     editor.ui.registry.addButton('mediaLibraryButton', {
       text: 'Media',
-      onAction: function () {
-        fetchMedia();
+      onAction: async function () {
+        const result = await fetchMedia(1);
+        openMediaDialog(result.items, result.totalPages);
       }
     });
   }
