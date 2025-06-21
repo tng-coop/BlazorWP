@@ -104,6 +104,17 @@ public class JwtService
         }
 
         var info = await LoadJwtInfoAsync(endpoint);
-        return info?.Token;
+        var token = info?.Token;
+
+        if (!string.IsNullOrEmpty(token))
+        {
+            await _js.InvokeVoidAsync("localStorage.setItem", "jwtToken", token);
+        }
+        else
+        {
+            await _js.InvokeVoidAsync("localStorage.removeItem", "jwtToken");
+        }
+
+        return token;
     }
 }

@@ -348,11 +348,20 @@ This token was minted by https://yasuaki.com at 2025-06-19 06:43:23 UTC (15:43 J
                         jwtUsername = info.Username;
                         jwtPassword = info.Password;
                         jwtDecoded = DecodeJwt(jwtToken);
+                        if (!string.IsNullOrEmpty(jwtToken))
+                        {
+                            await JS.InvokeVoidAsync("localStorage.setItem", "jwtToken", jwtToken);
+                        }
+                        else
+                        {
+                            await JS.InvokeVoidAsync("localStorage.removeItem", "jwtToken");
+                        }
                     }
                     else
                     {
                         jwtToken = null;
                         jwtDecoded = null;
+                        await JS.InvokeVoidAsync("localStorage.removeItem", "jwtToken");
                     }
                     await LoadFavorites();
                     status = $"Success! v2 endpoint is {apiEndpoint}";
@@ -668,6 +677,15 @@ This token was minted by https://yasuaki.com at 2025-06-19 06:43:23 UTC (15:43 J
         var data = await LoadSiteInfoAsync();
         data[endpoint] = info;
         await SaveSiteInfoAsync(data);
+
+        if (!string.IsNullOrEmpty(info.Token))
+        {
+            await JS.InvokeVoidAsync("localStorage.setItem", "jwtToken", info.Token);
+        }
+        else
+        {
+            await JS.InvokeVoidAsync("localStorage.removeItem", "jwtToken");
+        }
 
         var oldKey = GetOldJwtInfoKey(endpoint);
         await JS.InvokeVoidAsync("localStorage.removeItem", oldKey);
