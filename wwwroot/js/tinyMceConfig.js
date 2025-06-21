@@ -3,8 +3,8 @@ window.myTinyMceConfig = {
   branding: false,
   statusbar: true,
   resize: 'both',
-  plugins: 'code media',
-  toolbar: 'undo redo | bold italic | code mediaLibraryButton customButton showInfoButton',
+  plugins: 'code media table',
+  toolbar: 'undo redo | bold italic | table | code mediaLibraryButton customButton showInfoButton',
   mediaSource: null,
   setup: function (editor) {
     editor.ui.registry.addButton('customButton', {
