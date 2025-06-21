@@ -22,7 +22,7 @@
 {
     <div class="mb-3">
         <label class="form-label" for="mediaSource">Media Source</label>
-        <select id="mediaSource" class="form-select" @bind="selectedMediaSource" @onchange="OnMediaSourceChanged">
+        <select id="mediaSource" class="form-select" value="@selectedMediaSource" @onchange="OnMediaSourceChanged">
             <option value="">-- choose media site --</option>
             @foreach (var site in mediaSources)
             {
