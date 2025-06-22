@@ -142,3 +142,10 @@ mikesdotnetting.com
 mikesdotnetting.com
 stackoverflow.com
 . This unified pattern scales from simple inputs to complex components and ensures your Blazor app’s forms remain clean, responsive, and error-free. Sources: Citations include the official ASP.NET Core Blazor documentation and .NET team blog (for feature details) as well as Stack Overflow and community articles illustrating older pitfalls and the newer solutions. These are provided inline for reference.
+
+## WordPress API Integration
+
+When building features that communicate with a WordPress site, use the
+[WordPressPCL](https://github.com/wp-net/WordPressPCL) library for all API
+interactions. This ensures compatibility with WordPress REST endpoints and
+provides strongly typed models for posts, pages and other resources.
