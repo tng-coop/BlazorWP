@@ -50,7 +50,10 @@
             <button class="btn btn-warning me-2" @onclick="RetractReview">Retract Review</button>
         }
         <button class="btn btn-danger me-2" @onclick="CloseEditor">Close</button>
-        <span class="ms-auto"><strong>Status:</strong> @(isDirty ? "Dirty" : "Clean")</span>
+        <div class="ms-auto d-flex align-items-center">
+            <span><strong>Status:</strong> @(isDirty ? "Dirty" : "Clean")</span>
+            <button class="btn btn-sm btn-outline-secondary ms-2" @onclick="RefreshPosts">Refresh</button>
+        </div>
     </div>
 }
 

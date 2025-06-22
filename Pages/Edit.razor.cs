@@ -54,7 +54,7 @@ public partial class Edit : IAsyncDisposable
                 }
             }
 
-            foreach (var p in posts)
+            foreach (var p in posts.OrderByDescending(p => p.Id))
             {
                 if (postId != null && p.Id == postId)
                 {
