@@ -124,4 +124,62 @@ public class JwtService
 
         return token;
     }
+
+    public async Task<List<string>> GetCurrentUserRolesAsync()
+    {
+        var token = await GetCurrentJwtAsync();
+        var roles = new List<string>();
+        if (string.IsNullOrEmpty(token))
+        {
+            return roles;
+        }
+
+        var parts = token.Split('.');
+        if (parts.Length < 2)
+        {
+            return roles;
+        }
+
+        var payload = parts[1].Replace('-', '+').Replace('_', '/');
+        switch (payload.Length % 4)
+        {
+            case 2: payload += "=="; break;
+            case 3: payload += "="; break;
+        }
+
+        try
+        {
+            var bytes = Convert.FromBase64String(payload);
+            using var doc = JsonDocument.Parse(bytes);
+            if (doc.RootElement.TryGetProperty("data", out var data) &&
+                data.TryGetProperty("user", out var user))
+            {
+                if (user.TryGetProperty("roles", out var arr) && arr.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var el in arr.EnumerateArray())
+                    {
+                        var r = el.GetString();
+                        if (!string.IsNullOrEmpty(r))
+                        {
+                            roles.Add(r);
+                        }
+                    }
+                }
+                else if (user.TryGetProperty("role", out var single) && single.ValueKind == JsonValueKind.String)
+                {
+                    var r = single.GetString();
+                    if (!string.IsNullOrEmpty(r))
+                    {
+                        roles.Add(r);
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // ignore parse errors
+        }
+
+        return roles;
+    }
 }
