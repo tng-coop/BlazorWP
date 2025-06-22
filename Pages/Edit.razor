@@ -375,7 +375,7 @@ else
             return;
         }
 
-        var url = CombineUrl(endpoint, "/wp/v2/posts");
+        var url = CombineUrl(endpoint, "/wp/v2/posts?context=edit&status=any");
         try
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
