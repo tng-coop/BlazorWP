@@ -24,6 +24,7 @@ public partial class Edit : IAsyncDisposable
     private string _content = "<p>Hello, world!</p>";
     private bool showControls = true;
     private bool showTable = true;
+    private bool showTrashed = false;
     private readonly string[] availableStatuses = new[] { "draft", "pending", "publish", "private", "trash" };
 
     private IEnumerable<PostSummary> DisplayPosts
@@ -51,6 +52,10 @@ public partial class Edit : IAsyncDisposable
             foreach (var p in posts)
             {
                 if (postId != null && p.Id == postId)
+                {
+                    continue;
+                }
+                if (!showTrashed && string.Equals(p.Status, "trash", StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
                 }
