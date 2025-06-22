@@ -57,7 +57,7 @@ public partial class Edit
             }
             StateHasChanged();
         }
-
+        await ObserveScrollAsync();
     }
 
     private async Task SetupWordPressClientAsync()
