@@ -7,6 +7,7 @@ public partial class Edit
 {
     private DotNetObjectReference<Edit>? _scrollRef;
     private ElementReference scrollAnchor;
+    private ElementReference scrollContainer;
 
     [JSInvokable]
     public async Task OnIntersection()
@@ -18,7 +19,7 @@ public partial class Edit
     {
         if (!showTable) return;
         _scrollRef ??= DotNetObjectReference.Create(this);
-        await JS.InvokeVoidAsync("infiniteScroll.observe", scrollAnchor, _scrollRef);
+        await JS.InvokeVoidAsync("infiniteScroll.observe", scrollAnchor, _scrollRef, scrollContainer);
     }
 
     private async Task DisconnectScrollAsync()
