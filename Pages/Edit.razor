@@ -456,12 +456,7 @@ else
 
 
 
-<Editor
-    ScriptSrc="libman/tinymce/tinymce.min.js"
-    LicenseKey="gpl"
-    @bind-Value="_content"
-    ValueChanged="ContentChanged"
-    JsConfSrc="myTinyMceConfig" />
+<TinyMCEEditor @bind-Value="_content" OnContentChanged="ContentChanged" />
 
 @code {
     private string _content = "<p>Hello, world!</p>";

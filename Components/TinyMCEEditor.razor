@@ -1,0 +1,27 @@
+@using TinyMCE.Blazor
+<div class="tiny-editor-wrapper">
+    <Editor 
+        ScriptSrc="libman/tinymce/tinymce.min.js" 
+        LicenseKey="gpl"
+        JsConfSrc="myTinyMceConfig"
+        Value="@Value" 
+        ValueChanged="@OnEditorValueChanged" />
+</div>
+
+@code {
+    [Parameter]
+    public string Value { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> ValueChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnContentChanged { get; set; }
+
+    private async Task OnEditorValueChanged(string newValue)
+    {
+        Value = newValue;
+        await ValueChanged.InvokeAsync(newValue);
+        await OnContentChanged.InvokeAsync(newValue);
+    }
+}
