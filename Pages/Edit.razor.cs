@@ -452,6 +452,18 @@ public partial class Edit : IAsyncDisposable
         }
     }
 
+    private static string GetStatusButtonClass(string? status)
+    {
+        return status switch
+        {
+            "draft" => "btn-outline-secondary",
+            "pending" => "btn-outline-warning",
+            "publish" => "btn-outline-success",
+            "private" => "btn-outline-dark",
+            _ => "btn-outline-secondary",
+        };
+    }
+
 
     private static string CombineUrl(string site, string path)
     {
