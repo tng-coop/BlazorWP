@@ -153,6 +153,7 @@ code {
 .table-scroll {
     height: 300px;
     overflow-y: auto;
+    resize: vertical;
 }
 
 .article-row {

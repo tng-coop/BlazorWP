@@ -22,6 +22,8 @@ public partial class Edit : IAsyncDisposable
     private int currentPage = 1;
     private bool isLoading = false;
     private string _content = "<p>Hello, world!</p>";
+    private bool showControls = true;
+    private bool showTable = true;
     private readonly string[] availableStatuses = new[] { "draft", "pending", "publish", "private" };
 
     private IEnumerable<PostSummary> DisplayPosts
@@ -530,6 +532,16 @@ public partial class Edit : IAsyncDisposable
     private void UpdateDirty()
     {
         isDirty = postTitle != lastSavedTitle || _content != lastSavedContent;
+    }
+
+    private void ToggleControls()
+    {
+        showControls = !showControls;
+    }
+
+    private void ToggleTable()
+    {
+        showTable = !showTable;
     }
 
     private async Task ChangeStatus(PostSummary post, string newStatus)
