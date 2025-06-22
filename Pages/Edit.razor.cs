@@ -8,6 +8,7 @@ namespace BlazorWP.Pages;
 public partial class Edit : IAsyncDisposable
 {
     private const string DraftsKey = "editorDrafts";
+    private const string ShowTrashedKey = "showTrashed";
 
     private string? status;
     private string postTitle = string.Empty;
@@ -106,6 +107,12 @@ public partial class Edit : IAsyncDisposable
             {
                 // ignore deserialization errors
             }
+        }
+
+        var trashedSetting = await JS.InvokeAsync<string?>("localStorage.getItem", ShowTrashedKey);
+        if (!string.IsNullOrEmpty(trashedSetting) && bool.TryParse(trashedSetting, out var trashed))
+        {
+            showTrashed = trashed;
         }
 
         currentPage = 1;
@@ -556,6 +563,11 @@ public partial class Edit : IAsyncDisposable
     private void ToggleTable()
     {
         showTable = !showTable;
+    }
+
+    private async Task ShowTrashedChanged(ChangeEventArgs _)
+    {
+        await JS.InvokeVoidAsync("localStorage.setItem", ShowTrashedKey, showTrashed.ToString().ToLowerInvariant());
     }
 
     private async Task ChangeStatus(PostSummary post, string newStatus)
