@@ -137,4 +137,13 @@ public partial class Edit
         UpdateDirty();
         await InvokeAsync(StateHasChanged);
     }
+
+    private async Task RefreshPosts()
+    {
+        currentPage = 1;
+        hasMore = true;
+        await DisconnectScrollAsync();
+        await LoadPosts(currentPage);
+        await ObserveScrollAsync();
+    }
 }
