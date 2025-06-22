@@ -17,7 +17,7 @@
 
 <div class="mb-3">
     <label class="form-label" for="postTitle">Title</label>
-    <input id="postTitle" class="form-control" @bind="postTitle" />
+    <input id="postTitle" class="form-control" @bind="postTitle" @oninput="TitleInput" />
 </div>
 @if (mediaSources.Any())
 {
@@ -34,7 +34,9 @@
 }
 
 <div class="d-flex align-items-center mb-2">
-    <button class="btn btn-primary" @onclick="SaveDraft">Save Draft</button>
+    <button class="btn btn-primary me-2" @onclick="SaveDraft">Save Draft</button>
+    <button class="btn btn-secondary me-2" @onclick="SubmitForReview">Submit for Review</button>
+    <span class="ms-auto"><strong>Status:</strong> @(isDirty ? "Dirty" : "Clean")</span>
 </div>
 
 @if (posts == null)
@@ -48,6 +50,7 @@ else
             <tr>
                 <th>Id</th>
                 <th>Title</th>
+                <th>Status</th>
             </tr>
         </thead>
         <tbody>
@@ -56,6 +59,7 @@ else
                 <tr>
                     <td>@(p.Id > 0 ? p.Id.ToString() : "")</td>
                     <td>@p.Title</td>
+                    <td>@(p.Status == "pending" ? "Pending" : "")</td>
                 </tr>
             }
         </tbody>
@@ -67,6 +71,9 @@ else
 
     private string? status;
     private string postTitle = string.Empty;
+    private string lastSavedTitle = string.Empty;
+    private string lastSavedContent = string.Empty;
+    private bool isDirty = false;
     private List<string> mediaSources = new();
     private string? selectedMediaSource;
     private List<PostSummary>? posts;
@@ -124,6 +131,7 @@ else
     {
         public int Id { get; set; }
         public string? Title { get; set; }
+        public string? Status { get; set; }
     }
 
     protected override async Task OnInitializedAsync()
@@ -139,6 +147,8 @@ else
                     postId = info.PostId;
                     postTitle = info.Title ?? string.Empty;
                     _content = info.Content ?? string.Empty;
+                    lastSavedTitle = postTitle;
+                    lastSavedContent = _content;
                 }
             }
             catch
@@ -148,6 +158,7 @@ else
         }
 
         await LoadPosts();
+        UpdateDirty();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -226,6 +237,75 @@ else
         }
 
         await SaveLocalDraftAsync();
+        lastSavedTitle = postTitle;
+        lastSavedContent = _content;
+        UpdateDirty();
+    }
+
+    private async Task SubmitForReview()
+    {
+        var endpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
+        if (string.IsNullOrEmpty(endpoint))
+        {
+            status = "No WordPress endpoint configured.";
+            await SaveLocalDraftAsync();
+            return;
+        }
+
+        var title = string.IsNullOrWhiteSpace(postTitle)
+            ? $"Draft {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}"
+            : postTitle;
+        var payload = new
+        {
+            title,
+            content = _content,
+            status = "pending"
+        };
+
+        var url = postId == null
+            ? CombineUrl(endpoint, "/wp/v2/posts")
+            : CombineUrl(endpoint, $"/wp/v2/posts/{postId}");
+
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            var response = await Http.PostAsJsonAsync(url, payload, cancellationToken: cts.Token);
+            if (response.IsSuccessStatusCode)
+            {
+                if (postId == null)
+                {
+                    var json = await response.Content.ReadAsStringAsync(cts.Token);
+                    try
+                    {
+                        using var doc = JsonDocument.Parse(json);
+                        postId = doc.RootElement.GetProperty("id").GetInt32();
+                    }
+                    catch
+                    {
+                        // ignore parse errors
+                    }
+                    status = "Submitted for review";
+                }
+                else
+                {
+                    status = "Updated and submitted for review";
+                }
+            }
+            else
+            {
+                status = $"Error: {response.StatusCode}";
+            }
+        }
+        catch (Exception ex)
+        {
+            status = $"Error: {ex.Message}";
+        }
+
+        await SaveLocalDraftAsync();
+        lastSavedTitle = postTitle;
+        lastSavedContent = _content;
+        UpdateDirty();
+        await LoadPosts();
     }
 
     private async Task SaveLocalDraftAsync()
@@ -263,7 +343,8 @@ else
                 {
                     var id = el.GetProperty("id").GetInt32();
                     var title = el.GetProperty("title").GetProperty("rendered").GetString();
-                    posts.Add(new PostSummary { Id = id, Title = title });
+                    var postStatus = el.TryGetProperty("status", out var st) ? st.GetString() : null;
+                    posts.Add(new PostSummary { Id = id, Title = title, Status = postStatus });
                 }
             }
             else
@@ -291,6 +372,23 @@ else
             await JS.InvokeVoidAsync("localStorage.setItem", "mediaSource", selectedMediaSource);
         }
         await JS.InvokeVoidAsync("setTinyMediaSource", selectedMediaSource);
+    }
+
+    private void TitleInput(ChangeEventArgs e)
+    {
+        postTitle = e.Value?.ToString() ?? string.Empty;
+        UpdateDirty();
+    }
+
+    private void ContentChanged(string value)
+    {
+        _content = value;
+        UpdateDirty();
+    }
+
+    private void UpdateDirty()
+    {
+        isDirty = postTitle != lastSavedTitle || _content != lastSavedContent;
     }
 
     private static string CombineUrl(string site, string path)
@@ -362,6 +460,7 @@ else
     ScriptSrc="libman/tinymce/tinymce.min.js"
     LicenseKey="gpl"
     @bind-Value="_content"
+    ValueChanged="ContentChanged"
     JsConfSrc="myTinyMceConfig" />
 
 @code {
