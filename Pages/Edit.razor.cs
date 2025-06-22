@@ -2,6 +2,9 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.JSInterop;
 using Microsoft.AspNetCore.Components;
+using WordPressPCL;
+using WordPressPCL.Models;
+using WordPressPCL.Utility;
 
 namespace BlazorWP.Pages;
 
@@ -27,6 +30,8 @@ public partial class Edit : IAsyncDisposable
     private bool showTable = true;
     private bool showTrashed = false;
     private readonly string[] availableStatuses = new[] { "draft", "pending", "publish", "private", "trash" };
+    private WordPressClient? client;
+    private string? baseUrl;
 
     private IEnumerable<PostSummary> DisplayPosts
     {
@@ -115,6 +120,7 @@ public partial class Edit : IAsyncDisposable
             showTrashed = trashed;
         }
 
+        await SetupWordPressClientAsync();
         currentPage = 1;
         hasMore = true;
         await LoadPosts(currentPage);
@@ -138,10 +144,28 @@ public partial class Edit : IAsyncDisposable
 
     private int? postId;
 
-    private async Task SaveDraft()
+    private async Task SetupWordPressClientAsync()
     {
         var endpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
         if (string.IsNullOrEmpty(endpoint))
+        {
+            client = null;
+            baseUrl = null;
+            return;
+        }
+
+        baseUrl = endpoint.TrimEnd('/') + "/wp-json/";
+        client = new WordPressClient(baseUrl);
+        var token = await JwtService.GetCurrentJwtAsync();
+        if (!string.IsNullOrEmpty(token))
+        {
+            client.Auth.SetJWToken(token);
+        }
+    }
+
+    private async Task SaveDraft()
+    {
+        if (client == null)
         {
             status = "No WordPress endpoint configured.";
             await SaveLocalDraftAsync();
@@ -151,45 +175,32 @@ public partial class Edit : IAsyncDisposable
         var title = string.IsNullOrWhiteSpace(postTitle)
             ? $"Draft {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}"
             : postTitle;
-        var payload = new
-        {
-            title,
-            content = _content,
-            status = "draft"
-        };
-
-        var url = postId == null
-            ? CombineUrl(endpoint, "/wp/v2/posts")
-            : CombineUrl(endpoint, $"/wp/v2/posts/{postId}");
 
         try
         {
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-            var response = await Http.PostAsJsonAsync(url, payload, cancellationToken: cts.Token);
-            if (response.IsSuccessStatusCode)
+            if (postId == null)
             {
-                if (postId == null)
+                var post = new Post
                 {
-                    var json = await response.Content.ReadAsStringAsync(cts.Token);
-                    try
-                    {
-                        using var doc = JsonDocument.Parse(json);
-                        postId = doc.RootElement.GetProperty("id").GetInt32();
-                    }
-                    catch
-                    {
-                        // ignore parse errors
-                    }
-                    status = "Draft created";
-                }
-                else
-                {
-                    status = "Draft updated";
-                }
+                    Title = new Title(title),
+                    Content = new Content(_content),
+                    Status = Status.Draft
+                };
+                var created = await client.Posts.CreateAsync(post);
+                postId = created.Id;
+                status = "Draft created";
             }
             else
             {
-                status = $"Error: {response.StatusCode}";
+                var post = new Post
+                {
+                    Id = postId.Value,
+                    Title = new Title(title),
+                    Content = new Content(_content),
+                    Status = Status.Draft
+                };
+                await client.Posts.UpdateAsync(post);
+                status = "Draft updated";
             }
         }
         catch (Exception ex)
@@ -206,8 +217,7 @@ public partial class Edit : IAsyncDisposable
 
     private async Task SubmitForReview()
     {
-        var endpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
-        if (string.IsNullOrEmpty(endpoint))
+        if (client == null)
         {
             status = "No WordPress endpoint configured.";
             await SaveLocalDraftAsync();
@@ -217,45 +227,32 @@ public partial class Edit : IAsyncDisposable
         var title = string.IsNullOrWhiteSpace(postTitle)
             ? $"Draft {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}"
             : postTitle;
-        var payload = new
-        {
-            title,
-            content = _content,
-            status = "pending"
-        };
-
-        var url = postId == null
-            ? CombineUrl(endpoint, "/wp/v2/posts")
-            : CombineUrl(endpoint, $"/wp/v2/posts/{postId}");
 
         try
         {
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-            var response = await Http.PostAsJsonAsync(url, payload, cancellationToken: cts.Token);
-            if (response.IsSuccessStatusCode)
+            if (postId == null)
             {
-                if (postId == null)
+                var post = new Post
                 {
-                    var json = await response.Content.ReadAsStringAsync(cts.Token);
-                    try
-                    {
-                        using var doc = JsonDocument.Parse(json);
-                        postId = doc.RootElement.GetProperty("id").GetInt32();
-                    }
-                    catch
-                    {
-                        // ignore parse errors
-                    }
-                    status = "Submitted for review";
-                }
-                else
-                {
-                    status = "Updated and submitted for review";
-                }
+                    Title = new Title(title),
+                    Content = new Content(_content),
+                    Status = Status.Pending
+                };
+                var created = await client.Posts.CreateAsync(post);
+                postId = created.Id;
+                status = "Submitted for review";
             }
             else
             {
-                status = $"Error: {response.StatusCode}";
+                var post = new Post
+                {
+                    Id = postId.Value,
+                    Title = new Title(title),
+                    Content = new Content(_content),
+                    Status = Status.Pending
+                };
+                await client.Posts.UpdateAsync(post);
+                status = "Updated and submitted for review";
             }
         }
         catch (Exception ex)
@@ -275,8 +272,7 @@ public partial class Edit : IAsyncDisposable
 
     private async Task RetractReview()
     {
-        var endpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
-        if (string.IsNullOrEmpty(endpoint))
+        if (client == null)
         {
             status = "No WordPress endpoint configured.";
             return;
@@ -288,25 +284,15 @@ public partial class Edit : IAsyncDisposable
             return;
         }
 
-        var payload = new { status = "draft" };
-        var url = CombineUrl(endpoint, $"/wp/v2/posts/{postId}");
-
         try
         {
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-            var response = await Http.PostAsJsonAsync(url, payload, cancellationToken: cts.Token);
-            if (response.IsSuccessStatusCode)
-            {
-                status = "Review request retracted";
-                showRetractReview = false;
-                currentPage = 1;
-                hasMore = true;
-                await LoadPosts(currentPage);
-            }
-            else
-            {
-                status = $"Error: {response.StatusCode}";
-            }
+            var post = new Post { Id = postId.Value, Status = Status.Draft };
+            await client.Posts.UpdateAsync(post);
+            status = "Review request retracted";
+            showRetractReview = false;
+            currentPage = 1;
+            hasMore = true;
+            await LoadPosts(currentPage);
         }
         catch (Exception ex)
         {
@@ -372,54 +358,38 @@ public partial class Edit : IAsyncDisposable
         {
             posts.Clear();
         }
-        var endpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
-        if (string.IsNullOrEmpty(endpoint))
+        if (client == null)
         {
             return;
         }
 
-        var url = CombineUrl(endpoint, $"/wp/v2/posts?context=edit&status=any&page={page}&per_page=100&_embed");
+        var qb = new PostsQueryBuilder
+        {
+            Context = Context.Edit,
+            Page = page,
+            PerPage = 100,
+            Embed = true,
+            Statuses = new List<Status> { Status.Publish, Status.Private, Status.Draft, Status.Pending, Status.Future, Status.Trash }
+        };
+
         try
         {
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-            var response = await Http.GetAsync(url, cts.Token);
-            if (response.IsSuccessStatusCode)
+            var list = await client.Posts.QueryAsync(qb, useAuth: true);
+            int count = 0;
+            foreach (var p in list)
             {
-                var json = await response.Content.ReadAsStringAsync(cts.Token);
-                using var doc = JsonDocument.Parse(json);
-                int count = 0;
-                foreach (var el in doc.RootElement.EnumerateArray())
+                posts.Add(new PostSummary
                 {
-                    var id = el.GetProperty("id").GetInt32();
-                    var title = el.GetProperty("title").GetProperty("rendered").GetString();
-                    var postStatus = el.TryGetProperty("status", out var st) ? st.GetString() : null;
-                    var author = el.TryGetProperty("author", out var au) ? au.GetInt32() : 0;
-                    string? authorName = null;
-                    if (el.TryGetProperty("_embedded", out var emb) &&
-                        emb.TryGetProperty("author", out var authors) &&
-                        authors.ValueKind == JsonValueKind.Array &&
-                        authors.GetArrayLength() > 0)
-                    {
-                        var a = authors[0];
-                        authorName = a.TryGetProperty("name", out var nameEl) ? nameEl.GetString() : null;
-                    }
-                    DateTime? postDate = null;
-                    if (el.TryGetProperty("date", out var dateEl) && dateEl.ValueKind == JsonValueKind.String)
-                    {
-                        if (DateTime.TryParse(dateEl.GetString(), out var dt))
-                        {
-                            postDate = dt;
-                        }
-                    }
-                    posts.Add(new PostSummary { Id = id, Title = title, Author = author, AuthorName = authorName, Status = postStatus, Date = postDate });
-                    count++;
-                }
-                hasMore = count > 0;
+                    Id = p.Id,
+                    Title = p.Title?.Rendered ?? string.Empty,
+                    Author = p.Author,
+                    AuthorName = p.Embedded?.Author?.FirstOrDefault()?.Name,
+                    Status = p.Status.ToString().ToLowerInvariant(),
+                    Date = p.Date
+                });
+                count++;
             }
-            else
-            {
-                hasMore = false;
-            }
+            hasMore = count > 0;
         }
         catch
         {
@@ -457,33 +427,20 @@ public partial class Edit : IAsyncDisposable
 
     private async Task LoadPostFromServerAsync(int id)
     {
-        var endpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
-        if (string.IsNullOrEmpty(endpoint))
+        if (client == null)
         {
             status = "No WordPress endpoint configured.";
             return;
         }
 
-        var url = CombineUrl(endpoint, $"/wp/v2/posts/{id}?context=edit");
-
         try
         {
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-            var response = await Http.GetAsync(url, cts.Token);
-            if (response.IsSuccessStatusCode)
-            {
-                var json = await response.Content.ReadAsStringAsync(cts.Token);
-                using var doc = JsonDocument.Parse(json);
-                postId = id;
-                postTitle = doc.RootElement.GetProperty("title").GetProperty("raw").GetString() ?? string.Empty;
-                _content = doc.RootElement.GetProperty("content").GetProperty("raw").GetString() ?? string.Empty;
-                lastSavedTitle = postTitle;
-                lastSavedContent = _content;
-            }
-            else
-            {
-                status = $"Error: {response.StatusCode}";
-            }
+            var post = await client.Posts.GetByIDAsync(id, true, true);
+            postId = id;
+            postTitle = post.Title?.Raw ?? string.Empty;
+            _content = post.Content?.Raw ?? string.Empty;
+            lastSavedTitle = postTitle;
+            lastSavedContent = _content;
         }
         catch (Exception ex)
         {
@@ -571,48 +528,28 @@ public partial class Edit : IAsyncDisposable
     {
         if (post.Id <= 0) return;
 
-        var endpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
-        if (string.IsNullOrEmpty(endpoint))
+        if (client == null)
         {
             status = "No WordPress endpoint configured.";
             return;
         }
 
-        var url = CombineUrl(endpoint, $"/wp/v2/posts/{post.Id}");
-
         try
         {
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-            HttpResponseMessage response;
-
             if (string.Equals(newStatus, "trash", StringComparison.OrdinalIgnoreCase))
             {
-                response = await Http.DeleteAsync(url, cts.Token);
+                await client.Posts.DeleteAsync(post.Id, true);
+                status = "Post moved to trash";
+                posts.Remove(post);
             }
             else
             {
-                var payload = new { status = newStatus };
-                response = await Http.PostAsJsonAsync(url, payload, cancellationToken: cts.Token);
+                var postUpdate = new Post { Id = post.Id, Status = Enum.TryParse<Status>(newStatus, true, out var st) ? st : Status.Draft };
+                await client.Posts.UpdateAsync(postUpdate);
+                status = $"Status changed to {newStatus}";
+                post.Status = newStatus;
             }
-
-            if (response.IsSuccessStatusCode)
-            {
-                if (string.Equals(newStatus, "trash", StringComparison.OrdinalIgnoreCase))
-                {
-                    status = "Post moved to trash";
-                    posts.Remove(post);
-                }
-                else
-                {
-                    status = $"Status changed to {newStatus}";
-                    post.Status = newStatus;
-                }
-                await InvokeAsync(StateHasChanged);
-            }
-            else
-            {
-                status = $"Error: {response.StatusCode}";
-            }
+            await InvokeAsync(StateHasChanged);
         }
         catch (Exception ex)
         {
@@ -634,67 +571,6 @@ public partial class Edit : IAsyncDisposable
     }
 
 
-    private static string CombineUrl(string site, string path)
-    {
-        path = NormalizePath(path);
-        var trimmed = site.TrimEnd('/');
-
-        if (trimmed.EndsWith("/wp-json/wp/v2", StringComparison.OrdinalIgnoreCase) &&
-            path.StartsWith("/wp/v2", StringComparison.OrdinalIgnoreCase))
-        {
-            var baseUrl = trimmed[..^"/wp/v2".Length];
-            return baseUrl.TrimEnd('/') + path;
-        }
-
-        if (trimmed.EndsWith("/wp-json", StringComparison.OrdinalIgnoreCase) &&
-            path.StartsWith("/wp/v2", StringComparison.OrdinalIgnoreCase))
-        {
-            return trimmed + path;
-        }
-
-        if (!trimmed.Contains("/wp-json", StringComparison.OrdinalIgnoreCase) &&
-            path.StartsWith("/wp/v2", StringComparison.OrdinalIgnoreCase))
-        {
-            return trimmed + "/wp-json" + path;
-        }
-
-        return trimmed + (path.StartsWith("/") ? path : "/" + path);
-    }
-
-    private static string NormalizePath(string path)
-    {
-        if (string.IsNullOrEmpty(path))
-        {
-            return path;
-        }
-
-        if (path.StartsWith("~/"))
-        {
-            path = path[1..];
-        }
-
-        if (path.StartsWith("/routes/", StringComparison.OrdinalIgnoreCase))
-        {
-            path = path["/routes".Length..];
-        }
-        else if (path.StartsWith("routes/", StringComparison.OrdinalIgnoreCase))
-        {
-            path = "/" + path["routes/".Length..];
-        }
-
-        var idx = path.IndexOf("/routes/", StringComparison.OrdinalIgnoreCase);
-        if (idx >= 0)
-        {
-            var prefix = path[..idx];
-            var after = path[(idx + "/routes".Length)..];
-            if (after.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-            {
-                path = prefix + after[prefix.Length..];
-            }
-        }
-
-        return path;
-    }
 
     public ValueTask DisposeAsync()
     {
