@@ -59,10 +59,7 @@ else
                     <th>Title</th>
                     <th>Author</th>
                     <th>Status</th>
-                    @if (canChangeStatus)
-                    {
-                        <th>Change Status</th>
-                    }
+                    <th>Change Status</th>
                 </tr>
             </thead>
             <tbody>
@@ -73,15 +70,12 @@ else
                         <td>@p.Title</td>
                     <td>@(string.IsNullOrEmpty(p.AuthorName) ? (p.Author > 0 ? p.Author.ToString() : "") : p.AuthorName)</td>
                         <td>@p.Status</td>
-                        @if (canChangeStatus)
-                        {
-                            <td>
-                                @foreach (var st in availableStatuses)
-                                {
-                                    <button class="btn btn-sm me-1 @(p.Status == st ? "btn-primary" : "btn-outline-secondary")" @onclick="() => ChangeStatus(p, st)">@st</button>
-                                }
-                            </td>
-                        }
+                        <td>
+                            @foreach (var st in availableStatuses)
+                            {
+                                <button class="btn btn-sm me-1 @(p.Status == st ? "btn-primary" : "btn-outline-secondary")" @onclick="() => ChangeStatus(p, st)">@st</button>
+                            }
+                        </td>
                     </tr>
                 }
             </tbody>
