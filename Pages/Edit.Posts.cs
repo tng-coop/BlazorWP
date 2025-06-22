@@ -23,7 +23,7 @@ public partial class Edit
         {
             Context = Context.Edit,
             Page = 1,
-            PerPage = page == 1 && !append ? 10 : 100,
+            PerPage = page == 1 && !append ? 10 : 20,
             Offset = page == 1 && !append ? 0 : posts.Count,
             Embed = true,
             Statuses = new List<Status> { Status.Publish, Status.Private, Status.Draft, Status.Pending, Status.Future, Status.Trash }
