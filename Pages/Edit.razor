@@ -5,6 +5,7 @@
 @inject HttpClient Http
 @inject IJSRuntime JS
 @inject JwtService JwtService
+@implements IAsyncDisposable
 
 <PageTitle>Edit</PageTitle>
 
@@ -67,6 +68,14 @@ else
                     <td>@(p.Status == "pending" ? "Pending" : "")</td>
                 </tr>
             }
+            @if (hasMore)
+            {
+                <tr>
+                    <td colspan="3">
+                        <div style="height:1px" @ref="bottomSentinel"></div>
+                    </td>
+                </tr>
+            }
         </tbody>
     </table>
 }
@@ -82,7 +91,12 @@ else
     private bool showRetractReview = false;
     private List<string> mediaSources = new();
     private string? selectedMediaSource;
-    private List<PostSummary>? posts;
+    private List<PostSummary> posts = new();
+    private bool hasMore = true;
+    private int currentPage = 1;
+    private bool isLoading = false;
+    private ElementReference bottomSentinel;
+    private DotNetObjectReference<Edit>? objRef;
 
     private IEnumerable<PostSummary> DisplayPosts
     {
@@ -97,7 +111,7 @@ else
                     : $"{postTitle} (not saved yet)";
                 list.Add(new PostSummary { Id = -1, Title = title });
             }
-            else if (posts != null)
+            else
             {
                 var current = posts.FirstOrDefault(p => p.Id == postId);
                 if (current != null)
@@ -106,23 +120,16 @@ else
                 }
             }
 
-            if (posts != null)
+            foreach (var p in posts)
             {
-                foreach (var p in posts)
+                if (postId != null && p.Id == postId)
                 {
-                    if (postId != null && p.Id == postId)
-                    {
-                        continue;
-                    }
-                    if (list.Count >= 3)
-                    {
-                        break;
-                    }
-                    list.Add(p);
+                    continue;
                 }
+                list.Add(p);
             }
 
-            return list.Take(3);
+            return list;
         }
     }
 
@@ -163,7 +170,9 @@ else
             }
         }
 
-        await LoadPosts();
+        currentPage = 1;
+        hasMore = true;
+        await LoadPosts(currentPage);
         UpdateDirty();
     }
 
@@ -178,6 +187,12 @@ else
                 await JS.InvokeVoidAsync("setTinyMediaSource", selectedMediaSource);
             }
             StateHasChanged();
+        }
+
+        if (hasMore && objRef == null)
+        {
+            objRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("infiniteScroll.observe", bottomSentinel, objRef);
         }
     }
 
@@ -312,7 +327,9 @@ else
         lastSavedTitle = postTitle;
         lastSavedContent = _content;
         UpdateDirty();
-        await LoadPosts();
+        currentPage = 1;
+        hasMore = true;
+        await LoadPosts(currentPage);
         showRetractReview = true;
     }
 
@@ -342,7 +359,9 @@ else
             {
                 status = "Review request retracted";
                 showRetractReview = false;
-                await LoadPosts();
+                currentPage = 1;
+                hasMore = true;
+                await LoadPosts(currentPage);
             }
             else
             {
@@ -380,16 +399,19 @@ else
         await JS.InvokeVoidAsync("localStorage.setItem", DraftKey, json);
     }
 
-    private async Task LoadPosts()
+    private async Task LoadPosts(int page = 1, bool append = false)
     {
-        posts = null;
+        if (page == 1 && !append)
+        {
+            posts.Clear();
+        }
         var endpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
         if (string.IsNullOrEmpty(endpoint))
         {
             return;
         }
 
-        var url = CombineUrl(endpoint, "/wp/v2/posts?context=edit&status=any");
+        var url = CombineUrl(endpoint, $"/wp/v2/posts?context=edit&status=any&page={page}");
         try
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
@@ -397,28 +419,46 @@ else
             if (response.IsSuccessStatusCode)
             {
                 var json = await response.Content.ReadAsStringAsync(cts.Token);
-                posts = new();
                 using var doc = JsonDocument.Parse(json);
+                int count = 0;
                 foreach (var el in doc.RootElement.EnumerateArray())
                 {
                     var id = el.GetProperty("id").GetInt32();
                     var title = el.GetProperty("title").GetProperty("rendered").GetString();
                     var postStatus = el.TryGetProperty("status", out var st) ? st.GetString() : null;
                     posts.Add(new PostSummary { Id = id, Title = title, Status = postStatus });
+                    count++;
                 }
+                hasMore = count > 0;
             }
             else
             {
-                posts = new();
+                hasMore = false;
             }
         }
         catch
         {
-            posts = new();
+            hasMore = false;
         }
 
         showRetractReview = posts?.FirstOrDefault(p => p.Id == postId)?.Status == "pending";
         await InvokeAsync(StateHasChanged);
+    }
+
+    [JSInvokable]
+    public async Task OnIntersection()
+    {
+        if (isLoading || !hasMore) return;
+        isLoading = true;
+        currentPage++;
+        await LoadPosts(currentPage, append: true);
+        if (!hasMore && objRef != null)
+        {
+            await JS.InvokeVoidAsync("infiniteScroll.disconnect");
+            objRef.Dispose();
+            objRef = null;
+        }
+        isLoading = false;
     }
 
     private async Task OnMediaSourceChanged(ChangeEventArgs e)
@@ -512,6 +552,16 @@ else
         }
 
         return path;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (objRef != null)
+        {
+            await JS.InvokeVoidAsync("infiniteScroll.disconnect");
+            objRef.Dispose();
+            objRef = null;
+        }
     }
 }
 
