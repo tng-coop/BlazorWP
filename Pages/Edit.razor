@@ -82,7 +82,7 @@ else if (showTable)
             <tbody>
                 @foreach (var p in DisplayPosts)
                 {
-                    <tr class="article-row @(IsSelected(p, postId) ? "table-primary" : null)" @onclick="() => OpenPost(p)">
+                    <tr @key="p.Id" class="article-row @(IsSelected(p, postId) ? "table-primary" : null)" @onclick="() => OpenPost(p)">
                         <td>@(p.Id > 0 ? p.Id.ToString() : "")</td>
                         <td>@p.Title</td>
                         <td>@(string.IsNullOrEmpty(p.AuthorName) ? (p.Author > 0 ? p.Author.ToString() : "") : p.AuthorName)</td>
