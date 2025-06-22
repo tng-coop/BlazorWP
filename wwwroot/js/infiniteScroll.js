@@ -2,7 +2,7 @@ window.infiniteScroll = (function () {
   let observer = null;
   let dotNetHelper = null;
   return {
-    observe: function (element, dotNetObj) {
+    observe: function (element, dotNetObj, container) {
       dotNetHelper = dotNetObj;
       if (observer) observer.disconnect();
       observer = new IntersectionObserver(entries => {
@@ -11,7 +11,7 @@ window.infiniteScroll = (function () {
             dotNetHelper.invokeMethodAsync('OnIntersection');
           }
         }
-      });
+      }, { root: container || null });
       observer.observe(element);
     },
     disconnect: function () {
