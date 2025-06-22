@@ -10,6 +10,7 @@ public partial class Edit
 {
     private async Task SaveDraft()
     {
+        Console.WriteLine("[SaveDraft] starting");
         if (client == null)
         {
             status = "No WordPress endpoint configured.";
@@ -58,10 +59,12 @@ public partial class Edit
         lastSavedContent = _content;
         UpdateDirty();
         showRetractReview = false;
+        Console.WriteLine("[SaveDraft] completed");
     }
 
     private async Task SubmitForReview()
     {
+        Console.WriteLine("[SubmitForReview] starting");
         if (client == null)
         {
             status = "No WordPress endpoint configured.";
@@ -113,10 +116,12 @@ public partial class Edit
         hasMore = true;
         await LoadPosts(currentPage);
         showRetractReview = true;
+        Console.WriteLine("[SubmitForReview] completed");
     }
 
     private async Task RetractReview()
     {
+        Console.WriteLine("[RetractReview] starting");
         if (client == null)
         {
             status = "No WordPress endpoint configured.";
@@ -143,10 +148,12 @@ public partial class Edit
         {
             status = $"Error: {ex.Message}";
         }
+        Console.WriteLine("[RetractReview] completed");
     }
 
     private async Task CloseEditor()
     {
+        Console.WriteLine("[CloseEditor] starting");
         var closedId = postId;
         postId = null;
         postTitle = string.Empty;
@@ -167,6 +174,7 @@ public partial class Edit
         }
         UpdateDirty();
         await InvokeAsync(StateHasChanged);
+        Console.WriteLine("[CloseEditor] completed");
     }
 
     private async Task SaveLocalDraftAsync()
