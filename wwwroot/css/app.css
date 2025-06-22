@@ -149,3 +149,8 @@ code {
 .pdtreenode_content > i:not(.fa-plus-square):not(.fa-minus-square) {
     cursor: pointer;
 }
+
+.table-scroll {
+    height: 300px;
+    overflow-y: auto;
+}
