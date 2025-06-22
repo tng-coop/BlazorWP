@@ -7,7 +7,7 @@ namespace BlazorWP.Pages;
 
 public partial class Edit : IAsyncDisposable
 {
-    private const string DraftKey = "currentDraft";
+    private const string DraftsKey = "editorDrafts";
 
     private string? status;
     private string postTitle = string.Empty;
@@ -64,6 +64,7 @@ public partial class Edit : IAsyncDisposable
         public int? PostId { get; set; }
         public string? Title { get; set; }
         public string? Content { get; set; }
+        public DateTime LastUpdated { get; set; }
     }
 
     private class PostSummary
@@ -77,17 +78,18 @@ public partial class Edit : IAsyncDisposable
 
     protected override async Task OnInitializedAsync()
     {
-        var json = await JS.InvokeAsync<string?>("localStorage.getItem", DraftKey);
-        if (!string.IsNullOrEmpty(json))
+        var draftsJson = await JS.InvokeAsync<string?>("localStorage.getItem", DraftsKey);
+        if (!string.IsNullOrEmpty(draftsJson))
         {
             try
             {
-                var info = JsonSerializer.Deserialize<DraftInfo>(json);
-                if (info != null)
+                var list = JsonSerializer.Deserialize<List<DraftInfo>>(draftsJson);
+                var latest = list?.OrderByDescending(d => d.LastUpdated).FirstOrDefault();
+                if (latest != null)
                 {
-                    postId = info.PostId;
-                    postTitle = info.Title ?? string.Empty;
-                    _content = info.Content ?? string.Empty;
+                    postId = latest.PostId;
+                    postTitle = latest.Title ?? string.Empty;
+                    _content = latest.Content ?? string.Empty;
                     lastSavedTitle = postTitle;
                     lastSavedContent = _content;
                 }
@@ -305,21 +307,48 @@ public partial class Edit : IAsyncDisposable
         lastSavedTitle = string.Empty;
         lastSavedContent = string.Empty;
         showRetractReview = false;
-        await JS.InvokeVoidAsync("localStorage.removeItem", DraftKey);
+        var list = await LoadDraftStatesAsync();
+        list.RemoveAll(d => d.PostId == postId);
+        await SaveDraftStatesAsync(list);
         UpdateDirty();
         await InvokeAsync(StateHasChanged);
     }
 
     private async Task SaveLocalDraftAsync()
     {
-        var info = new DraftInfo
+        var list = await LoadDraftStatesAsync();
+        var existing = list.FirstOrDefault(d => d.PostId == postId);
+        if (existing == null)
         {
-            PostId = postId,
-            Title = postTitle,
-            Content = _content
-        };
-        var json = JsonSerializer.Serialize(info);
-        await JS.InvokeVoidAsync("localStorage.setItem", DraftKey, json);
+            existing = new DraftInfo { PostId = postId };
+            list.Add(existing);
+        }
+        existing.Title = postTitle;
+        existing.Content = _content;
+        existing.LastUpdated = DateTime.UtcNow;
+        list = list.OrderByDescending(d => d.LastUpdated).Take(3).ToList();
+        await SaveDraftStatesAsync(list);
+    }
+
+    private async Task<List<DraftInfo>> LoadDraftStatesAsync()
+    {
+        var json = await JS.InvokeAsync<string?>("localStorage.getItem", DraftsKey);
+        if (!string.IsNullOrEmpty(json))
+        {
+            try
+            {
+                var list = JsonSerializer.Deserialize<List<DraftInfo>>(json);
+                if (list != null) return list;
+            }
+            catch { }
+        }
+        return new List<DraftInfo>();
+    }
+
+    private async Task SaveDraftStatesAsync(List<DraftInfo> list)
+    {
+        var json = JsonSerializer.Serialize(list);
+        await JS.InvokeVoidAsync("localStorage.setItem", DraftsKey, json);
     }
 
     private async Task LoadPosts(int page = 1, bool append = false)
@@ -385,6 +414,91 @@ public partial class Edit : IAsyncDisposable
         currentPage++;
         await LoadPosts(currentPage, append: true);
         isLoading = false;
+    }
+
+    private async Task<bool> TryLoadDraftAsync(int? id)
+    {
+        var list = await LoadDraftStatesAsync();
+        var item = list.FirstOrDefault(d => d.PostId == id);
+        if (item != null)
+        {
+            postId = item.PostId;
+            postTitle = item.Title ?? string.Empty;
+            _content = item.Content ?? string.Empty;
+            lastSavedTitle = postTitle;
+            lastSavedContent = _content;
+            return true;
+        }
+        return false;
+    }
+
+    private async Task LoadPostFromServerAsync(int id)
+    {
+        var endpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
+        if (string.IsNullOrEmpty(endpoint))
+        {
+            status = "No WordPress endpoint configured.";
+            return;
+        }
+
+        var url = CombineUrl(endpoint, $"/wp/v2/posts/{id}?context=edit");
+
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            var response = await Http.GetAsync(url, cts.Token);
+            if (response.IsSuccessStatusCode)
+            {
+                var json = await response.Content.ReadAsStringAsync(cts.Token);
+                using var doc = JsonDocument.Parse(json);
+                postId = id;
+                postTitle = doc.RootElement.GetProperty("title").GetProperty("raw").GetString() ?? string.Empty;
+                _content = doc.RootElement.GetProperty("content").GetProperty("raw").GetString() ?? string.Empty;
+                lastSavedTitle = postTitle;
+                lastSavedContent = _content;
+            }
+            else
+            {
+                status = $"Error: {response.StatusCode}";
+            }
+        }
+        catch (Exception ex)
+        {
+            status = $"Error: {ex.Message}";
+        }
+    }
+
+    private async Task OpenPost(PostSummary post)
+    {
+        if (post.Id == postId)
+        {
+            return;
+        }
+
+        if (isDirty)
+        {
+            await SaveLocalDraftAsync();
+        }
+
+        if (!await TryLoadDraftAsync(post.Id))
+        {
+            if (post.Id > 0)
+            {
+                await LoadPostFromServerAsync(post.Id);
+            }
+            else
+            {
+                postId = null;
+                postTitle = string.Empty;
+                _content = string.Empty;
+                lastSavedTitle = postTitle;
+                lastSavedContent = _content;
+            }
+        }
+
+        showRetractReview = post.Status == "pending";
+        UpdateDirty();
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task OnMediaSourceChanged(ChangeEventArgs e)
