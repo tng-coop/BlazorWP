@@ -524,9 +524,8 @@ public partial class Edit : IAsyncDisposable
         await InvokeAsync(StateHasChanged);
     }
 
-    private async Task OnMediaSourceChanged(ChangeEventArgs e)
+    private async Task OnMediaSourceChanged()
     {
-        selectedMediaSource = e.Value?.ToString();
         if (string.IsNullOrEmpty(selectedMediaSource))
         {
             await JS.InvokeVoidAsync("localStorage.removeItem", "mediaSource");
@@ -538,15 +537,13 @@ public partial class Edit : IAsyncDisposable
         await JS.InvokeVoidAsync("setTinyMediaSource", selectedMediaSource);
     }
 
-    private void TitleInput(ChangeEventArgs e)
+    private void OnTitleChanged()
     {
-        postTitle = e.Value?.ToString() ?? string.Empty;
         UpdateDirty();
     }
 
-    private void ContentChanged(string value)
+    private void OnContentChanged()
     {
-        _content = value;
         UpdateDirty();
     }
 
@@ -565,7 +562,7 @@ public partial class Edit : IAsyncDisposable
         showTable = !showTable;
     }
 
-    private async Task ShowTrashedChanged(ChangeEventArgs _)
+    private async Task OnShowTrashedChanged()
     {
         await JS.InvokeVoidAsync("localStorage.setItem", ShowTrashedKey, showTrashed.ToString().ToLowerInvariant());
     }
