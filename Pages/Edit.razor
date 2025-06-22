@@ -71,10 +71,19 @@ else
                     <td>@(string.IsNullOrEmpty(p.AuthorName) ? (p.Author > 0 ? p.Author.ToString() : "") : p.AuthorName)</td>
                         <td>@p.Status</td>
                         <td>
-                            @foreach (var st in availableStatuses)
-                            {
-                                <button class="btn btn-sm me-1 @(p.Status == st ? "btn-primary" : "btn-outline-secondary")" @onclick="() => ChangeStatus(p, st)">@st</button>
-                            }
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    @p.Status
+                                </button>
+                                <ul class="dropdown-menu">
+                                    @foreach (var st in availableStatuses)
+                                    {
+                                        <li>
+                                            <a class="dropdown-item @(p.Status == st ? "active" : null)" href="#" @onclick="() => ChangeStatus(p, st)">@st</a>
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
                         </td>
                     </tr>
                 }
