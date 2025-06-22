@@ -1,10 +1,11 @@
 @using TinyMCE.Blazor
-<div class="tiny-editor-wrapper">
-    <Editor 
-        ScriptSrc="libman/tinymce/tinymce.min.js" 
+<div class="tiny-editor-wrapper position-relative">
+    <button type="button" class="btn-close position-absolute end-0" aria-label="Close" @onclick="CloseEditor"></button>
+    <Editor
+        ScriptSrc="libman/tinymce/tinymce.min.js"
         LicenseKey="gpl"
         JsConfSrc="myTinyMceConfig"
-        Value="@Value" 
+        Value="@Value"
         ValueChanged="@OnEditorValueChanged" />
 </div>
 
@@ -18,10 +19,18 @@
     [Parameter]
     public EventCallback<string> OnContentChanged { get; set; }
 
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
     private async Task OnEditorValueChanged(string newValue)
     {
         Value = newValue;
         await ValueChanged.InvokeAsync(newValue);
         await OnContentChanged.InvokeAsync(newValue);
+    }
+
+    private async Task CloseEditor()
+    {
+        await OnClose.InvokeAsync();
     }
 }

@@ -503,8 +503,17 @@ else
 
 
 
-<TinyMCEEditor @bind-Value="_content" OnContentChanged="ContentChanged" />
+@if (showEditor)
+{
+    <TinyMCEEditor @bind-Value="_content" OnContentChanged="ContentChanged" OnClose="CloseEditor" />
+}
 
 @code {
     private string _content = "<p>Hello, world!</p>";
+    private bool showEditor = true;
+
+    private void CloseEditor()
+    {
+        showEditor = false;
+    }
 }
