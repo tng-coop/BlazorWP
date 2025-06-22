@@ -57,6 +57,7 @@ else
                 <tr>
                     <th>Id</th>
                     <th>Title</th>
+                    <th>Author</th>
                     <th>Status</th>
                 </tr>
             </thead>
@@ -66,6 +67,7 @@ else
                     <tr>
                         <td>@(p.Id > 0 ? p.Id.ToString() : "")</td>
                         <td>@p.Title</td>
+                        <td>@(p.Author > 0 ? p.Author.ToString() : "")</td>
                         <td>@(p.Status == "pending" ? "Pending" : "")</td>
                     </tr>
                 }
@@ -102,7 +104,7 @@ else
                 var title = string.IsNullOrWhiteSpace(postTitle)
                     ? "(Not saved yet)"
                     : $"{postTitle} (not saved yet)";
-                list.Add(new PostSummary { Id = -1, Title = title });
+                list.Add(new PostSummary { Id = -1, Title = title, Author = 0 });
             }
             else
             {
@@ -137,6 +139,7 @@ else
     {
         public int Id { get; set; }
         public string? Title { get; set; }
+        public int Author { get; set; }
         public string? Status { get; set; }
     }
 
@@ -414,7 +417,8 @@ else
                     var id = el.GetProperty("id").GetInt32();
                     var title = el.GetProperty("title").GetProperty("rendered").GetString();
                     var postStatus = el.TryGetProperty("status", out var st) ? st.GetString() : null;
-                    posts.Add(new PostSummary { Id = id, Title = title, Status = postStatus });
+                    var author = el.TryGetProperty("author", out var au) ? au.GetInt32() : 0;
+                    posts.Add(new PostSummary { Id = id, Title = title, Author = author, Status = postStatus });
                     count++;
                 }
                 hasMore = count > 0;
