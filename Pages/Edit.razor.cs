@@ -1,7 +1,5 @@
-using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.JSInterop;
-using Microsoft.AspNetCore.Components;
 using WordPressPCL;
 using WordPressPCL.Models;
 using WordPressPCL.Utility;
@@ -367,7 +365,7 @@ public partial class Edit : IAsyncDisposable
         {
             Context = Context.Edit,
             Page = page,
-            PerPage = 100,
+            PerPage = 10,
             Embed = true,
             Statuses = new List<Status> { Status.Publish, Status.Private, Status.Draft, Status.Pending, Status.Future, Status.Trash }
         };
