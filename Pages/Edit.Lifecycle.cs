@@ -42,6 +42,18 @@ public partial class Edit
         currentPage = 1;
         hasMore = true;
         await LoadPosts(currentPage);
+        if (postId != null && !posts.Any(p => p.Id == postId))
+        {
+            posts.Add(new PostSummary
+            {
+                Id = postId.Value,
+                Title = postTitle,
+                Author = 0,
+                AuthorName = string.Empty,
+                Status = string.Empty,
+                Date = null
+            });
+        }
         UpdateDirty();
     }
 
