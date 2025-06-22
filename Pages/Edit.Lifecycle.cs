@@ -12,25 +12,31 @@ public partial class Edit
     {
         //Console.WriteLine("[OnInitializedAsync] starting");
         var draftsJson = await JS.InvokeAsync<string?>("localStorage.getItem", DraftsKey);
+        DraftInfo? latestDraft = null;
         if (!string.IsNullOrEmpty(draftsJson))
         {
             try
             {
                 var list = JsonSerializer.Deserialize<List<DraftInfo>>(draftsJson);
-                var latest = list?.OrderByDescending(d => d.LastUpdated).FirstOrDefault();
-                if (latest != null)
-                {
-                    postId = latest.PostId;
-                    postTitle = latest.Title ?? string.Empty;
-                    _content = latest.Content ?? string.Empty;
-                    lastSavedTitle = postTitle;
-                    lastSavedContent = _content;
-                }
+                latestDraft = list?.OrderByDescending(d => d.LastUpdated).FirstOrDefault();
             }
             catch
             {
                 // ignore deserialization errors
             }
+        }
+
+        if (latestDraft != null)
+        {
+            postId = latestDraft.PostId;
+            postTitle = latestDraft.Title ?? string.Empty;
+            _content = latestDraft.Content ?? string.Empty;
+            lastSavedTitle = postTitle;
+            lastSavedContent = _content;
+        }
+        else
+        {
+            ResetEditorState();
         }
 
         var trashedSetting = await JS.InvokeAsync<string?>("localStorage.getItem", ShowTrashedKey);

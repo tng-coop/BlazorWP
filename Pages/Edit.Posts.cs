@@ -162,12 +162,7 @@ public partial class Edit
             else
             {
                 //Console.WriteLine("[OpenPost] new empty post");
-                postId = null;
-                postTitle = string.Empty;
-                _content = string.Empty;
-                //Console.WriteLine("[OpenPost] cleared title and content");
-                lastSavedTitle = postTitle;
-                lastSavedContent = _content;
+                ResetEditorState();
             }
         }
 

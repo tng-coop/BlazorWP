@@ -155,12 +155,7 @@ public partial class Edit
     {
         //Console.WriteLine("[CloseEditor] starting");
         var closedId = postId;
-        postId = null;
-        postTitle = string.Empty;
-        _content = string.Empty;
-        lastSavedTitle = string.Empty;
-        lastSavedContent = string.Empty;
-        showRetractReview = false;
+        ResetEditorState();
         var list = await LoadDraftStatesAsync();
         list.RemoveAll(d => d.PostId == closedId);
         await SaveDraftStatesAsync(list);
