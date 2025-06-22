@@ -52,7 +52,7 @@
 else
 {
     <div class="table-scroll">
-        <table class="table">
+        <table class="table table-hover">
             <thead>
                 <tr>
                     <th>Id</th>
@@ -65,7 +65,7 @@ else
             <tbody>
                 @foreach (var p in DisplayPosts)
                 {
-                    <tr>
+                    <tr class="article-row" @onclick="() => OpenPost(p)">
                         <td>@(p.Id > 0 ? p.Id.ToString() : "")</td>
                         <td>@p.Title</td>
                     <td>@(string.IsNullOrEmpty(p.AuthorName) ? (p.Author > 0 ? p.Author.ToString() : "") : p.AuthorName)</td>
@@ -74,14 +74,14 @@ else
                             @if (p.Id > 0 && !string.IsNullOrEmpty(p.Status))
                             {
                                 <div class="dropdown">
-                                    <button class="btn btn-sm @(GetStatusButtonClass(p.Status)) dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <button class="btn btn-sm @(GetStatusButtonClass(p.Status)) dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" @onclick:stopPropagation="true">
                                         @p.Status
                                     </button>
                                     <ul class="dropdown-menu">
                                         @foreach (var st in availableStatuses)
                                         {
                                             <li>
-                                                <button type="button" class="dropdown-item @(p.Status == st ? "active" : null)" @onclick="() => ChangeStatus(p, st)">@st</button>
+                                                <button type="button" class="dropdown-item @(p.Status == st ? "active" : null)" @onclick="() => ChangeStatus(p, st)" @onclick:stopPropagation="true">@st</button>
                                             </li>
                                         }
                                     </ul>
