@@ -22,8 +22,9 @@ public partial class Edit
         var qb = new PostsQueryBuilder
         {
             Context = Context.Edit,
-            Page = page,
-            PerPage = 10,
+            Page = 1,
+            PerPage = page == 1 && !append ? 10 : 100,
+            Offset = page == 1 && !append ? 0 : posts.Count,
             Embed = true,
             Statuses = new List<Status> { Status.Publish, Status.Private, Status.Draft, Status.Pending, Status.Future, Status.Trash }
         };
