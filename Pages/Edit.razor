@@ -40,6 +40,7 @@
     {
         <button class="btn btn-warning me-2" @onclick="RetractReview">Retract Review</button>
     }
+    <button class="btn btn-danger me-2" @onclick="CloseEditor">Close</button>
     <span class="ms-auto"><strong>Status:</strong> @(isDirty ? "Dirty" : "Clean")</span>
 </div>
 
@@ -352,6 +353,19 @@ else
         {
             status = $"Error: {ex.Message}";
         }
+    }
+
+    private async Task CloseEditor()
+    {
+        postId = null;
+        postTitle = string.Empty;
+        _content = string.Empty;
+        lastSavedTitle = string.Empty;
+        lastSavedContent = string.Empty;
+        showRetractReview = false;
+        await JS.InvokeVoidAsync("localStorage.removeItem", DraftKey);
+        UpdateDirty();
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task SaveLocalDraftAsync()
