@@ -79,6 +79,7 @@ public partial class Edit
             postId = item.PostId;
             postTitle = item.Title ?? string.Empty;
             _content = item.Content ?? string.Empty;
+            Console.WriteLine($"[TryLoadDraftAsync] loaded draft title length={postTitle.Length}, content length={_content.Length}");
             lastSavedTitle = postTitle;
             lastSavedContent = _content;
             if (postId != null && !posts.Any(p => p.Id == postId))
@@ -114,6 +115,7 @@ public partial class Edit
             postId = id;
             postTitle = post.Title?.Raw ?? string.Empty;
             _content = post.Content?.Raw ?? string.Empty;
+            Console.WriteLine($"[LoadPostFromServerAsync] loaded title length={postTitle.Length}, content length={_content.Length}");
             lastSavedTitle = postTitle;
             lastSavedContent = _content;
             if (!posts.Any(p => p.Id == id))
@@ -163,6 +165,7 @@ public partial class Edit
                 postId = null;
                 postTitle = string.Empty;
                 _content = string.Empty;
+                Console.WriteLine("[OpenPost] cleared title and content");
                 lastSavedTitle = postTitle;
                 lastSavedContent = _content;
             }
