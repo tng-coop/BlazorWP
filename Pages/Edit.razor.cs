@@ -564,17 +564,36 @@ public partial class Edit : IAsyncDisposable
             return;
         }
 
-        var payload = new { status = newStatus };
         var url = CombineUrl(endpoint, $"/wp/v2/posts/{post.Id}");
 
         try
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-            var response = await Http.PostAsJsonAsync(url, payload, cancellationToken: cts.Token);
+            HttpResponseMessage response;
+
+            if (string.Equals(newStatus, "trash", StringComparison.OrdinalIgnoreCase))
+            {
+                response = await Http.DeleteAsync(url, cts.Token);
+            }
+            else
+            {
+                var payload = new { status = newStatus };
+                response = await Http.PostAsJsonAsync(url, payload, cancellationToken: cts.Token);
+            }
+
             if (response.IsSuccessStatusCode)
             {
-                status = $"Status changed to {newStatus}";
-                post.Status = newStatus;
+                if (string.Equals(newStatus, "trash", StringComparison.OrdinalIgnoreCase))
+                {
+                    status = "Post moved to trash";
+                    posts.Remove(post);
+                }
+                else
+                {
+                    status = $"Status changed to {newStatus}";
+                    post.Status = newStatus;
+                }
+                await InvokeAsync(StateHasChanged);
             }
             else
             {
