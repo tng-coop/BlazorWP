@@ -75,6 +75,7 @@ public partial class Edit
         else
         {
             Console.WriteLine("[OnAfterRenderAsync] subsequent render");
+            await JS.InvokeVoidAsync("setTinyEditorContent", _content);
         }
         await ObserveScrollAsync();
     }

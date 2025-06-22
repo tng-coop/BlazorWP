@@ -113,3 +113,9 @@ window.myTinyMceConfig = {
 window.setTinyMediaSource = function (url) {
   window.myTinyMceConfig.mediaSource = url || null;
 };
+
+window.setTinyEditorContent = function (html) {
+  if (window.tinymce && tinymce.get('articleEditor')) {
+    tinymce.get('articleEditor').setContent(html || '');
+  }
+};
