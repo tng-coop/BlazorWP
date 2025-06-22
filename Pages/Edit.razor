@@ -36,6 +36,10 @@
 <div class="d-flex align-items-center mb-2">
     <button class="btn btn-primary me-2" @onclick="SaveDraft">Save Draft</button>
     <button class="btn btn-secondary me-2" @onclick="SubmitForReview">Submit for Review</button>
+    @if (showRetractReview)
+    {
+        <button class="btn btn-warning me-2" @onclick="RetractReview">Retract Review</button>
+    }
     <span class="ms-auto"><strong>Status:</strong> @(isDirty ? "Dirty" : "Clean")</span>
 </div>
 
@@ -74,6 +78,7 @@ else
     private string lastSavedTitle = string.Empty;
     private string lastSavedContent = string.Empty;
     private bool isDirty = false;
+    private bool showRetractReview = false;
     private List<string> mediaSources = new();
     private string? selectedMediaSource;
     private List<PostSummary>? posts;
@@ -240,6 +245,7 @@ else
         lastSavedTitle = postTitle;
         lastSavedContent = _content;
         UpdateDirty();
+        showRetractReview = false;
     }
 
     private async Task SubmitForReview()
@@ -306,6 +312,46 @@ else
         lastSavedContent = _content;
         UpdateDirty();
         await LoadPosts();
+        showRetractReview = true;
+    }
+
+    private async Task RetractReview()
+    {
+        var endpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
+        if (string.IsNullOrEmpty(endpoint))
+        {
+            status = "No WordPress endpoint configured.";
+            return;
+        }
+
+        if (postId == null)
+        {
+            status = "No post to retract.";
+            return;
+        }
+
+        var payload = new { status = "draft" };
+        var url = CombineUrl(endpoint, $"/wp/v2/posts/{postId}");
+
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            var response = await Http.PostAsJsonAsync(url, payload, cancellationToken: cts.Token);
+            if (response.IsSuccessStatusCode)
+            {
+                status = "Review request retracted";
+                showRetractReview = false;
+                await LoadPosts();
+            }
+            else
+            {
+                status = $"Error: {response.StatusCode}";
+            }
+        }
+        catch (Exception ex)
+        {
+            status = $"Error: {ex.Message}";
+        }
     }
 
     private async Task SaveLocalDraftAsync()
@@ -357,6 +403,7 @@ else
             posts = new();
         }
 
+        showRetractReview = posts?.FirstOrDefault(p => p.Id == postId)?.Status == "pending";
         await InvokeAsync(StateHasChanged);
     }
 
