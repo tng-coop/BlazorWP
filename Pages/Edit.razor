@@ -67,7 +67,7 @@ else
                     <tr>
                         <td>@(p.Id > 0 ? p.Id.ToString() : "")</td>
                         <td>@p.Title</td>
-                        <td>@(p.Author > 0 ? p.Author.ToString() : "")</td>
+                    <td>@(string.IsNullOrEmpty(p.AuthorName) ? (p.Author > 0 ? p.Author.ToString() : "") : p.AuthorName)</td>
                         <td>@(p.Status == "pending" ? "Pending" : "")</td>
                     </tr>
                 }

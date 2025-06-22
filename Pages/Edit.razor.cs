@@ -39,7 +39,7 @@ public partial class Edit : IAsyncDisposable
                 var title = string.IsNullOrWhiteSpace(postTitle)
                     ? "(Not saved yet)"
                     : $"{postTitle} (not saved yet)";
-                list.Add(new PostSummary { Id = -1, Title = title, Author = 0 });
+                list.Add(new PostSummary { Id = -1, Title = title, Author = 0, AuthorName = string.Empty });
             }
             else
             {
@@ -75,6 +75,7 @@ public partial class Edit : IAsyncDisposable
         public int Id { get; set; }
         public string? Title { get; set; }
         public int Author { get; set; }
+        public string? AuthorName { get; set; }
         public string? Status { get; set; }
     }
 
@@ -337,7 +338,7 @@ public partial class Edit : IAsyncDisposable
             return;
         }
 
-        var url = CombineUrl(endpoint, $"/wp/v2/posts?context=edit&status=any&page={page}");
+        var url = CombineUrl(endpoint, $"/wp/v2/posts?context=edit&status=any&page={page}&_embed");
         try
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
@@ -353,7 +354,16 @@ public partial class Edit : IAsyncDisposable
                     var title = el.GetProperty("title").GetProperty("rendered").GetString();
                     var postStatus = el.TryGetProperty("status", out var st) ? st.GetString() : null;
                     var author = el.TryGetProperty("author", out var au) ? au.GetInt32() : 0;
-                    posts.Add(new PostSummary { Id = id, Title = title, Author = author, Status = postStatus });
+                    string? authorName = null;
+                    if (el.TryGetProperty("_embedded", out var emb) &&
+                        emb.TryGetProperty("author", out var authors) &&
+                        authors.ValueKind == JsonValueKind.Array &&
+                        authors.GetArrayLength() > 0)
+                    {
+                        var a = authors[0];
+                        authorName = a.TryGetProperty("name", out var nameEl) ? nameEl.GetString() : null;
+                    }
+                    posts.Add(new PostSummary { Id = id, Title = title, Author = author, AuthorName = authorName, Status = postStatus });
                     count++;
                 }
                 hasMore = count > 0;
