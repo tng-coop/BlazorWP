@@ -54,7 +54,7 @@ Similarly, a <select> dropdown can use @bind:after to run logic after a selectio
     private void OnStateChanged()
     {
         // SelectedState has been updated; use it here
-        Console.WriteLine($"User chose: {SelectedState}");
+        //Console.WriteLine($"User chose: {SelectedState}");
     }
 }
 ```

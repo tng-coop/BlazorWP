@@ -10,7 +10,7 @@ public partial class Edit
 {
     protected override async Task OnInitializedAsync()
     {
-        Console.WriteLine("[OnInitializedAsync] starting");
+        //Console.WriteLine("[OnInitializedAsync] starting");
         var draftsJson = await JS.InvokeAsync<string?>("localStorage.getItem", DraftsKey);
         if (!string.IsNullOrEmpty(draftsJson))
         {
@@ -56,14 +56,14 @@ public partial class Edit
             });
         }
         UpdateDirty();
-        Console.WriteLine("[OnInitializedAsync] completed");
+        //Console.WriteLine("[OnInitializedAsync] completed");
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            Console.WriteLine("[OnAfterRenderAsync] firstRender");
+            //Console.WriteLine("[OnAfterRenderAsync] firstRender");
             mediaSources = await JwtService.GetSiteInfoKeysAsync();
             selectedMediaSource = await JS.InvokeAsync<string?>("localStorage.getItem", "mediaSource");
             if (!string.IsNullOrEmpty(selectedMediaSource))
@@ -74,7 +74,7 @@ public partial class Edit
         }
         else
         {
-            Console.WriteLine("[OnAfterRenderAsync] subsequent render");
+            //Console.WriteLine("[OnAfterRenderAsync] subsequent render");
             await JS.InvokeVoidAsync("setTinyEditorContent", _content);
         }
         await ObserveScrollAsync();
@@ -87,18 +87,18 @@ public partial class Edit
         {
             client = null;
             baseUrl = null;
-            Console.WriteLine("[SetupWordPressClientAsync] no endpoint configured");
+            //Console.WriteLine("[SetupWordPressClientAsync] no endpoint configured");
             return;
         }
 
         baseUrl = endpoint.TrimEnd('/') + "/wp-json/";
-        Console.WriteLine($"[SetupWordPressClientAsync] baseUrl={baseUrl}");
+        //Console.WriteLine($"[SetupWordPressClientAsync] baseUrl={baseUrl}");
         client = new WordPressClient(baseUrl);
         var token = await JwtService.GetCurrentJwtAsync();
         if (!string.IsNullOrEmpty(token))
         {
             client.Auth.SetJWToken(token);
-            Console.WriteLine("[SetupWordPressClientAsync] token configured");
+            //Console.WriteLine("[SetupWordPressClientAsync] token configured");
         }
     }
 }

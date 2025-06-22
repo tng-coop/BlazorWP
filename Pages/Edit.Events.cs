@@ -18,26 +18,26 @@ public partial class Edit
         {
             await JS.InvokeVoidAsync("localStorage.setItem", "mediaSource", selectedMediaSource);
         }
-        Console.WriteLine($"[OnMediaSourceChanged] source='{selectedMediaSource}'");
+        //Console.WriteLine($"[OnMediaSourceChanged] source='{selectedMediaSource}'");
         await JS.InvokeVoidAsync("setTinyMediaSource", selectedMediaSource);
     }
 
     private void OnTitleChanged()
     {
-        Console.WriteLine($"[OnTitleChanged] length={postTitle.Length}");
+        //Console.WriteLine($"[OnTitleChanged] length={postTitle.Length}");
         UpdateDirty();
     }
 
     private void OnContentChanged()
     {
-        Console.WriteLine($"[OnContentChanged] length={_content.Length}");
+        //Console.WriteLine($"[OnContentChanged] length={_content.Length}");
         UpdateDirty();
     }
 
     private void UpdateDirty()
     {
         isDirty = postTitle != lastSavedTitle || _content != lastSavedContent;
-        Console.WriteLine($"[UpdateDirty] isDirty={isDirty}");
+        //Console.WriteLine($"[UpdateDirty] isDirty={isDirty}");
     }
 
     private void ToggleControls()

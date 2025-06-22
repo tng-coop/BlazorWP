@@ -10,7 +10,7 @@ public partial class Edit
 {
     private async Task LoadPosts(int page = 1, bool append = false)
     {
-        Console.WriteLine($"[LoadPosts] page={page}, append={append}");
+        //Console.WriteLine($"[LoadPosts] page={page}, append={append}");
         if (page == 1 && !append)
         {
             posts.Clear();
@@ -46,12 +46,12 @@ public partial class Edit
                 });
                 count++;
             }
-            Console.WriteLine($"[LoadPosts] loaded {count} posts");
+            //Console.WriteLine($"[LoadPosts] loaded {count} posts");
             hasMore = count > 0;
         }
         catch
         {
-            Console.WriteLine("[LoadPosts] error fetching posts");
+            //Console.WriteLine("[LoadPosts] error fetching posts");
             hasMore = false;
         }
 
@@ -70,16 +70,16 @@ public partial class Edit
 
     private async Task<bool> TryLoadDraftAsync(int? id)
     {
-        Console.WriteLine($"[TryLoadDraftAsync] id={id}");
+        //Console.WriteLine($"[TryLoadDraftAsync] id={id}");
         var list = await LoadDraftStatesAsync();
         var item = list.FirstOrDefault(d => d.PostId == id);
         if (item != null)
         {
-            Console.WriteLine("[TryLoadDraftAsync] draft found");
+            //Console.WriteLine("[TryLoadDraftAsync] draft found");
             postId = item.PostId;
             postTitle = item.Title ?? string.Empty;
             _content = item.Content ?? string.Empty;
-            Console.WriteLine($"[TryLoadDraftAsync] loaded draft title length={postTitle.Length}, content length={_content.Length}");
+            //Console.WriteLine($"[TryLoadDraftAsync] loaded draft title length={postTitle.Length}, content length={_content.Length}");
             lastSavedTitle = postTitle;
             lastSavedContent = _content;
             if (postId != null && !posts.Any(p => p.Id == postId))
@@ -96,13 +96,13 @@ public partial class Edit
             }
             return true;
         }
-        Console.WriteLine("[TryLoadDraftAsync] no draft found");
+        //Console.WriteLine("[TryLoadDraftAsync] no draft found");
         return false;
     }
 
     private async Task LoadPostFromServerAsync(int id)
     {
-        Console.WriteLine($"[LoadPostFromServerAsync] id={id}");
+        //Console.WriteLine($"[LoadPostFromServerAsync] id={id}");
         if (client == null)
         {
             status = "No WordPress endpoint configured.";
@@ -113,9 +113,9 @@ public partial class Edit
         {
             var post = await client.Posts.GetByIDAsync(id, true, true);
             postId = id;
-            postTitle = post.Title?.Raw ?? string.Empty;
-            _content = post.Content?.Raw ?? string.Empty;
-            Console.WriteLine($"[LoadPostFromServerAsync] loaded title length={postTitle.Length}, content length={_content.Length}");
+            postTitle = post.Title?.Rendered ?? string.Empty;
+            _content = post.Content?.Rendered ?? string.Empty;
+            //Console.WriteLine($"[LoadPostFromServerAsync] loaded title length={postTitle.Length}, content length={_content.Length}");
             lastSavedTitle = postTitle;
             lastSavedContent = _content;
             if (!posts.Any(p => p.Id == id))
@@ -134,13 +134,13 @@ public partial class Edit
         catch (Exception ex)
         {
             status = $"Error: {ex.Message}";
-            Console.WriteLine($"[LoadPostFromServerAsync] exception: {ex.Message}");
+            //Console.WriteLine($"[LoadPostFromServerAsync] exception: {ex.Message}");
         }
     }
 
     private async Task OpenPost(PostSummary post)
     {
-        Console.WriteLine($"[OpenPost] click id={post.Id}, title={post.Title}");
+        //Console.WriteLine($"[OpenPost] click id={post.Id}, title={post.Title}");
         if (post.Id == postId)
         {
             return;
@@ -149,23 +149,23 @@ public partial class Edit
         if (isDirty)
         {
             await SaveLocalDraftAsync();
-            Console.WriteLine("[OpenPost] autosaved dirty draft");
+            //Console.WriteLine("[OpenPost] autosaved dirty draft");
         }
 
         if (!await TryLoadDraftAsync(post.Id))
         {
             if (post.Id > 0)
             {
-                Console.WriteLine("[OpenPost] loading from server");
+                //Console.WriteLine("[OpenPost] loading from server");
                 await LoadPostFromServerAsync(post.Id);
             }
             else
             {
-                Console.WriteLine("[OpenPost] new empty post");
+                //Console.WriteLine("[OpenPost] new empty post");
                 postId = null;
                 postTitle = string.Empty;
                 _content = string.Empty;
-                Console.WriteLine("[OpenPost] cleared title and content");
+                //Console.WriteLine("[OpenPost] cleared title and content");
                 lastSavedTitle = postTitle;
                 lastSavedContent = _content;
             }
@@ -173,13 +173,13 @@ public partial class Edit
 
         showRetractReview = post.Status == "pending";
         UpdateDirty();
-        Console.WriteLine($"[OpenPost] completed. postId={postId}");
+        //Console.WriteLine($"[OpenPost] completed. postId={postId}");
         await InvokeAsync(StateHasChanged);
     }
 
     private async Task RefreshPosts()
     {
-        Console.WriteLine("[RefreshPosts] refreshing");
+        //Console.WriteLine("[RefreshPosts] refreshing");
         currentPage = 1;
         hasMore = true;
         await DisconnectScrollAsync();

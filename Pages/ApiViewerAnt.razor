@@ -44,16 +44,16 @@ else
 
     private async Task ToggleFavorite(AntJsonNode node)
     {
-        Console.WriteLine($"[ToggleFavorite] Toggling {node.Path}");
+        //Console.WriteLine($"[ToggleFavorite] Toggling {node.Path}");
         var endpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
-        Console.WriteLine($"[ToggleFavorite] Endpoint: {endpoint}");
+        //Console.WriteLine($"[ToggleFavorite] Endpoint: {endpoint}");
         if (string.IsNullOrEmpty(endpoint))
         {
             return;
         }
 
         var json = await JS.InvokeAsync<string?>("localStorage.getItem", "favoriteApis");
-        Console.WriteLine($"[ToggleFavorite] Current JSON: {json}");
+        //Console.WriteLine($"[ToggleFavorite] Current JSON: {json}");
         Dictionary<string, List<string>> data;
         if (!string.IsNullOrEmpty(json))
         {
