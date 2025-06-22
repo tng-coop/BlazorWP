@@ -36,39 +36,28 @@ public partial class Edit : IAsyncDisposable
     {
         get
         {
-            var list = new List<PostSummary>();
+            IEnumerable<PostSummary> query = posts.OrderByDescending(p => p.Id);
+
+            if (!showTrashed)
+            {
+                query = query.Where(p => !string.Equals(p.Status, "trash", StringComparison.OrdinalIgnoreCase));
+            }
 
             if (postId == null)
             {
                 var title = string.IsNullOrWhiteSpace(postTitle)
                     ? "(Not saved yet)"
                     : $"{postTitle} (not saved yet)";
-                list.Add(new PostSummary { Id = -1, Title = title, Author = 0, AuthorName = string.Empty });
-            }
-            else
-            {
-                var current = posts.FirstOrDefault(p => p.Id == postId);
-                if (current != null)
-                {
-                    list.Add(current);
-                }
+                return new[] { new PostSummary { Id = -1, Title = title, Author = 0, AuthorName = string.Empty } }.Concat(query);
             }
 
-            foreach (var p in posts.OrderByDescending(p => p.Id))
-            {
-                if (postId != null && p.Id == postId)
-                {
-                    continue;
-                }
-                if (!showTrashed && string.Equals(p.Status, "trash", StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-                list.Add(p);
-            }
-
-            return list;
+            return query;
         }
+    }
+
+    private static bool IsSelected(PostSummary post, int? selectedId)
+    {
+        return selectedId == null ? post.Id == -1 : post.Id == selectedId;
     }
 
     private class DraftInfo
