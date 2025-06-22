@@ -22,6 +22,8 @@ public partial class Edit : IAsyncDisposable
     private int currentPage = 1;
     private bool isLoading = false;
     private string _content = "<p>Hello, world!</p>";
+    private bool canChangeStatus = false;
+    private readonly string[] availableStatuses = new[] { "draft", "pending", "publish", "private" };
 
     private IEnumerable<PostSummary> DisplayPosts
     {
@@ -101,6 +103,7 @@ public partial class Edit : IAsyncDisposable
         hasMore = true;
         await LoadPosts(currentPage);
         UpdateDirty();
+        await LoadUserRoles();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -113,6 +116,7 @@ public partial class Edit : IAsyncDisposable
             {
                 await JS.InvokeVoidAsync("setTinyMediaSource", selectedMediaSource);
             }
+            await LoadUserRoles();
             StateHasChanged();
         }
 
@@ -415,6 +419,48 @@ public partial class Edit : IAsyncDisposable
     private void UpdateDirty()
     {
         isDirty = postTitle != lastSavedTitle || _content != lastSavedContent;
+    }
+
+    private async Task ChangeStatus(PostSummary post, string newStatus)
+    {
+        if (post.Id <= 0) return;
+
+        var endpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
+        if (string.IsNullOrEmpty(endpoint))
+        {
+            status = "No WordPress endpoint configured.";
+            return;
+        }
+
+        var payload = new { status = newStatus };
+        var url = CombineUrl(endpoint, $"/wp/v2/posts/{post.Id}");
+
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            var response = await Http.PostAsJsonAsync(url, payload, cancellationToken: cts.Token);
+            if (response.IsSuccessStatusCode)
+            {
+                status = $"Status changed to {newStatus}";
+                post.Status = newStatus;
+            }
+            else
+            {
+                status = $"Error: {response.StatusCode}";
+            }
+        }
+        catch (Exception ex)
+        {
+            status = $"Error: {ex.Message}";
+        }
+    }
+
+    private async Task LoadUserRoles()
+    {
+        var roles = await JwtService.GetCurrentUserRolesAsync();
+        canChangeStatus = roles.Any(r =>
+            string.Equals(r, "administrator", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(r, "editor", StringComparison.OrdinalIgnoreCase));
     }
 
     private static string CombineUrl(string site, string path)
