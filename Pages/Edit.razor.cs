@@ -24,7 +24,7 @@ public partial class Edit : IAsyncDisposable
     private string _content = "<p>Hello, world!</p>";
     private bool showControls = true;
     private bool showTable = true;
-    private readonly string[] availableStatuses = new[] { "draft", "pending", "publish", "private" };
+    private readonly string[] availableStatuses = new[] { "draft", "pending", "publish", "private", "trash" };
 
     private IEnumerable<PostSummary> DisplayPosts
     {
@@ -76,6 +76,7 @@ public partial class Edit : IAsyncDisposable
         public int Author { get; set; }
         public string? AuthorName { get; set; }
         public string? Status { get; set; }
+        public DateTime? Date { get; set; }
     }
 
     protected override async Task OnInitializedAsync()
@@ -390,7 +391,15 @@ public partial class Edit : IAsyncDisposable
                         var a = authors[0];
                         authorName = a.TryGetProperty("name", out var nameEl) ? nameEl.GetString() : null;
                     }
-                    posts.Add(new PostSummary { Id = id, Title = title, Author = author, AuthorName = authorName, Status = postStatus });
+                    DateTime? postDate = null;
+                    if (el.TryGetProperty("date", out var dateEl) && dateEl.ValueKind == JsonValueKind.String)
+                    {
+                        if (DateTime.TryParse(dateEl.GetString(), out var dt))
+                        {
+                            postDate = dt;
+                        }
+                    }
+                    posts.Add(new PostSummary { Id = id, Title = title, Author = author, AuthorName = authorName, Status = postStatus, Date = postDate });
                     count++;
                 }
                 hasMore = count > 0;
@@ -586,6 +595,7 @@ public partial class Edit : IAsyncDisposable
             "pending" => "btn-outline-warning",
             "publish" => "btn-outline-success",
             "private" => "btn-outline-dark",
+            "trash" => "btn-outline-danger",
             _ => "btn-outline-secondary",
         };
     }
