@@ -1,6 +1,7 @@
 @page "/edit"
 @using TinyMCE.Blazor
 @using System.Text.Json
+@using System.Threading
 @inject HttpClient Http
 @inject IJSRuntime JS
 @inject JwtService JwtService
@@ -36,6 +37,35 @@
     <button class="btn btn-primary" @onclick="SaveDraft">Save Draft</button>
 </div>
 
+@if (posts == null)
+{
+    <p><em>Loading posts...</em></p>
+}
+else if (posts.Count == 0)
+{
+    <p>No posts found.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Title</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var p in posts)
+            {
+                <tr>
+                    <td>@p.Id</td>
+                    <td>@p.Title</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
 @code {
     private const string DraftKey = "currentDraft";
 
@@ -43,12 +73,19 @@
     private string postTitle = string.Empty;
     private List<string> mediaSources = new();
     private string? selectedMediaSource;
+    private List<PostSummary>? posts;
 
     private class DraftInfo
     {
         public int? PostId { get; set; }
         public string? Title { get; set; }
         public string? Content { get; set; }
+    }
+
+    private class PostSummary
+    {
+        public int Id { get; set; }
+        public string? Title { get; set; }
     }
 
     protected override async Task OnInitializedAsync()
@@ -71,6 +108,8 @@
                 // ignore deserialization errors
             }
         }
+
+        await LoadPosts();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -161,6 +200,45 @@
         };
         var json = JsonSerializer.Serialize(info);
         await JS.InvokeVoidAsync("localStorage.setItem", DraftKey, json);
+    }
+
+    private async Task LoadPosts()
+    {
+        posts = null;
+        var endpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
+        if (string.IsNullOrEmpty(endpoint))
+        {
+            return;
+        }
+
+        var url = CombineUrl(endpoint, "/wp/v2/posts");
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            var response = await Http.GetAsync(url, cts.Token);
+            if (response.IsSuccessStatusCode)
+            {
+                var json = await response.Content.ReadAsStringAsync(cts.Token);
+                posts = new();
+                using var doc = JsonDocument.Parse(json);
+                foreach (var el in doc.RootElement.EnumerateArray())
+                {
+                    var id = el.GetProperty("id").GetInt32();
+                    var title = el.GetProperty("title").GetProperty("rendered").GetString();
+                    posts.Add(new PostSummary { Id = id, Title = title });
+                }
+            }
+            else
+            {
+                posts = new();
+            }
+        }
+        catch
+        {
+            posts = new();
+        }
+
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task OnMediaSourceChanged(ChangeEventArgs e)
