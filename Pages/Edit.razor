@@ -79,7 +79,7 @@ else
                                     @foreach (var st in availableStatuses)
                                     {
                                         <li>
-                                            <a class="dropdown-item @(p.Status == st ? "active" : null)" href="#" @onclick="() => ChangeStatus(p, st)">@st</a>
+                                            <button type="button" class="dropdown-item @(p.Status == st ? "active" : null)" @onclick="() => ChangeStatus(p, st)">@st</button>
                                         </li>
                                     }
                                 </ul>
