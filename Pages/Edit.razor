@@ -11,45 +11,53 @@
 
 <h1>Edit</h1>
 
-@if (!string.IsNullOrEmpty(status))
-{
-    <p>@status</p>
-}
-
-<div class="mb-3">
-    <label class="form-label" for="postTitle">Title</label>
-    <input id="postTitle" class="form-control" @bind="postTitle" @oninput="TitleInput" />
+<div class="mb-2">
+    <button class="btn btn-sm btn-outline-secondary me-1" @onclick="ToggleControls">@(showControls ? "Hide Details" : "Show Details")</button>
+    <button class="btn btn-sm btn-outline-secondary me-1" @onclick="ToggleTable">@(showTable ? "Hide Posts" : "Show Posts")</button>
 </div>
-@if (mediaSources.Any())
+
+@if (showControls)
 {
+    @if (!string.IsNullOrEmpty(status))
+    {
+        <p>@status</p>
+    }
+
     <div class="mb-3">
-        <label class="form-label" for="mediaSource">Media Source</label>
-        <select id="mediaSource" class="form-select" value="@selectedMediaSource" @onchange="OnMediaSourceChanged">
-            <option value="">-- choose media site --</option>
-            @foreach (var site in mediaSources)
-            {
-                <option value="@site">@site</option>
-            }
-        </select>
+        <label class="form-label" for="postTitle">Title</label>
+        <input id="postTitle" class="form-control" @bind="postTitle" @oninput="TitleInput" />
+    </div>
+    @if (mediaSources.Any())
+    {
+        <div class="mb-3">
+            <label class="form-label" for="mediaSource">Media Source</label>
+            <select id="mediaSource" class="form-select" value="@selectedMediaSource" @onchange="OnMediaSourceChanged">
+                <option value="">-- choose media site --</option>
+                @foreach (var site in mediaSources)
+                {
+                    <option value="@site">@site</option>
+                }
+            </select>
+        </div>
+    }
+
+    <div class="d-flex align-items-center mb-2">
+        <button class="btn btn-primary me-2" @onclick="SaveDraft">Save Draft</button>
+        <button class="btn btn-secondary me-2" @onclick="SubmitForReview">Submit for Review</button>
+        @if (showRetractReview)
+        {
+            <button class="btn btn-warning me-2" @onclick="RetractReview">Retract Review</button>
+        }
+        <button class="btn btn-danger me-2" @onclick="CloseEditor">Close</button>
+        <span class="ms-auto"><strong>Status:</strong> @(isDirty ? "Dirty" : "Clean")</span>
     </div>
 }
-
-<div class="d-flex align-items-center mb-2">
-    <button class="btn btn-primary me-2" @onclick="SaveDraft">Save Draft</button>
-    <button class="btn btn-secondary me-2" @onclick="SubmitForReview">Submit for Review</button>
-    @if (showRetractReview)
-    {
-        <button class="btn btn-warning me-2" @onclick="RetractReview">Retract Review</button>
-    }
-    <button class="btn btn-danger me-2" @onclick="CloseEditor">Close</button>
-    <span class="ms-auto"><strong>Status:</strong> @(isDirty ? "Dirty" : "Clean")</span>
-</div>
 
 @if (posts == null)
 {
     <p><em>Loading posts...</em></p>
 }
-else
+else if (showTable)
 {
     <div class="table-scroll">
         <table class="table table-hover">
