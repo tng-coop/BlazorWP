@@ -147,6 +147,7 @@ public partial class Edit
 
     private async Task CloseEditor()
     {
+        var closedId = postId;
         postId = null;
         postTitle = string.Empty;
         _content = string.Empty;
@@ -154,8 +155,16 @@ public partial class Edit
         lastSavedContent = string.Empty;
         showRetractReview = false;
         var list = await LoadDraftStatesAsync();
-        list.RemoveAll(d => d.PostId == postId);
+        list.RemoveAll(d => d.PostId == closedId);
         await SaveDraftStatesAsync(list);
+        if (closedId != null)
+        {
+            var placeholder = posts.FirstOrDefault(p => p.Id == closedId && string.IsNullOrEmpty(p.Status));
+            if (placeholder != null)
+            {
+                posts.Remove(placeholder);
+            }
+        }
         UpdateDirty();
         await InvokeAsync(StateHasChanged);
     }

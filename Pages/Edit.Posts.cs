@@ -76,6 +76,18 @@ public partial class Edit
             _content = item.Content ?? string.Empty;
             lastSavedTitle = postTitle;
             lastSavedContent = _content;
+            if (postId != null && !posts.Any(p => p.Id == postId))
+            {
+                posts.Add(new PostSummary
+                {
+                    Id = postId.Value,
+                    Title = postTitle,
+                    Author = 0,
+                    AuthorName = string.Empty,
+                    Status = string.Empty,
+                    Date = null
+                });
+            }
             return true;
         }
         return false;
@@ -97,6 +109,18 @@ public partial class Edit
             _content = post.Content?.Raw ?? string.Empty;
             lastSavedTitle = postTitle;
             lastSavedContent = _content;
+            if (!posts.Any(p => p.Id == id))
+            {
+                posts.Add(new PostSummary
+                {
+                    Id = post.Id,
+                    Title = post.Title?.Rendered ?? postTitle,
+                    Author = post.Author,
+                    AuthorName = post.Embedded?.Author?.FirstOrDefault()?.Name ?? string.Empty,
+                    Status = post.Status.ToString().ToLowerInvariant(),
+                    Date = post.Date
+                });
+            }
         }
         catch (Exception ex)
         {
@@ -143,6 +167,10 @@ public partial class Edit
         hasMore = true;
         await DisconnectScrollAsync();
         await LoadPosts(currentPage);
+        if (postId != null && !posts.Any(p => p.Id == postId))
+        {
+            await LoadPostFromServerAsync(postId.Value);
+        }
         await ObserveScrollAsync();
     }
 }
