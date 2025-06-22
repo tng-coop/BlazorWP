@@ -22,7 +22,6 @@ public partial class Edit : IAsyncDisposable
     private int currentPage = 1;
     private bool isLoading = false;
     private string _content = "<p>Hello, world!</p>";
-    private bool canChangeStatus = false;
     private readonly string[] availableStatuses = new[] { "draft", "pending", "publish", "private" };
 
     private IEnumerable<PostSummary> DisplayPosts
@@ -103,7 +102,6 @@ public partial class Edit : IAsyncDisposable
         hasMore = true;
         await LoadPosts(currentPage);
         UpdateDirty();
-        await LoadUserRoles();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -116,7 +114,6 @@ public partial class Edit : IAsyncDisposable
             {
                 await JS.InvokeVoidAsync("setTinyMediaSource", selectedMediaSource);
             }
-            await LoadUserRoles();
             StateHasChanged();
         }
 
@@ -455,13 +452,6 @@ public partial class Edit : IAsyncDisposable
         }
     }
 
-    private async Task LoadUserRoles()
-    {
-        var roles = await JwtService.GetCurrentUserRolesAsync();
-        canChangeStatus = roles.Any(r =>
-            string.Equals(r, "administrator", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(r, "editor", StringComparison.OrdinalIgnoreCase));
-    }
 
     private static string CombineUrl(string site, string path)
     {
