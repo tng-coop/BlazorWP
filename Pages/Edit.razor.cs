@@ -378,7 +378,7 @@ public partial class Edit : IAsyncDisposable
             return;
         }
 
-        var url = CombineUrl(endpoint, $"/wp/v2/posts?context=edit&status=any&page={page}&_embed");
+        var url = CombineUrl(endpoint, $"/wp/v2/posts?context=edit&status=any&page={page}&per_page=100&_embed");
         try
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
