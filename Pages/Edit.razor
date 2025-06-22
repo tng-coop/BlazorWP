@@ -51,33 +51,28 @@
 }
 else
 {
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Id</th>
-                <th>Title</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var p in DisplayPosts)
-            {
+    <div class="table-scroll">
+        <table class="table">
+            <thead>
                 <tr>
-                    <td>@(p.Id > 0 ? p.Id.ToString() : "")</td>
-                    <td>@p.Title</td>
-                    <td>@(p.Status == "pending" ? "Pending" : "")</td>
+                    <th>Id</th>
+                    <th>Title</th>
+                    <th>Status</th>
                 </tr>
-            }
-            @if (hasMore)
-            {
-                <tr>
-                    <td colspan="3">
-                        <div style="height:1px" @ref="bottomSentinel"></div>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach (var p in DisplayPosts)
+                {
+                    <tr>
+                        <td>@(p.Id > 0 ? p.Id.ToString() : "")</td>
+                        <td>@p.Title</td>
+                        <td>@(p.Status == "pending" ? "Pending" : "")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <button class="btn btn-outline-primary w-100 mt-2" @onclick="PullMore" disabled="@(!hasMore)">Pull more</button>
 }
 
 @code {
@@ -95,8 +90,6 @@ else
     private bool hasMore = true;
     private int currentPage = 1;
     private bool isLoading = false;
-    private ElementReference bottomSentinel;
-    private DotNetObjectReference<Edit>? objRef;
 
     private IEnumerable<PostSummary> DisplayPosts
     {
@@ -189,11 +182,6 @@ else
             StateHasChanged();
         }
 
-        if (hasMore && objRef == null)
-        {
-            objRef = DotNetObjectReference.Create(this);
-            await JS.InvokeVoidAsync("infiniteScroll.observe", bottomSentinel, objRef);
-        }
     }
 
     private int? postId;
@@ -445,19 +433,12 @@ else
         await InvokeAsync(StateHasChanged);
     }
 
-    [JSInvokable]
-    public async Task OnIntersection()
+    private async Task PullMore()
     {
         if (isLoading || !hasMore) return;
         isLoading = true;
         currentPage++;
         await LoadPosts(currentPage, append: true);
-        if (!hasMore && objRef != null)
-        {
-            await JS.InvokeVoidAsync("infiniteScroll.disconnect");
-            objRef.Dispose();
-            objRef = null;
-        }
         isLoading = false;
     }
 
@@ -554,14 +535,9 @@ else
         return path;
     }
 
-    public async ValueTask DisposeAsync()
+    public ValueTask DisposeAsync()
     {
-        if (objRef != null)
-        {
-            await JS.InvokeVoidAsync("infiniteScroll.disconnect");
-            objRef.Dispose();
-            objRef = null;
-        }
+        return ValueTask.CompletedTask;
     }
 }
 
