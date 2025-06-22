@@ -26,13 +26,13 @@
 
     <div class="mb-3">
         <label class="form-label" for="postTitle">Title</label>
-        <input id="postTitle" class="form-control" @bind="postTitle" @oninput="TitleInput" />
+        <input id="postTitle" class="form-control" @bind="postTitle" @bind:event="oninput" @bind:after="OnTitleChanged" />
     </div>
     @if (mediaSources.Any())
     {
         <div class="mb-3">
             <label class="form-label" for="mediaSource">Media Source</label>
-            <select id="mediaSource" class="form-select" value="@selectedMediaSource" @onchange="OnMediaSourceChanged">
+            <select id="mediaSource" class="form-select" @bind="selectedMediaSource" @bind:after="OnMediaSourceChanged">
                 <option value="">-- choose media site --</option>
                 @foreach (var site in mediaSources)
                 {
@@ -61,7 +61,7 @@
 else if (showTable)
 {
     <div class="form-check form-switch mb-2">
-        <input class="form-check-input" type="checkbox" id="showTrashedToggle" @bind="showTrashed" @onchange="ShowTrashedChanged" />
+        <input class="form-check-input" type="checkbox" id="showTrashedToggle" @bind="showTrashed" @bind:after="OnShowTrashedChanged" />
         <label class="form-check-label" for="showTrashedToggle">Include trashed articles</label>
     </div>
     <div class="table-scroll">
@@ -114,5 +114,5 @@ else if (showTable)
 
 
 
-<TinyMCEEditor @bind-Value="_content" OnContentChanged="ContentChanged" />
+<TinyMCEEditor @bind-Value="_content" @bind-Value:after="OnContentChanged" />
 
