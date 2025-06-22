@@ -41,9 +41,17 @@ public partial class Edit
         showControls = !showControls;
     }
 
-    private void ToggleTable()
+    private async Task ToggleTable()
     {
         showTable = !showTable;
+        if (showTable)
+        {
+            await ObserveScrollAsync();
+        }
+        else
+        {
+            await DisconnectScrollAsync();
+        }
     }
 
     private async Task OnShowTrashedChanged()
