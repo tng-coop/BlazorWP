@@ -27,6 +27,7 @@ public partial class Edit : IAsyncDisposable
     private bool showControls = true;
     private bool showTable = true;
     private bool showTrashed = false;
+    private bool isEditing = false;
     private readonly string[] availableStatuses = new[] { "draft", "pending", "publish", "private", "trash" };
     private WordPressClient? client;
     private string? baseUrl;

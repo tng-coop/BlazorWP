@@ -138,7 +138,7 @@ public partial class Edit
         }
     }
 
-    private async Task OpenPost(PostSummary post)
+    private async Task OpenPost(PostSummary post, bool edit = false)
     {
         //Console.WriteLine($"[OpenPost] click id={post.Id}, title={post.Title}");
         if (post.Id == postId)
@@ -169,7 +169,13 @@ public partial class Edit
         showRetractReview = post.Status == "pending";
         UpdateDirty();
         //Console.WriteLine($"[OpenPost] completed. postId={postId}");
+        isEditing = edit;
         await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task EditPost(PostSummary post)
+    {
+        await OpenPost(post, true);
     }
 
     private async Task RefreshPosts()
