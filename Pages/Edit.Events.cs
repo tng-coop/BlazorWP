@@ -96,6 +96,32 @@ public partial class Edit
         }
     }
 
+    private async Task NewPost()
+    {
+        if (postId != null)
+        {
+            if (isDirty)
+            {
+                await SaveLocalDraftAsync();
+            }
+        }
+        else
+        {
+            var list = await LoadDraftStatesAsync();
+            list.RemoveAll(d => d.PostId == null);
+            await SaveDraftStatesAsync(list);
+        }
+
+        if (!await TryLoadDraftAsync(null))
+        {
+            ResetEditorState();
+        }
+
+        showRetractReview = false;
+        UpdateDirty();
+        await InvokeAsync(StateHasChanged);
+    }
+
     private static string GetStatusButtonClass(string? status)
     {
         return status switch
