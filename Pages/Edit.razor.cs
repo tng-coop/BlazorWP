@@ -77,6 +77,7 @@ public partial class Edit : IAsyncDisposable
         public string? AuthorName { get; set; }
         public string? Status { get; set; }
         public DateTime? Date { get; set; }
+        public string? Content { get; set; }
     }
 
 
