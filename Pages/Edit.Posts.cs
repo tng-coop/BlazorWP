@@ -42,7 +42,8 @@ public partial class Edit
                     Author = p.Author,
                     AuthorName = p.Embedded?.Author?.FirstOrDefault()?.Name,
                     Status = p.Status.ToString().ToLowerInvariant(),
-                    Date = p.Date
+                    Date = p.Date,
+                    Content = p.Content?.Rendered
                 });
                 count++;
             }
@@ -91,7 +92,8 @@ public partial class Edit
                     Author = 0,
                     AuthorName = string.Empty,
                     Status = string.Empty,
-                    Date = null
+                    Date = null,
+                    Content = _content
                 });
             }
             return true;
@@ -118,7 +120,8 @@ public partial class Edit
             //Console.WriteLine($"[LoadPostFromServerAsync] loaded title length={postTitle.Length}, content length={_content.Length}");
             lastSavedTitle = postTitle;
             lastSavedContent = _content;
-            if (!posts.Any(p => p.Id == id))
+            var existing = posts.FirstOrDefault(p => p.Id == id);
+            if (existing == null)
             {
                 posts.Add(new PostSummary
                 {
@@ -127,8 +130,18 @@ public partial class Edit
                     Author = post.Author,
                     AuthorName = post.Embedded?.Author?.FirstOrDefault()?.Name ?? string.Empty,
                     Status = post.Status.ToString().ToLowerInvariant(),
-                    Date = post.Date
+                    Date = post.Date,
+                    Content = post.Content?.Rendered
                 });
+            }
+            else
+            {
+                existing.Title = post.Title?.Rendered ?? postTitle;
+                existing.Author = post.Author;
+                existing.AuthorName = post.Embedded?.Author?.FirstOrDefault()?.Name ?? string.Empty;
+                existing.Status = post.Status.ToString().ToLowerInvariant();
+                existing.Date = post.Date;
+                existing.Content = post.Content?.Rendered;
             }
         }
         catch (Exception ex)
@@ -138,11 +151,12 @@ public partial class Edit
         }
     }
 
-    private async Task OpenPost(PostSummary post, bool edit = false)
+    private async Task OpenPost(PostSummary post, bool edit = false, bool forceReload = false)
     {
         //Console.WriteLine($"[OpenPost] click id={post.Id}, title={post.Title}");
-        if (post.Id == postId)
+        if (post.Id == postId && !forceReload)
         {
+            isEditing = edit;
             return;
         }
 
@@ -156,8 +170,19 @@ public partial class Edit
         {
             if (post.Id > 0)
             {
-                //Console.WriteLine("[OpenPost] loading from server");
-                await LoadPostFromServerAsync(post.Id);
+                if (!forceReload && !string.IsNullOrEmpty(post.Content))
+                {
+                    postId = post.Id;
+                    postTitle = post.Title ?? string.Empty;
+                    _content = post.Content;
+                    lastSavedTitle = postTitle;
+                    lastSavedContent = _content;
+                }
+                else
+                {
+                    //Console.WriteLine("[OpenPost] loading from server");
+                    await LoadPostFromServerAsync(post.Id);
+                }
             }
             else
             {
@@ -175,7 +200,7 @@ public partial class Edit
 
     private async Task EditPost(PostSummary post)
     {
-        await OpenPost(post, true);
+        await OpenPost(post, true, true);
     }
 
     private async Task RefreshPosts()
