@@ -118,6 +118,7 @@ public partial class Edit
         }
 
         showRetractReview = false;
+        isEditing = true;
         UpdateDirty();
         await InvokeAsync(StateHasChanged);
     }
