@@ -124,7 +124,7 @@ else if (showTable)
 
 @if (isEditing)
 {
-    <TinyMCEEditor @ref="editorComp" ContentBlurred="OnEditorBlurred" FirstChange="OnContentDirty" />
+    <TinyMCEEditor @ref="editorComp" OnInit="HandleEditorReady" ContentBlurred="OnEditorBlurred" FirstChange="OnContentDirty" />
 }
 else
 {

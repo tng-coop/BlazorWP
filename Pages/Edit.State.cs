@@ -18,4 +18,14 @@ public partial class Edit
         showRetractReview = false;
         isEditing = false;
     }
+
+    private async Task SetEditorContentAsync(string html)
+    {
+        if (editorComp == null) return;
+        while (!editorComp.IsReady)
+        {
+            await Task.Delay(20);
+        }
+        await editorComp.SetContentAsync(html);
+    }
 }

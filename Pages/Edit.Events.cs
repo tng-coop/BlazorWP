@@ -33,6 +33,15 @@ public partial class Edit
         isDirty = true;
     }
 
+    private async Task HandleEditorReady()
+    {
+        editorReady = true;
+        if (editorComp != null)
+        {
+            await SetEditorContentAsync(_content);
+        }
+    }
+
     private async Task OnEditorBlurred(string html)
     {
         _content = html;
@@ -128,7 +137,7 @@ public partial class Edit
             ResetEditorState();
             if (editorComp != null)
             {
-                await editorComp.SetContentAsync(_content);
+                await SetEditorContentAsync(_content);
             }
         }
 
