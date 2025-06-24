@@ -2,6 +2,7 @@
 @page "/edit-demo"
 @using TinyMCE.Blazor
 @inject IJSRuntime JS
+@implements IAsyncDisposable
 
 <PageTitle>Edit Demo</PageTitle>
 
@@ -52,6 +53,14 @@
   private string docB = string.Empty;
   private string docC = string.Empty;
 
+  private const string KeyDocA = "editDemoDocA";
+  private const string KeyDocB = "editDemoDocB";
+  private const string KeyDocC = "editDemoDocC";
+
+  private DateTime lastSaveTime = DateTime.UtcNow;
+  private bool saveScheduled = false;
+  private CancellationTokenSource? saveCts;
+
   // capture all events
   private List<string> eventLog = new();
   private string eventLogText => string.Join("\n", eventLog);
@@ -83,16 +92,20 @@
 
   private void OnContentChanged() {
     SaveCurrent();
+    ScheduleSave();
   }
 
   protected override async Task OnAfterRenderAsync(bool firstRender) {
     if (firstRender) {
+      await LoadFromLocalStorageAsync();
+      currentText = GetCurrent();
       var module = await JS.InvokeAsync<IJSObjectReference>(
         "import", "./js/tinyMceHelper.js");
       await module.InvokeVoidAsync(
         "registerDotNetHelper",
         DotNetObjectReference.Create(this)
       );
+      StateHasChanged();
     }
   }
 
@@ -111,4 +124,54 @@
 
   [JSInvokable]
   public Task OnEditorDirty()   => LogEvent("editorDirty: first change");
+
+  private void ScheduleSave()
+  {
+    if (saveScheduled)
+    {
+      return;
+    }
+
+    var sinceLast = DateTime.UtcNow - lastSaveTime;
+    var delay = sinceLast >= TimeSpan.FromSeconds(7)
+        ? TimeSpan.Zero
+        : TimeSpan.FromSeconds(7) - sinceLast;
+
+    saveScheduled = true;
+    saveCts = new CancellationTokenSource();
+    _ = Task.Run(async () =>
+    {
+      try
+      {
+        await Task.Delay(delay, saveCts.Token);
+        await InvokeAsync(SaveToLocalStorageAsync);
+        lastSaveTime = DateTime.UtcNow;
+      }
+      catch (TaskCanceledException) { }
+      finally
+      {
+        saveScheduled = false;
+      }
+    });
+  }
+
+  private async Task SaveToLocalStorageAsync()
+  {
+    await JS.InvokeVoidAsync("localStorage.setItem", KeyDocA, docA);
+    await JS.InvokeVoidAsync("localStorage.setItem", KeyDocB, docB);
+    await JS.InvokeVoidAsync("localStorage.setItem", KeyDocC, docC);
+  }
+
+  private async Task LoadFromLocalStorageAsync()
+  {
+    docA = await JS.InvokeAsync<string?>("localStorage.getItem", KeyDocA) ?? string.Empty;
+    docB = await JS.InvokeAsync<string?>("localStorage.getItem", KeyDocB) ?? string.Empty;
+    docC = await JS.InvokeAsync<string?>("localStorage.getItem", KeyDocC) ?? string.Empty;
+  }
+
+  public ValueTask DisposeAsync()
+  {
+    saveCts?.Cancel();
+    return ValueTask.CompletedTask;
+  }
 }
