@@ -1,0 +1,4 @@
+.drag-tree-demo .pdtreenode_header > i.fa-plus-square,
+.drag-tree-demo .pdtreenode_header > i.fa-minus-square {
+    color: transparent;
+}
