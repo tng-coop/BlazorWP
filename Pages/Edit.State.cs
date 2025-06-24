@@ -17,5 +17,6 @@ public partial class Edit
         lastSavedContent = string.Empty;
         showRetractReview = false;
         isEditing = false;
+        pendingEditorContent = true;
     }
 }

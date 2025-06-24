@@ -83,10 +83,7 @@ public partial class Edit
             //Console.WriteLine($"[TryLoadDraftAsync] loaded draft title length={postTitle.Length}, content length={_content.Length}");
             lastSavedTitle = postTitle;
             lastSavedContent = _content;
-            if (editorComp != null)
-            {
-                await editorComp.SetContentAsync(_content);
-            }
+            await EnsureEditorContentAsync();
             if (postId != null && !posts.Any(p => p.Id == postId))
             {
                 posts.Add(new PostSummary
@@ -124,10 +121,7 @@ public partial class Edit
             //Console.WriteLine($"[LoadPostFromServerAsync] loaded title length={postTitle.Length}, content length={_content.Length}");
             lastSavedTitle = postTitle;
             lastSavedContent = _content;
-            if (editorComp != null)
-            {
-                await editorComp.SetContentAsync(_content);
-            }
+            await EnsureEditorContentAsync();
             var existing = posts.FirstOrDefault(p => p.Id == id);
             if (existing == null)
             {
@@ -200,10 +194,7 @@ public partial class Edit
             {
                 //Console.WriteLine("[OpenPost] new empty post");
                 ResetEditorState();
-                if (editorComp != null)
-                {
-                    await editorComp.SetContentAsync(_content);
-                }
+                await EnsureEditorContentAsync();
             }
         }
 

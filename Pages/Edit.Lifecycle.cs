@@ -62,6 +62,7 @@ public partial class Edit
             });
         }
         UpdateDirty();
+        await EnsureEditorContentAsync();
         //Console.WriteLine("[OnInitializedAsync] completed");
     }
 
@@ -76,12 +77,18 @@ public partial class Edit
             {
                 await JS.InvokeVoidAsync("setTinyMediaSource", selectedMediaSource);
             }
-            if (editorComp != null)
-            {
-                await editorComp.SetContentAsync(_content);
-            }
+        }
+
+        if (pendingEditorContent)
+        {
+            await EnsureEditorContentAsync();
+        }
+
+        if (firstRender)
+        {
             StateHasChanged();
         }
+
         await ObserveScrollAsync();
     }
 

@@ -126,10 +126,7 @@ public partial class Edit
         if (!await TryLoadDraftAsync(null))
         {
             ResetEditorState();
-            if (editorComp != null)
-            {
-                await editorComp.SetContentAsync(_content);
-            }
+            await EnsureEditorContentAsync();
         }
 
         showRetractReview = false;
