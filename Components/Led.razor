@@ -1,0 +1,6 @@
+<div class="led @(IsOn ? "on" : "off")"></div>
+
+@code {
+    [Parameter]
+    public bool IsOn { get; set; }
+}

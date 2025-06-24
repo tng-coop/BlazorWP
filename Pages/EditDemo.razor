@@ -1,9 +1,15 @@
 @page "/edit-demo"
 @using TinyMCE.Blazor
+@using System.Threading
 
 <PageTitle>Edit Demo</PageTitle>
 
 <h1>Edit Demo</h1>
+
+<div class="mb-2">
+    <Led IsOn="@keyLedOn" />
+    <Led IsOn="@intervalLedOn" />
+</div>
 
 <div class="mb-3">
     <button class="btn btn-primary me-1" @onclick="() => SelectDoc(Doc.A)">Document A</button>
@@ -16,6 +22,7 @@
         LicenseKey="gpl"
         JsConfSrc="myTinyMceConfig"
         @bind-Value="currentText"
+        @bind-Value:event="oninput"
         @bind-Value:after="OnContentChanged" />
 
 <div class="row mt-3">
@@ -41,10 +48,14 @@
     private string docA = string.Empty;
     private string docB = string.Empty;
     private string docC = string.Empty;
+    private bool keyLedOn;
+    private bool intervalLedOn;
+    private PeriodicTimer? flashTimer;
 
     protected override void OnInitialized()
     {
         currentText = docA;
+        _ = StartIntervalFlashAsync();
     }
 
     private void SelectDoc(Doc doc)
@@ -78,8 +89,36 @@
         _ => string.Empty
     };
 
-    private void OnContentChanged()
+    private async Task OnContentChanged()
     {
         SaveCurrent();
+        await FlashKeyLedAsync();
+    }
+
+    private async Task FlashKeyLedAsync()
+    {
+        keyLedOn = true;
+        StateHasChanged();
+        await Task.Delay(150);
+        keyLedOn = false;
+        StateHasChanged();
+    }
+
+    private async Task FlashIntervalLedAsync()
+    {
+        intervalLedOn = true;
+        await InvokeAsync(StateHasChanged);
+        await Task.Delay(150);
+        intervalLedOn = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task StartIntervalFlashAsync()
+    {
+        flashTimer = new PeriodicTimer(TimeSpan.FromSeconds(5));
+        while (await flashTimer.WaitForNextTickAsync())
+        {
+            await FlashIntervalLedAsync();
+        }
     }
 }
