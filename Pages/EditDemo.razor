@@ -1,5 +1,5 @@
 @page "/edit-demo"
-@using TinyMCE.Blazor
+@using BlazorWP.Components
 
 <PageTitle>Edit Demo</PageTitle>
 
@@ -11,13 +11,10 @@
     <button class="btn btn-primary" @onclick="() => SelectDoc(Doc.C)">Document C</button>
 </div>
 
-<Editor Id="demoEditor"
-        ScriptSrc="libman/tinymce/tinymce.min.js"
-        LicenseKey="gpl"
-        JsConfSrc="myTinyMceConfig"
-        @bind-Value="currentText"
-        @bind-Value:after="OnContentChanged"
-        EventReceived="LogEvent" />
+<TinyMCEEditor @ref="editorComp"
+               OnInit="HandleEditorReady"
+               ContentBlurred="OnEditorBlurred"
+               EventReceived="LogEvent" />
 
 <div class="row mt-3">
     <div class="col">
@@ -42,6 +39,7 @@
     private enum Doc { A, B, C }
     private Doc currentDoc = Doc.A;
 
+    private TinyMCEEditor? editorComp;
     private string currentText = string.Empty;
     private string docA = string.Empty;
     private string docB = string.Empty;
@@ -53,11 +51,15 @@
         currentText = docA;
     }
 
-    private void SelectDoc(Doc doc)
+    private async Task SelectDoc(Doc doc)
     {
         SaveCurrent();
         currentDoc = doc;
         currentText = GetCurrent();
+        if (editorComp != null)
+        {
+            await editorComp.SetContentAsync(currentText);
+        }
     }
 
     private void SaveCurrent()
@@ -84,8 +86,18 @@
         _ => string.Empty
     };
 
-    private void OnContentChanged()
+
+    private async Task HandleEditorReady()
     {
+        if (editorComp != null)
+        {
+            await editorComp.SetContentAsync(currentText);
+        }
+    }
+
+    private async Task OnEditorBlurred(string html)
+    {
+        currentText = html;
         SaveCurrent();
     }
 
