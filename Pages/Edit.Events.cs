@@ -28,9 +28,16 @@ public partial class Edit
         UpdateDirty();
     }
 
-    private void OnContentChanged()
+    private void OnContentDirty()
     {
-        //Console.WriteLine($"[OnContentChanged] length={_content.Length}");
+        isDirty = true;
+    }
+
+    private async Task OnEditorBlurred(string html)
+    {
+        _content = html;
+        await SaveLocalDraftAsync();
+        lastSavedContent = _content;
         UpdateDirty();
     }
 
@@ -102,6 +109,10 @@ public partial class Edit
         {
             if (isDirty)
             {
+                if (editorComp != null)
+                {
+                    _content = await editorComp.GetContentAsync();
+                }
                 await SaveLocalDraftAsync();
             }
         }
@@ -115,6 +126,10 @@ public partial class Edit
         if (!await TryLoadDraftAsync(null))
         {
             ResetEditorState();
+            if (editorComp != null)
+            {
+                await editorComp.SetContentAsync(_content);
+            }
         }
 
         showRetractReview = false;

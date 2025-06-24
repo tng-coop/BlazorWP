@@ -11,6 +11,11 @@ public partial class Edit
     private async Task SaveDraft()
     {
         //Console.WriteLine("[SaveDraft] starting");
+        if (editorComp != null)
+        {
+            _content = await editorComp.GetContentAsync();
+        }
+
         if (client == null)
         {
             status = "No WordPress endpoint configured.";
@@ -65,6 +70,10 @@ public partial class Edit
     private async Task SubmitForReview()
     {
         //Console.WriteLine("[SubmitForReview] starting");
+        if (editorComp != null)
+        {
+            _content = await editorComp.GetContentAsync();
+        }
         if (client == null)
         {
             status = "No WordPress endpoint configured.";
@@ -156,6 +165,10 @@ public partial class Edit
         //Console.WriteLine("[CloseEditor] starting");
         var closedId = postId;
         ResetEditorState();
+        if (editorComp != null)
+        {
+            await editorComp.SetContentAsync(_content);
+        }
         var list = await LoadDraftStatesAsync();
         list.RemoveAll(d => d.PostId == closedId);
         await SaveDraftStatesAsync(list);
