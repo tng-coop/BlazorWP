@@ -16,6 +16,11 @@
     [Parameter]
     public EventCallback FirstChange { get; set; }
 
+    [Parameter]
+    public EventCallback OnInit { get; set; }
+
+    public bool IsReady { get; private set; }
+
     private DotNetObjectReference<TinyMCEEditor>? _objRef;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -24,6 +29,8 @@
         {
             _objRef = DotNetObjectReference.Create(this);
             await JS.InvokeVoidAsync("registerTinyEditorCallbacks", _objRef);
+            IsReady = true;
+            await OnInit.InvokeAsync();
         }
     }
 

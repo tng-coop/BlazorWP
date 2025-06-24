@@ -85,7 +85,7 @@ public partial class Edit
             lastSavedContent = _content;
             if (editorComp != null)
             {
-                await editorComp.SetContentAsync(_content);
+                await SetEditorContentAsync(_content);
             }
             if (postId != null && !posts.Any(p => p.Id == postId))
             {
@@ -126,7 +126,7 @@ public partial class Edit
             lastSavedContent = _content;
             if (editorComp != null)
             {
-                await editorComp.SetContentAsync(_content);
+                await SetEditorContentAsync(_content);
             }
             var existing = posts.FirstOrDefault(p => p.Id == id);
             if (existing == null)
@@ -202,7 +202,7 @@ public partial class Edit
                 ResetEditorState();
                 if (editorComp != null)
                 {
-                    await editorComp.SetContentAsync(_content);
+                    await SetEditorContentAsync(_content);
                 }
             }
         }

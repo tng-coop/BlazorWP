@@ -167,7 +167,7 @@ public partial class Edit
         ResetEditorState();
         if (editorComp != null)
         {
-            await editorComp.SetContentAsync(_content);
+            await SetEditorContentAsync(_content);
         }
         var list = await LoadDraftStatesAsync();
         list.RemoveAll(d => d.PostId == closedId);
