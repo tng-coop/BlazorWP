@@ -83,6 +83,10 @@ public partial class Edit
             //Console.WriteLine($"[TryLoadDraftAsync] loaded draft title length={postTitle.Length}, content length={_content.Length}");
             lastSavedTitle = postTitle;
             lastSavedContent = _content;
+            if (editorComp != null)
+            {
+                await editorComp.SetContentAsync(_content);
+            }
             if (postId != null && !posts.Any(p => p.Id == postId))
             {
                 posts.Add(new PostSummary
@@ -120,6 +124,10 @@ public partial class Edit
             //Console.WriteLine($"[LoadPostFromServerAsync] loaded title length={postTitle.Length}, content length={_content.Length}");
             lastSavedTitle = postTitle;
             lastSavedContent = _content;
+            if (editorComp != null)
+            {
+                await editorComp.SetContentAsync(_content);
+            }
             var existing = posts.FirstOrDefault(p => p.Id == id);
             if (existing == null)
             {
@@ -162,6 +170,10 @@ public partial class Edit
 
         if (isDirty)
         {
+            if (editorComp != null)
+            {
+                _content = await editorComp.GetContentAsync();
+            }
             await SaveLocalDraftAsync();
             //Console.WriteLine("[OpenPost] autosaved dirty draft");
         }
@@ -188,6 +200,10 @@ public partial class Edit
             {
                 //Console.WriteLine("[OpenPost] new empty post");
                 ResetEditorState();
+                if (editorComp != null)
+                {
+                    await editorComp.SetContentAsync(_content);
+                }
             }
         }
 

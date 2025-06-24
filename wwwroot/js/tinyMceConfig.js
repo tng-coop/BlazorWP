@@ -119,3 +119,24 @@ window.setTinyEditorContent = function (html) {
     tinymce.get('articleEditor').setContent(html || '');
   }
 };
+
+window.getTinyEditorContent = function () {
+  if (window.tinymce && tinymce.get('articleEditor')) {
+    return tinymce.get('articleEditor').getContent();
+  }
+  return '';
+};
+
+window.registerTinyEditorCallbacks = function (dotNetHelper) {
+  if (window.tinymce && tinymce.get('articleEditor')) {
+    const editor = tinymce.get('articleEditor');
+    editor.on('blur', function () {
+      dotNetHelper.invokeMethodAsync('OnEditorBlur');
+    });
+    const changeHandler = function () {
+      dotNetHelper.invokeMethodAsync('OnEditorDirty');
+      editor.off('change', changeHandler);
+    };
+    editor.on('change', changeHandler);
+  }
+};

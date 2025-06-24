@@ -124,7 +124,7 @@ else if (showTable)
 
 @if (isEditing)
 {
-    <TinyMCEEditor @bind-Value="_content" @bind-Value:after="OnContentChanged" />
+    <TinyMCEEditor @ref="editorComp" ContentBlurred="OnEditorBlurred" FirstChange="OnContentDirty" />
 }
 else
 {

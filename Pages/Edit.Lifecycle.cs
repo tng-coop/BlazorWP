@@ -76,12 +76,11 @@ public partial class Edit
             {
                 await JS.InvokeVoidAsync("setTinyMediaSource", selectedMediaSource);
             }
+            if (editorComp != null)
+            {
+                await editorComp.SetContentAsync(_content);
+            }
             StateHasChanged();
-        }
-        else
-        {
-            //Console.WriteLine("[OnAfterRenderAsync] subsequent render");
-            await JS.InvokeVoidAsync("setTinyEditorContent", _content);
         }
         await ObserveScrollAsync();
     }

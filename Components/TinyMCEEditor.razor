@@ -1,25 +1,52 @@
 @using TinyMCE.Blazor
+@inject IJSRuntime JS
+@implements IAsyncDisposable
 <div class="tiny-editor-wrapper">
     <Editor
         Id="articleEditor"
         ScriptSrc="libman/tinymce/tinymce.min.js"
         LicenseKey="gpl"
-        JsConfSrc="myTinyMceConfig"
-        Value="@Value"
-        ValueChanged="@OnEditorValueChanged" />
+        JsConfSrc="myTinyMceConfig" />
 </div>
 
 @code {
     [Parameter]
-    public string Value { get; set; } = string.Empty;
+    public EventCallback<string> ContentBlurred { get; set; }
 
     [Parameter]
-    public EventCallback<string> ValueChanged { get; set; }
+    public EventCallback FirstChange { get; set; }
 
+    private DotNetObjectReference<TinyMCEEditor>? _objRef;
 
-    private async Task OnEditorValueChanged(string newValue)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        Value = newValue;
-        await ValueChanged.InvokeAsync(newValue);
+        if (firstRender)
+        {
+            _objRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("registerTinyEditorCallbacks", _objRef);
+        }
+    }
+
+    public async Task<string> GetContentAsync()
+        => await JS.InvokeAsync<string>("getTinyEditorContent");
+
+    public async Task SetContentAsync(string html)
+        => await JS.InvokeVoidAsync("setTinyEditorContent", html);
+
+    [JSInvokable]
+    public async Task OnEditorBlur()
+    {
+        var content = await GetContentAsync();
+        await ContentBlurred.InvokeAsync(content);
+    }
+
+    [JSInvokable]
+    public Task OnEditorDirty()
+        => FirstChange.InvokeAsync();
+
+    public ValueTask DisposeAsync()
+    {
+        _objRef?.Dispose();
+        return ValueTask.CompletedTask;
     }
 }
