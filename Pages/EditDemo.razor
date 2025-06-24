@@ -1,5 +1,7 @@
 @page "/edit-demo"
 @using TinyMCE.Blazor
+@inject IJSRuntime JS
+@implements IAsyncDisposable
 
 <PageTitle>Edit Demo</PageTitle>
 
@@ -11,13 +13,12 @@
     <button class="btn btn-primary" @onclick="() => SelectDoc(Doc.C)">Document C</button>
 </div>
 
-<Editor Id="demoEditor"
+<Editor Id="articleEditor"
         ScriptSrc="libman/tinymce/tinymce.min.js"
         LicenseKey="gpl"
         JsConfSrc="myTinyMceConfig"
         @bind-Value="currentText"
-        @bind-Value:after="OnContentChanged"
-        EventReceived="LogEvent" />
+        @bind-Value:after="OnContentChanged" />
 
 <div class="row mt-3">
     <div class="col">
@@ -93,5 +94,40 @@
     {
         eventLog = ($"{ev}\n" + eventLog).TrimEnd();
         StateHasChanged();
+    }
+
+    private DotNetObjectReference<EditDemo>? _objRef;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _objRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("registerTinyEditorCallbacks", _objRef);
+        }
+    }
+
+    [JSInvokable]
+    public void OnEditorBlur()
+    {
+        // not used
+    }
+
+    [JSInvokable]
+    public void OnEditorDirty()
+    {
+        // not used
+    }
+
+    [JSInvokable]
+    public void OnEditorEvent(string type)
+    {
+        LogEvent(type);
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        _objRef?.Dispose();
+        return ValueTask.CompletedTask;
     }
 }
