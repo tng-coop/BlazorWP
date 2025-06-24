@@ -11,12 +11,18 @@
     <button class="btn btn-primary" @onclick="() => SelectDoc(Doc.C)">Document C</button>
 </div>
 
-<Editor Id="demoEditor"
-        ScriptSrc="libman/tinymce/tinymce.min.js"
-        LicenseKey="gpl"
-        JsConfSrc="myTinyMceConfig"
-        @bind-Value="currentText"
-        @bind-Value:after="OnContentChanged" />
+<div class="mb-2 d-flex">
+    <div class="me-2"><span class="led @(initLed ? "flash" : null)"></span> Init</div>
+    <div class="me-2"><span class="led @(focusLed ? "flash" : null)"></span> Focus</div>
+    <div class="me-2"><span class="led @(blurLed ? "flash" : null)"></span> Blur</div>
+    <div class="me-2"><span class="led @(dirtyLed ? "flash" : null)"></span> Dirty</div>
+</div>
+
+<TinyMCEEditor @ref="editor"
+        OnInit="OnEditorInit"
+        Focused="OnEditorFocused"
+        ContentBlurred="OnEditorBlurred"
+        FirstChange="OnEditorDirty" />
 
 <div class="row mt-3">
     <div class="col">
@@ -47,11 +53,15 @@
         currentText = docA;
     }
 
-    private void SelectDoc(Doc doc)
+    private async Task SelectDoc(Doc doc)
     {
         SaveCurrent();
         currentDoc = doc;
         currentText = GetCurrent();
+        if (editor != null)
+        {
+            await editor.SetContentAsync(currentText);
+        }
     }
 
     private void SaveCurrent()
@@ -78,8 +88,41 @@
         _ => string.Empty
     };
 
-    private void OnContentChanged()
+    private TinyMCEEditor? editor;
+
+    private bool initLed;
+    private bool focusLed;
+    private bool blurLed;
+    private bool dirtyLed;
+
+    private async Task OnEditorInit()
     {
+        await FlashAsync(() => initLed = true, () => initLed = false);
+        if (editor != null)
+        {
+            await editor.SetContentAsync(currentText);
+        }
+    }
+
+    private Task OnEditorFocused()
+        => FlashAsync(() => focusLed = true, () => focusLed = false);
+
+    private async Task OnEditorBlurred(string html)
+    {
+        currentText = html;
         SaveCurrent();
+        await FlashAsync(() => blurLed = true, () => blurLed = false);
+    }
+
+    private Task OnEditorDirty()
+        => FlashAsync(() => dirtyLed = true, () => dirtyLed = false);
+
+    private async Task FlashAsync(Action setOn, Action setOff)
+    {
+        setOn();
+        await InvokeAsync(StateHasChanged);
+        await Task.Delay(500);
+        setOff();
+        await InvokeAsync(StateHasChanged);
     }
 }

@@ -137,6 +137,9 @@ window.getTinyEditorContentLength = function () {
 window.registerTinyEditorCallbacks = function (dotNetHelper) {
   if (window.tinymce && tinymce.get('articleEditor')) {
     const editor = tinymce.get('articleEditor');
+    editor.on('focus', function () {
+      dotNetHelper.invokeMethodAsync('OnEditorFocus');
+    });
     editor.on('blur', function () {
       dotNetHelper.invokeMethodAsync('OnEditorBlur');
     });

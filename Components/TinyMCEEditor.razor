@@ -17,6 +17,9 @@
     public EventCallback FirstChange { get; set; }
 
     [Parameter]
+    public EventCallback Focused { get; set; }
+
+    [Parameter]
     public EventCallback OnInit { get; set; }
 
     public bool IsReady { get; private set; }
@@ -49,6 +52,10 @@
         var content = await GetContentAsync();
         await ContentBlurred.InvokeAsync(content);
     }
+
+    [JSInvokable]
+    public Task OnEditorFocus()
+        => Focused.InvokeAsync();
 
     [JSInvokable]
     public Task OnEditorDirty()

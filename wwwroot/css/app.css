@@ -163,3 +163,24 @@ code {
 .article-row {
     cursor: pointer;
 }
+
+/* Simple LED indicator */
+.led {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: #ccc;
+    margin-right: 4px;
+}
+
+.led.flash {
+    background-color: #28a745;
+    box-shadow: 0 0 6px #28a745;
+    animation: led-flash 0.5s ease-out;
+}
+
+@keyframes led-flash {
+    from { opacity: 1; }
+    to { opacity: 0.4; }
+}
