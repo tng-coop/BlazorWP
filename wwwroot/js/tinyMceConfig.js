@@ -127,6 +127,13 @@ window.getTinyEditorContent = function () {
   return '';
 };
 
+window.getTinyEditorContentLength = function () {
+  if (window.tinymce && tinymce.get('articleEditor')) {
+    return tinymce.get('articleEditor').getContent().length;
+  }
+  return 0;
+};
+
 window.registerTinyEditorCallbacks = function (dotNetHelper) {
   if (window.tinymce && tinymce.get('articleEditor')) {
     const editor = tinymce.get('articleEditor');

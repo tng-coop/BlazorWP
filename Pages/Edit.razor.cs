@@ -31,6 +31,8 @@ public partial class Edit : IAsyncDisposable
     private bool showTable = true;
     private bool showTrashed = false;
     private bool isEditing = false;
+    private int? editTimerPostId;
+    private long? editTimerElapsedMs;
     private readonly string[] availableStatuses = new[] { "draft", "pending", "publish", "private", "trash" };
     private WordPressClient? client;
     private string? baseUrl;

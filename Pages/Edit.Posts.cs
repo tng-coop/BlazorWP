@@ -217,7 +217,15 @@ public partial class Edit
         isEditing = edit;
         await InvokeAsync(StateHasChanged);
         sw.Stop();
-        Console.WriteLine($"[Perf] OpenPost({post.Id}) took {sw.ElapsedMilliseconds} ms");
+        if (edit)
+        {
+            editTimerElapsedMs = sw.ElapsedMilliseconds;
+            editTimerPostId = post.Id;
+        }
+        else
+        {
+            Console.WriteLine($"[Perf] OpenPost({post.Id}) took {sw.ElapsedMilliseconds} ms");
+        }
     }
 
     private async Task EditPost(PostSummary post)

@@ -37,6 +37,9 @@
     public async Task<string> GetContentAsync()
         => await JS.InvokeAsync<string>("getTinyEditorContent");
 
+    public async Task<int> GetContentLengthAsync()
+        => await JS.InvokeAsync<int>("getTinyEditorContentLength");
+
     public async Task SetContentAsync(string html)
         => await JS.InvokeVoidAsync("setTinyEditorContent", html);
 

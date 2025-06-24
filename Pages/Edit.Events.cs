@@ -39,6 +39,13 @@ public partial class Edit
         if (editorComp != null)
         {
             await SetEditorContentAsync(_content);
+            if (editTimerPostId != null && editTimerElapsedMs != null)
+            {
+                var len = await editorComp.GetContentLengthAsync();
+                Console.WriteLine($"[Perf] OpenPost({editTimerPostId}) took {editTimerElapsedMs} ms, length {len}");
+                editTimerPostId = null;
+                editTimerElapsedMs = null;
+            }
         }
     }
 
