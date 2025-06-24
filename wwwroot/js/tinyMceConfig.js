@@ -145,5 +145,13 @@ window.registerTinyEditorCallbacks = function (dotNetHelper) {
       editor.off('change', changeHandler);
     };
     editor.on('change', changeHandler);
+
+    const originalFire = editor.fire;
+    editor.fire = function (type, data) {
+      try {
+        dotNetHelper.invokeMethodAsync('OnEditorEvent', type);
+      } catch (_) { }
+      return originalFire.call(this, type, data);
+    };
   }
 };

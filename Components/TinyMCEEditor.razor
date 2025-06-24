@@ -19,6 +19,9 @@
     [Parameter]
     public EventCallback OnInit { get; set; }
 
+    [Parameter]
+    public EventCallback<string> EventReceived { get; set; }
+
     public bool IsReady { get; private set; }
 
     private DotNetObjectReference<TinyMCEEditor>? _objRef;
@@ -53,6 +56,10 @@
     [JSInvokable]
     public Task OnEditorDirty()
         => FirstChange.InvokeAsync();
+
+    [JSInvokable]
+    public Task OnEditorEvent(string type)
+        => EventReceived.InvokeAsync(type);
 
     public ValueTask DisposeAsync()
     {

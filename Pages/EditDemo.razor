@@ -16,7 +16,8 @@
         LicenseKey="gpl"
         JsConfSrc="myTinyMceConfig"
         @bind-Value="currentText"
-        @bind-Value:after="OnContentChanged" />
+        @bind-Value:after="OnContentChanged"
+        EventReceived="LogEvent" />
 
 <div class="row mt-3">
     <div class="col">
@@ -32,6 +33,10 @@
         <textarea class="form-control" rows="5" readonly @bind="docC"></textarea>
     </div>
 </div>
+<div class="row mt-1">
+    @* use this textarea to display tinymce events *@
+    <textarea class="form-control" rows="5" readonly @bind="eventLog"></textarea>
+</div>
 
 @code {
     private enum Doc { A, B, C }
@@ -41,6 +46,7 @@
     private string docA = string.Empty;
     private string docB = string.Empty;
     private string docC = string.Empty;
+    private string eventLog = string.Empty;
 
     protected override void OnInitialized()
     {
@@ -81,5 +87,11 @@
     private void OnContentChanged()
     {
         SaveCurrent();
+    }
+
+    private void LogEvent(string ev)
+    {
+        eventLog = ($"{ev}\n" + eventLog).TrimEnd();
+        StateHasChanged();
     }
 }
