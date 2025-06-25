@@ -1,0 +1,79 @@
+@page "/sql-demo"
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<SqlDemoDbContext> DbFactory
+
+<PageTitle>SQL Demo</PageTitle>
+
+<h1>SQL Demo</h1>
+
+<div class="mb-2">
+    <button class="btn btn-primary me-2" @onclick="AddRandomAsync">Add Random</button>
+    <button class="btn btn-secondary me-2" @onclick="AddRandomDelayedAsync">Add Random (Delayed)</button>
+    <button class="btn btn-warning" @onclick="AddConcurrentAsync">Add 5 Concurrent</button>
+</div>
+
+<div class="table-responsive" style="max-height:250px; overflow-y:auto;">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var rec in records)
+            {
+                <tr>
+                    <td>@rec.Id</td>
+                    <td>@rec.Name</td>
+                    <td>@rec.Value</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    private List<DemoRecord> records = new();
+    private readonly Random random = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        using var db = await DbFactory.CreateDbContextAsync();
+        records = await db.Records.OrderBy(r => r.Id).ToListAsync();
+    }
+
+    private async Task AddRandomAsync()
+    {
+        using var db = await DbFactory.CreateDbContextAsync();
+        db.Records.Add(new DemoRecord { Name = $"Item {random.Next(1000)}", Value = random.Next(1000) });
+        await db.SaveChangesAsync();
+        await LoadAsync();
+    }
+
+    private async Task AddRandomDelayedAsync()
+    {
+        await Task.Delay(random.Next(50, 300));
+        await AddRandomAsync();
+    }
+
+    private async Task AddConcurrentAsync()
+    {
+        var tasks = Enumerable.Range(0, 5).Select(async _ =>
+        {
+            await Task.Delay(random.Next(50, 300));
+            using var db = await DbFactory.CreateDbContextAsync();
+            db.Records.Add(new DemoRecord { Name = $"Item {random.Next(1000)}", Value = random.Next(1000) });
+            await db.SaveChangesAsync();
+        });
+
+        await Task.WhenAll(tasks);
+        await LoadAsync();
+    }
+}
