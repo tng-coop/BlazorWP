@@ -154,13 +154,12 @@ public partial class Edit
         }
     }
 
-    private async Task OpenPost(PostSummary post, bool edit = false, bool forceReload = false)
+    private async Task OpenPost(PostSummary post, bool forceReload = false)
     {
         var sw = Stopwatch.StartNew();
         //Console.WriteLine($"[OpenPost] click id={post.Id}, title={post.Title}");
         if (post.Id == postId && !forceReload)
         {
-            isEditing = edit;
             sw.Stop();
             Console.WriteLine($"[Perf] OpenPost({post.Id}) took {sw.ElapsedMilliseconds} ms (noop)");
             return;
@@ -201,23 +200,9 @@ public partial class Edit
         showRetractReview = post.Status == "pending";
         UpdateDirty();
         //Console.WriteLine($"[OpenPost] completed. postId={postId}");
-        isEditing = edit;
         await InvokeAsync(StateHasChanged);
         sw.Stop();
-        if (edit)
-        {
-            editTimerElapsedMs = sw.ElapsedMilliseconds;
-            editTimerPostId = post.Id;
-        }
-        else
-        {
-            Console.WriteLine($"[Perf] OpenPost({post.Id}) took {sw.ElapsedMilliseconds} ms");
-        }
-    }
-
-    private async Task EditPost(PostSummary post)
-    {
-        await OpenPost(post, true, true);
+        Console.WriteLine($"[Perf] OpenPost({post.Id}) took {sw.ElapsedMilliseconds} ms");
     }
 
     private async Task RefreshPosts()

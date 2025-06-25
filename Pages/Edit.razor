@@ -72,7 +72,6 @@ else if (showTable)
         <table class="table table-hover">
             <thead>
                 <tr>
-                    <th>Edit</th>
                     <th>Id</th>
                     <th>Title</th>
                     <th>Author</th>
@@ -85,9 +84,6 @@ else if (showTable)
                 @foreach (var p in DisplayPosts)
                 {
                     <tr @key="p.Id" class="article-row @(IsSelected(p, postId) ? "table-primary" : null)" @onclick="() => OpenPost(p)">
-                        <td>
-                            <button class="btn btn-sm btn-primary" @onclick="() => EditPost(p)" @onclick:stopPropagation="true">Edit</button>
-                        </td>
                         <td>@(p.Id > 0 ? p.Id.ToString() : "")</td>
                         <td>@p.Title</td>
                         <td>@(string.IsNullOrEmpty(p.AuthorName) ? (p.Author > 0 ? p.Author.ToString() : "") : p.AuthorName)</td>
@@ -122,20 +118,11 @@ else if (showTable)
 
 
 
-@if (isEditing)
-{
-    <Editor
-        Id="mainEditor"
-        ScriptSrc="libman/tinymce/tinymce.min.js"
-        LicenseKey="gpl"
-        JsConfSrc="myTinyMceConfig"
-        @bind-Value="_content"
-        @bind-Value:after="UpdateDirty" />
-}
-else
-{
-    <div class="border p-2" @onclick="() => isEditing = true">
-        @((MarkupString)_content)
-    </div>
-}
+<Editor
+    Id="mainEditor"
+    ScriptSrc="libman/tinymce/tinymce.min.js"
+    LicenseKey="gpl"
+    JsConfSrc="myTinyMceConfig"
+    @bind-Value="_content"
+    @bind-Value:after="UpdateDirty" />
 

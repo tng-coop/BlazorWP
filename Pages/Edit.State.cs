@@ -16,7 +16,6 @@ public partial class Edit
         lastSavedTitle = string.Empty;
         lastSavedContent = string.Empty;
         showRetractReview = false;
-        isEditing = false;
     }
 
     private Task SetEditorContentAsync(string html)
