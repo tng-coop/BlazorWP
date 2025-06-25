@@ -207,71 +207,85 @@ public partial class Edit
 
     private async Task RefreshPosts()
     {
-        // Query the WordPress API using a comma-separated list of IDs that are
-        // already present in the table. Log the IDs retrieved and any
-        // differences found compared with the current list.
+        // Download posts using paginated requests instead of querying by comma-separated IDs.
+        // Fetch the same number of articles currently loaded (at least) in batches of 100.
 
         if (client == null)
         {
             return;
         }
 
-        var ids = posts.Where(p => p.Id > 0).Select(p => p.Id).ToList();
-        if (ids.Count == 0)
-        {
-            return;
-        }
+        var target = posts.Count;
+        var page = 1;
+        var all = new List<Post>();
 
-        var qb = new PostsQueryBuilder
+        while (all.Count < target)
         {
-            Context = Context.Edit,
-            Embed = true,
-            Include = ids
-        };
-
-        try
-        {
-            var list = await client.Posts.QueryAsync(qb, useAuth: true);
-            var retrievedIds = list.Select(p => p.Id).ToList();
-            await JS.InvokeVoidAsync("console.log", $"Retrieved IDs: {string.Join(',', retrievedIds)}");
-
-            var fresh = list.ToDictionary(p => p.Id, p => new PostSummary
+            var qb = new PostsQueryBuilder
             {
-                Id = p.Id,
-                Title = p.Title?.Rendered ?? string.Empty,
-                Author = p.Author,
-                AuthorName = p.Embedded?.Author?.FirstOrDefault()?.Name,
-                Status = p.Status.ToString().ToLowerInvariant(),
-                Date = DateTime.SpecifyKind(p.DateGmt, DateTimeKind.Utc).ToLocalTime(),
-                Content = p.Content?.Rendered
-            });
-
-            var diffIds = new List<int>();
-
-            foreach (var id in retrievedIds)
-            {
-                var freshPost = fresh[id];
-                var old = posts.FirstOrDefault(p => p.Id == id);
-                if (old == null ||
-                    old.Title != freshPost.Title ||
-                    old.Author != freshPost.Author ||
-                    old.AuthorName != freshPost.AuthorName ||
-                    old.Status != freshPost.Status ||
-                    old.Date != freshPost.Date ||
-                    old.Content != freshPost.Content)
+                Context = Context.Edit,
+                Page = page,
+                PerPage = 100,
+                Embed = true,
+                Statuses = new List<Status>
                 {
-                    diffIds.Add(id);
+                    Status.Publish,
+                    Status.Private,
+                    Status.Draft,
+                    Status.Pending,
+                    Status.Future,
+                    Status.Trash
                 }
+            };
+
+            var list = await client.Posts.QueryAsync(qb, useAuth: true);
+            all.AddRange(list);
+            if (list.Count < 100)
+            {
+                break;
+            }
+            page++;
+        }
+
+        var retrievedIds = all.Select(p => p.Id).ToList();
+        await JS.InvokeVoidAsync("console.log", $"Retrieved IDs: {string.Join(',', retrievedIds)}");
+
+        var fresh = all.ToDictionary(p => p.Id, p => new PostSummary
+        {
+            Id = p.Id,
+            Title = p.Title?.Rendered ?? string.Empty,
+            Author = p.Author,
+            AuthorName = p.Embedded?.Author?.FirstOrDefault()?.Name,
+            Status = p.Status.ToString().ToLowerInvariant(),
+            Date = DateTime.SpecifyKind(p.DateGmt, DateTimeKind.Utc).ToLocalTime(),
+            Content = p.Content?.Rendered
+        });
+
+        var diffIds = new List<int>();
+
+        foreach (var id in retrievedIds)
+        {
+            if (!fresh.TryGetValue(id, out var freshPost))
+            {
+                continue;
             }
 
-            if (diffIds.Count > 0)
+            var old = posts.FirstOrDefault(p => p.Id == id);
+            if (old == null ||
+                old.Title != freshPost.Title ||
+                old.Author != freshPost.Author ||
+                old.AuthorName != freshPost.AuthorName ||
+                old.Status != freshPost.Status ||
+                old.Date != freshPost.Date ||
+                old.Content != freshPost.Content)
             {
-                await JS.InvokeVoidAsync("console.log", $"Differences in IDs: {string.Join(',', diffIds)}");
+                diffIds.Add(id);
             }
         }
-        catch (Exception ex)
+
+        if (diffIds.Count > 0)
         {
-            await JS.InvokeVoidAsync("console.log", $"Refresh failed: {ex.Message}");
+            await JS.InvokeVoidAsync("console.log", $"Differences in IDs: {string.Join(',', diffIds)}");
         }
     }
 }
