@@ -19,9 +19,9 @@ public partial class Edit
         isEditing = false;
     }
 
-    private async Task SetEditorContentAsync(string html)
+    private Task SetEditorContentAsync(string html)
     {
-        if (editorComp == null) return;
-        await editorComp.SetContentAsync(html);
+        _content = html;
+        return Task.CompletedTask;
     }
 }

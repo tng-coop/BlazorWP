@@ -28,34 +28,18 @@ public partial class Edit
         UpdateDirty();
     }
 
-    private void OnContentDirty()
+    [JSInvokable]
+    public async Task OnEditorBlur()
     {
-        isDirty = true;
-    }
-
-    private async Task HandleEditorReady()
-    {
-        editorReady = true;
-        if (editorComp != null)
-        {
-            await SetEditorContentAsync(_content);
-            if (editTimerPostId != null && editTimerElapsedMs != null)
-            {
-                var len = await editorComp.GetContentLengthAsync();
-                var _contentLen = _content.Length;
-                Console.WriteLine($"[Perf] OpenPost({editTimerPostId}) took {editTimerElapsedMs} ms, length {len}, contentLen {_contentLen}");
-                editTimerPostId = null;
-                editTimerElapsedMs = null;
-            }
-        }
-    }
-
-    private async Task OnEditorBlurred(string html)
-    {
-        _content = html;
         await SaveLocalDraftAsync();
         lastSavedContent = _content;
         UpdateDirty();
+    }
+
+    [JSInvokable]
+    public void OnEditorDirty()
+    {
+        isDirty = true;
     }
 
     private void UpdateDirty()
@@ -126,10 +110,6 @@ public partial class Edit
         {
             if (isDirty)
             {
-                if (editorComp != null)
-                {
-                    _content = await editorComp.GetContentAsync();
-                }
                 await SaveLocalDraftAsync();
             }
         }
@@ -143,10 +123,7 @@ public partial class Edit
         if (!await TryLoadDraftAsync(null))
         {
             ResetEditorState();
-            if (editorComp != null)
-            {
-                await SetEditorContentAsync(_content);
-            }
+            await SetEditorContentAsync(_content);
         }
 
         showRetractReview = false;

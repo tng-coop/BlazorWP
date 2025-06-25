@@ -1,5 +1,4 @@
 using System.Text.Json;
-using BlazorWP.Components;
 using Microsoft.JSInterop;
 using WordPressPCL;
 using WordPressPCL.Models;
@@ -25,8 +24,6 @@ public partial class Edit : IAsyncDisposable
     private int currentPage = 1;
     private bool isLoading = false;
     private string _content = string.Empty;
-    private TinyMCEEditor? editorComp;
-    private bool editorReady = false;
     private bool showControls = true;
     private bool showTable = true;
     private bool showTrashed = false;
