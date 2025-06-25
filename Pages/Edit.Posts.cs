@@ -207,91 +207,71 @@ public partial class Edit
 
     private async Task RefreshPosts()
     {
-        // Instead of refreshing the UI, fetch the latest posts and compare
-        // them with the current list, logging the differences.
+        // Query the WordPress API using a comma-separated list of IDs that are
+        // already present in the table. Log the IDs retrieved and any
+        // differences found compared with the current list.
 
         if (client == null)
         {
             return;
         }
 
-        var pagesToLoad = currentPage;
-        var statuses = new List<Status>
+        var ids = posts.Where(p => p.Id > 0).Select(p => p.Id).ToList();
+        if (ids.Count == 0)
         {
-            Status.Publish,
-            Status.Private,
-            Status.Draft,
-            Status.Pending,
-            Status.Future,
-            Status.Trash
+            return;
+        }
+
+        var qb = new PostsQueryBuilder
+        {
+            Context = Context.Edit,
+            Embed = true,
+            Include = ids
         };
 
-        var fresh = new List<PostSummary>();
-
-        for (int page = 1; page <= pagesToLoad; page++)
+        try
         {
-            var qb = new PostsQueryBuilder
-            {
-                Context = Context.Edit,
-                Page = page,
-                PerPage = page == 1 ? 10 : 20,
-                Embed = true,
-                Statuses = statuses
-            };
+            var list = await client.Posts.QueryAsync(qb, useAuth: true);
+            var retrievedIds = list.Select(p => p.Id).ToList();
+            await JS.InvokeVoidAsync("console.log", $"Retrieved IDs: {string.Join(',', retrievedIds)}");
 
-            try
+            var fresh = list.ToDictionary(p => p.Id, p => new PostSummary
             {
-                var list = await client.Posts.QueryAsync(qb, useAuth: true);
-                foreach (var p in list)
+                Id = p.Id,
+                Title = p.Title?.Rendered ?? string.Empty,
+                Author = p.Author,
+                AuthorName = p.Embedded?.Author?.FirstOrDefault()?.Name,
+                Status = p.Status.ToString().ToLowerInvariant(),
+                Date = DateTime.SpecifyKind(p.DateGmt, DateTimeKind.Utc).ToLocalTime(),
+                Content = p.Content?.Rendered
+            });
+
+            var diffIds = new List<int>();
+
+            foreach (var id in retrievedIds)
+            {
+                var freshPost = fresh[id];
+                var old = posts.FirstOrDefault(p => p.Id == id);
+                if (old == null ||
+                    old.Title != freshPost.Title ||
+                    old.Author != freshPost.Author ||
+                    old.AuthorName != freshPost.AuthorName ||
+                    old.Status != freshPost.Status ||
+                    old.Date != freshPost.Date ||
+                    old.Content != freshPost.Content)
                 {
-                    fresh.Add(new PostSummary
-                    {
-                        Id = p.Id,
-                        Title = p.Title?.Rendered ?? string.Empty,
-                        Author = p.Author,
-                        AuthorName = p.Embedded?.Author?.FirstOrDefault()?.Name,
-                        Status = p.Status.ToString().ToLowerInvariant(),
-                        Date = DateTime.SpecifyKind(p.DateGmt, DateTimeKind.Utc).ToLocalTime(),
-                        Content = p.Content?.Rendered
-                    });
-                }
-                if (list.Count == 0)
-                {
-                    break;
+                    diffIds.Add(id);
                 }
             }
-            catch
+
+            if (diffIds.Count > 0)
             {
-                break;
+                await JS.InvokeVoidAsync("console.log", $"Differences in IDs: {string.Join(',', diffIds)}");
             }
         }
-
-        var existing = posts.ToDictionary(p => p.Id);
-
-        foreach (var post in fresh)
+        catch (Exception ex)
         {
-            if (existing.TryGetValue(post.Id, out var old))
-            {
-                if (old.Title != post.Title ||
-                    old.Author != post.Author ||
-                    old.AuthorName != post.AuthorName ||
-                    old.Status != post.Status ||
-                    old.Date != post.Date ||
-                    old.Content != post.Content)
-                {
-                    await JS.InvokeVoidAsync("console.log", $"MODIFIED {post.Id}: {post.Title}");
-                }
-                existing.Remove(post.Id);
-            }
-            else
-            {
-                await JS.InvokeVoidAsync("console.log", $"ADDED {post.Id}: {post.Title}");
-            }
-        }
-
-        foreach (var removed in existing.Values)
-        {
-            await JS.InvokeVoidAsync("console.log", $"REMOVED {removed.Id}: {removed.Title}");
+            await JS.InvokeVoidAsync("console.log", $"Refresh failed: {ex.Message}");
         }
     }
 }
