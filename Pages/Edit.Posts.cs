@@ -21,13 +21,26 @@ public partial class Edit
             return;
         }
 
+        var statuses = new List<Status>
+        {
+            Status.Publish,
+            Status.Private,
+            Status.Draft,
+            Status.Pending,
+            Status.Future
+        };
+        if (showTrashed)
+        {
+            statuses.Add(Status.Trash);
+        }
+
         var qb = new PostsQueryBuilder
         {
             Context = Context.Edit,
             Page = page,
             PerPage = perPageOverride ?? (page == 1 && !append ? 10 : 20),
             Embed = true,
-            Statuses = new List<Status> { Status.Publish, Status.Private, Status.Draft, Status.Pending, Status.Future, Status.Trash }
+            Statuses = statuses
         };
 
         try

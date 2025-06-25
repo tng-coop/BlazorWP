@@ -40,11 +40,6 @@ public partial class Edit : IAsyncDisposable
         {
             IEnumerable<PostSummary> query = posts.OrderByDescending(p => p.Id);
 
-            if (!showTrashed)
-            {
-                query = query.Where(p => !string.Equals(p.Status, "trash", StringComparison.OrdinalIgnoreCase));
-            }
-
             if (postId == null)
             {
                 var title = string.IsNullOrWhiteSpace(postTitle)
