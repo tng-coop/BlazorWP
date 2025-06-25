@@ -43,7 +43,7 @@ public partial class Edit
                     Author = p.Author,
                     AuthorName = p.Embedded?.Author?.FirstOrDefault()?.Name,
                     Status = p.Status.ToString().ToLowerInvariant(),
-                    Date = p.Date,
+                    Date = DateTime.SpecifyKind(p.DateGmt, DateTimeKind.Utc).ToLocalTime(),
                     Content = p.Content?.Rendered
                 });
                 count++;
@@ -133,7 +133,7 @@ public partial class Edit
                     Author = post.Author,
                     AuthorName = post.Embedded?.Author?.FirstOrDefault()?.Name ?? string.Empty,
                     Status = post.Status.ToString().ToLowerInvariant(),
-                    Date = post.Date,
+                    Date = DateTime.SpecifyKind(post.DateGmt, DateTimeKind.Utc).ToLocalTime(),
                     Content = post.Content?.Rendered
                 });
             }
@@ -143,7 +143,7 @@ public partial class Edit
                 existing.Author = post.Author;
                 existing.AuthorName = post.Embedded?.Author?.FirstOrDefault()?.Name ?? string.Empty;
                 existing.Status = post.Status.ToString().ToLowerInvariant();
-                existing.Date = post.Date;
+                existing.Date = DateTime.SpecifyKind(post.DateGmt, DateTimeKind.Utc).ToLocalTime();
                 existing.Content = post.Content?.Rendered;
             }
         }
