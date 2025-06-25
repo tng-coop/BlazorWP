@@ -3,7 +3,7 @@ window.myTinyMceConfig = {
   promotion: false,
   branding: false,
   statusbar: true,
-  resize: 'both',
+  resize: 'vertical',
   plugins: 'code media table fullscreen',
   toolbar: 'undo redo | bold italic | table | code mediaLibraryButton customButton showInfoButton fullscreen',
   mediaSource: null,
