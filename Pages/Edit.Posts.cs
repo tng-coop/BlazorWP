@@ -9,7 +9,7 @@ namespace BlazorWP.Pages;
 
 public partial class Edit
 {
-    private async Task LoadPosts(int page = 1, bool append = false)
+    private async Task LoadPosts(int page = 1, bool append = false, int? perPageOverride = null)
     {
         //Console.WriteLine($"[LoadPosts] page={page}, append={append}");
         if (page == 1 && !append)
@@ -25,7 +25,7 @@ public partial class Edit
         {
             Context = Context.Edit,
             Page = page,
-            PerPage = page == 1 && !append ? 10 : 20,
+            PerPage = perPageOverride ?? (page == 1 && !append ? 10 : 20),
             Embed = true,
             Statuses = new List<Status> { Status.Publish, Status.Private, Status.Draft, Status.Pending, Status.Future, Status.Trash }
         };
@@ -203,6 +203,36 @@ public partial class Edit
         await InvokeAsync(StateHasChanged);
         sw.Stop();
         Console.WriteLine($"[Perf] OpenPost({post.Id}) took {sw.ElapsedMilliseconds} ms");
+    }
+
+    private async Task RefreshPosts()
+    {
+        currentPage = 1;
+        hasMore = true;
+
+        if (string.Equals(selectedRefreshCount, "all", StringComparison.OrdinalIgnoreCase))
+        {
+            int page = 1;
+            bool first = true;
+            while (true)
+            {
+                await LoadPosts(page, append: !first, perPageOverride: 100);
+                first = false;
+                if (!hasMore)
+                {
+                    break;
+                }
+                page++;
+            }
+        }
+        else
+        {
+            if (!int.TryParse(selectedRefreshCount, out var count))
+            {
+                count = 10;
+            }
+            await LoadPosts(1, append: false, perPageOverride: count);
+        }
     }
 
 }

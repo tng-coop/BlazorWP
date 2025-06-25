@@ -48,7 +48,11 @@ public partial class Edit
         await SetupWordPressClientAsync();
         currentPage = 1;
         hasMore = true;
-        await LoadPosts(currentPage);
+        if (!int.TryParse(selectedRefreshCount, out var initCount))
+        {
+            initCount = 10;
+        }
+        await LoadPosts(currentPage, perPageOverride: initCount);
         if (postId != null && !posts.Any(p => p.Id == postId))
         {
             posts.Add(new PostSummary
