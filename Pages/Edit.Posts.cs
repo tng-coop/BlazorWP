@@ -207,6 +207,8 @@ public partial class Edit
 
     private async Task RefreshPosts()
     {
+        if (isLoading) return;
+        isLoading = true;
         currentPage = 1;
         hasMore = true;
 
@@ -233,6 +235,7 @@ public partial class Edit
             }
             await LoadPosts(1, append: false, perPageOverride: count);
         }
+        isLoading = false;
     }
 
 }
