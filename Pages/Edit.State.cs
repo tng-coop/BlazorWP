@@ -17,6 +17,8 @@ public partial class Edit
         lastSavedContent = string.Empty;
         showRetractReview = false;
         hasPersistedContent = false;
+        selectedCategoryIds.Clear();
+        lastSavedCategoryIds.Clear();
     }
 
     private Task SetEditorContentAsync(string html)

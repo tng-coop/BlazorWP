@@ -1,4 +1,6 @@
 using System.Text.Json;
+using System.Linq;
+using System.Collections.Generic;
 using Microsoft.JSInterop;
 using WordPressPCL;
 using WordPressPCL.Models;
@@ -48,6 +50,15 @@ public partial class Edit
         }
 
         await SetupWordPressClientAsync();
+        if (client != null)
+        {
+            try
+            {
+                var list = await client.Categories.GetAllAsync();
+                categories = list?.ToList() ?? new List<Category>();
+            }
+            catch { }
+        }
         currentPage = 1;
         hasMore = true;
         if (!int.TryParse(selectedRefreshCount, out var initCount))
@@ -81,6 +92,15 @@ public partial class Edit
             if (!string.IsNullOrEmpty(selectedMediaSource))
             {
                 await JS.InvokeVoidAsync("setTinyMediaSource", selectedMediaSource);
+            }
+            if (client != null)
+            {
+                try
+                {
+                    var list = await client.Categories.GetAllAsync();
+                    categories = list?.ToList() ?? new List<Category>();
+                }
+                catch { }
             }
             StateHasChanged();
         }

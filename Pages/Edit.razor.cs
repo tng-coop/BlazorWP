@@ -1,4 +1,6 @@
 using System.Text.Json;
+using System.Collections.Generic;
+using System.Linq;
 using Microsoft.JSInterop;
 using WordPressPCL;
 using WordPressPCL.Models;
@@ -19,6 +21,9 @@ public partial class Edit : IAsyncDisposable
     private bool showRetractReview = false;
     private List<string> mediaSources = new();
     private string? selectedMediaSource;
+    private List<Category> categories = new();
+    private HashSet<int> selectedCategoryIds = new();
+    private HashSet<int> lastSavedCategoryIds = new();
     private List<PostSummary> posts = new();
     private bool hasMore = true;
     private int currentPage = 1;
@@ -68,6 +73,7 @@ public partial class Edit : IAsyncDisposable
         public int? PostId { get; set; }
         public string? Title { get; set; }
         public string? Content { get; set; }
+        public List<int> Categories { get; set; } = new();
         public DateTime LastUpdated { get; set; }
     }
 
@@ -80,6 +86,7 @@ public partial class Edit : IAsyncDisposable
         public string? Status { get; set; }
         public DateTime? Date { get; set; }
         public string? Content { get; set; }
+        public List<int> CategoryIds { get; set; } = new();
     }
 
 

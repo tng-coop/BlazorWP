@@ -1,5 +1,7 @@
 using System.Text.Json;
 using Microsoft.JSInterop;
+using System.Collections.Generic;
+using System.Linq;
 using WordPressPCL;
 using WordPressPCL.Models;
 using WordPressPCL.Utility;
@@ -30,7 +32,8 @@ public partial class Edit
                 {
                     Title = new Title(title),
                     Content = new Content(_content),
-                    Status = Status.Draft
+                    Status = Status.Draft,
+                    Categories = selectedCategoryIds.ToList()
                 };
                 var created = await client.Posts.CreateAsync(post);
                 postId = created.Id;
@@ -43,7 +46,8 @@ public partial class Edit
                     Id = postId.Value,
                     Title = new Title(title),
                     Content = new Content(_content),
-                    Status = Status.Draft
+                    Status = Status.Draft,
+                    Categories = selectedCategoryIds.ToList()
                 };
                 await client.Posts.UpdateAsync(post);
                 status = "Draft updated";
@@ -59,6 +63,7 @@ public partial class Edit
         {
             lastSavedTitle = postTitle;
             lastSavedContent = _content;
+            lastSavedCategoryIds = selectedCategoryIds.ToHashSet();
             await RemoveLocalDraftAsync(postId);
             if (postId != null)
             {
@@ -96,7 +101,8 @@ public partial class Edit
                 {
                     Title = new Title(title),
                     Content = new Content(_content),
-                    Status = Status.Pending
+                    Status = Status.Pending,
+                    Categories = selectedCategoryIds.ToList()
                 };
                 var created = await client.Posts.CreateAsync(post);
                 postId = created.Id;
@@ -109,7 +115,8 @@ public partial class Edit
                     Id = postId.Value,
                     Title = new Title(title),
                     Content = new Content(_content),
-                    Status = Status.Pending
+                    Status = Status.Pending,
+                    Categories = selectedCategoryIds.ToList()
                 };
                 await client.Posts.UpdateAsync(post);
                 status = "Updated and submitted for review";
@@ -125,6 +132,7 @@ public partial class Edit
         {
             lastSavedTitle = postTitle;
             lastSavedContent = _content;
+            lastSavedCategoryIds = selectedCategoryIds.ToHashSet();
             await RemoveLocalDraftAsync(postId);
             if (postId != null)
             {
@@ -209,6 +217,7 @@ public partial class Edit
         }
         existing.Title = postTitle;
         existing.Content = _content;
+        existing.Categories = selectedCategoryIds.ToList();
         existing.LastUpdated = DateTime.UtcNow;
         list = list.OrderByDescending(d => d.LastUpdated).Take(3).ToList();
         await SaveDraftStatesAsync(list);
