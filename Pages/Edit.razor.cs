@@ -72,7 +72,7 @@ public partial class Edit : IAsyncDisposable
         public DateTime LastUpdated { get; set; }
     }
 
-    private class PostSummary
+    public class PostSummary
     {
         public int Id { get; set; }
         public string? Title { get; set; }
