@@ -69,48 +69,41 @@ else if (showTable)
         <label class="form-check-label" for="showTrashedToggle">Include trashed articles</label>
     </div>
     <div class="table-scroll" @ref="scrollContainer">
-        <table class="table table-hover">
-            <thead>
-                <tr>
-                    <th>Id</th>
-                    <th>Title</th>
-                    <th>Author</th>
-                    <th>Status</th>
-                    <th>Publication Date</th>
-                    <th>Change Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var p in DisplayPosts)
-                {
-                    <tr @key="p.Id" class="article-row @(IsSelected(p, postId) ? "table-primary" : null)" @onclick="() => OpenPost(p)">
-                        <td>@(p.Id > 0 ? p.Id.ToString() : "")</td>
-                        <td>@p.Title</td>
-                        <td>@(string.IsNullOrEmpty(p.AuthorName) ? (p.Author > 0 ? p.Author.ToString() : "") : p.AuthorName)</td>
-                        <td>@p.Status</td>
-                        <td>@(p.Date.HasValue ? p.Date.Value.Humanize() : "")</td>
-                        <td>
-                            @if (p.Id > 0 && !string.IsNullOrEmpty(p.Status))
-                            {
-                                <div class="dropdown">
-                                    <button class="btn btn-sm @(GetStatusButtonClass(p.Status)) dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" @onclick:stopPropagation="true">
-                                        @p.Status
-                                    </button>
-                                    <ul class="dropdown-menu">
-                                        @foreach (var st in availableStatuses)
-                                        {
-                                            <li>
-                                                <button type="button" class="dropdown-item @(p.Status == st ? "active" : null)" @onclick="() => ChangeStatus(p, st)" @onclick:stopPropagation="true">@st</button>
-                                            </li>
-                                        }
-                                    </ul>
-                                </div>
-                            }
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+        <PDTable @ref="postsTable"
+                  TItem="PostSummary"
+                  DataProvider="postsProvider"
+                  KeyField="p => p.Id"
+                  TableClass="table table-hover">
+            <PDColumn TItem="PostSummary" Field="p => p.Id" Title="Id" />
+            <PDColumn TItem="PostSummary" Field="p => p.Title" Title="Title" />
+            <PDColumn TItem="PostSummary" Title="Author">
+                <Template Context="p">@((string.IsNullOrEmpty(p.AuthorName) ? (p.Author > 0 ? p.Author.ToString() : "") : p.AuthorName))</Template>
+            </PDColumn>
+            <PDColumn TItem="PostSummary" Field="p => p.Status" Title="Status" />
+            <PDColumn TItem="PostSummary" Title="Publication Date">
+                <Template Context="p">@(p.Date.HasValue ? p.Date.Value.Humanize() : "")</Template>
+            </PDColumn>
+            <PDColumn TItem="PostSummary" Sortable="false" Editable="false" Title="Change Status">
+                <Template Context="p">
+                    @if (p.Id > 0 && !string.IsNullOrEmpty(p.Status))
+                    {
+                        <div class="dropdown">
+                            <button class="btn btn-sm @(GetStatusButtonClass(p.Status)) dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" @onclick:stopPropagation="true">
+                                @p.Status
+                            </button>
+                            <ul class="dropdown-menu">
+                                @foreach (var st in availableStatuses)
+                                {
+                                    <li>
+                                        <button type="button" class="dropdown-item @(p.Status == st ? "active" : null)" @onclick="() => ChangeStatus(p, st)" @onclick:stopPropagation="true">@st</button>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    }
+                </Template>
+            </PDColumn>
+        </PDTable>
         <div @ref="scrollAnchor" class="scroll-anchor"></div>
     </div>
 }

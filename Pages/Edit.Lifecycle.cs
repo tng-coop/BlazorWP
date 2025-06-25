@@ -62,6 +62,7 @@ public partial class Edit
             });
         }
         UpdateDirty();
+        postsProvider = new PostSummaryDataProvider(() => DisplayPosts.ToList());
         //Console.WriteLine("[OnInitializedAsync] completed");
     }
 

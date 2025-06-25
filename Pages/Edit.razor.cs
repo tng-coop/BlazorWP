@@ -3,6 +3,8 @@ using Microsoft.JSInterop;
 using WordPressPCL;
 using WordPressPCL.Models;
 using WordPressPCL.Utility;
+using PanoramicData.Blazor;
+using BlazorWP.Data;
 
 namespace BlazorWP.Pages;
 
@@ -31,6 +33,8 @@ public partial class Edit : IAsyncDisposable
     private WordPressClient? client;
     private string? baseUrl;
     private int? postId;
+    private PDTable<PostSummary>? postsTable;
+    private PostSummaryDataProvider? postsProvider;
 
     private IEnumerable<PostSummary> DisplayPosts
     {

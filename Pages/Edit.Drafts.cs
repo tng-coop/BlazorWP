@@ -167,6 +167,10 @@ public partial class Edit
             if (placeholder != null)
             {
                 posts.Remove(placeholder);
+                if (postsTable != null)
+                {
+                    await postsTable.RefreshAsync();
+                }
             }
         }
         UpdateDirty();
