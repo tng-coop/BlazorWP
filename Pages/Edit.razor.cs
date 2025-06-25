@@ -53,7 +53,7 @@ public partial class Edit : IAsyncDisposable
     private bool ShowSaveDraftButton
         => postId == null || string.Equals(CurrentPostStatus, "draft", StringComparison.OrdinalIgnoreCase) || string.IsNullOrEmpty(CurrentPostStatus);
 
-    private bool CanSaveDraft => isDirty && hasPersistedContent;
+    private bool CanSaveDraft => isDirty || hasPersistedContent;
 
     private static bool IsSelected(PostSummary post, int? selectedId)
     {
