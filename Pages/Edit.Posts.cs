@@ -207,24 +207,91 @@ public partial class Edit
 
     private async Task RefreshPosts()
     {
-        //Console.WriteLine("[RefreshPosts] refreshing");
+        // Instead of refreshing the UI, fetch the latest posts and compare
+        // them with the current list, logging the differences.
+
+        if (client == null)
+        {
+            return;
+        }
+
         var pagesToLoad = currentPage;
-        currentPage = 1;
-        hasMore = true;
-        await DisconnectScrollAsync();
-        await LoadPosts(currentPage);
-
-        for (int p = 2; p <= pagesToLoad && hasMore; p++)
+        var statuses = new List<Status>
         {
-            currentPage = p;
-            await LoadPosts(currentPage, append: true);
+            Status.Publish,
+            Status.Private,
+            Status.Draft,
+            Status.Pending,
+            Status.Future,
+            Status.Trash
+        };
+
+        var fresh = new List<PostSummary>();
+
+        for (int page = 1; page <= pagesToLoad; page++)
+        {
+            var qb = new PostsQueryBuilder
+            {
+                Context = Context.Edit,
+                Page = page,
+                PerPage = page == 1 ? 10 : 20,
+                Embed = true,
+                Statuses = statuses
+            };
+
+            try
+            {
+                var list = await client.Posts.QueryAsync(qb, useAuth: true);
+                foreach (var p in list)
+                {
+                    fresh.Add(new PostSummary
+                    {
+                        Id = p.Id,
+                        Title = p.Title?.Rendered ?? string.Empty,
+                        Author = p.Author,
+                        AuthorName = p.Embedded?.Author?.FirstOrDefault()?.Name,
+                        Status = p.Status.ToString().ToLowerInvariant(),
+                        Date = DateTime.SpecifyKind(p.DateGmt, DateTimeKind.Utc).ToLocalTime(),
+                        Content = p.Content?.Rendered
+                    });
+                }
+                if (list.Count == 0)
+                {
+                    break;
+                }
+            }
+            catch
+            {
+                break;
+            }
         }
 
-        if (postId != null && !posts.Any(p => p.Id == postId))
+        var existing = posts.ToDictionary(p => p.Id);
+
+        foreach (var post in fresh)
         {
-            await LoadPostFromServerAsync(postId.Value);
+            if (existing.TryGetValue(post.Id, out var old))
+            {
+                if (old.Title != post.Title ||
+                    old.Author != post.Author ||
+                    old.AuthorName != post.AuthorName ||
+                    old.Status != post.Status ||
+                    old.Date != post.Date ||
+                    old.Content != post.Content)
+                {
+                    await JS.InvokeVoidAsync("console.log", $"MODIFIED {post.Id}: {post.Title}");
+                }
+                existing.Remove(post.Id);
+            }
+            else
+            {
+                await JS.InvokeVoidAsync("console.log", $"ADDED {post.Id}: {post.Title}");
+            }
         }
 
-        await ObserveScrollAsync();
+        foreach (var removed in existing.Values)
+        {
+            await JS.InvokeVoidAsync("console.log", $"REMOVED {removed.Id}: {removed.Title}");
+        }
     }
 }
