@@ -261,31 +261,46 @@ public partial class Edit
             Content = p.Content?.Rendered
         });
 
-        var diffIds = new List<int>();
+        // Use a dictionary for fast lookups and avoid duplicate additions.
+        var existing = posts.ToDictionary(p => p.Id);
+        var newPostIds = new List<int>();
 
-        foreach (var id in retrievedIds)
+        foreach (var kvp in fresh)
         {
-            if (!fresh.TryGetValue(id, out var freshPost))
+            if (existing.TryGetValue(kvp.Key, out var old))
             {
-                continue;
+                // Update existing entry if anything changed
+                if (old.Title != kvp.Value.Title ||
+                    old.Author != kvp.Value.Author ||
+                    old.AuthorName != kvp.Value.AuthorName ||
+                    old.Status != kvp.Value.Status ||
+                    old.Date != kvp.Value.Date ||
+                    old.Content != kvp.Value.Content)
+                {
+                    old.Title = kvp.Value.Title;
+                    old.Author = kvp.Value.Author;
+                    old.AuthorName = kvp.Value.AuthorName;
+                    old.Status = kvp.Value.Status;
+                    old.Date = kvp.Value.Date;
+                    old.Content = kvp.Value.Content;
+                }
             }
-
-            var old = posts.FirstOrDefault(p => p.Id == id);
-            if (old == null ||
-                old.Title != freshPost.Title ||
-                old.Author != freshPost.Author ||
-                old.AuthorName != freshPost.AuthorName ||
-                old.Status != freshPost.Status ||
-                old.Date != freshPost.Date ||
-                old.Content != freshPost.Content)
+            else
             {
-                diffIds.Add(id);
+                // New post detected
+                posts.Add(kvp.Value);
+                newPostIds.Add(kvp.Key);
             }
         }
 
-        if (diffIds.Count > 0)
+        if (newPostIds.Count > 0)
         {
-            await JS.InvokeVoidAsync("console.log", $"Differences in IDs: {string.Join(',', diffIds)}");
+            await JS.InvokeVoidAsync("console.log", $"New post IDs: {string.Join(',', newPostIds)}");
         }
+
+        // Keep list ordered by id descending for display consistency
+        posts = posts.OrderByDescending(p => p.Id).ToList();
+
+        await InvokeAsync(StateHasChanged);
     }
 }
