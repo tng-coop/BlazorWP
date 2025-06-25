@@ -82,6 +82,7 @@ public partial class Edit
             {
                 await JS.InvokeVoidAsync("setTinyMediaSource", selectedMediaSource);
             }
+            await JS.InvokeVoidAsync("initEditSplit");
             StateHasChanged();
         }
     }

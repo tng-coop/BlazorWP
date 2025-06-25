@@ -78,19 +78,21 @@
     </div>
 }
 
-@if (posts == null)
-{
-    <p><em>Loading posts...</em></p>
-}
-else if (showTable)
-{
-    <div class="table-scroll">
-        <table class="table table-hover">
-            <thead>
-                <tr>
-                    <th>Id</th>
-                    <th>Title</th>
-                    <th>Author</th>
+<div id="editSplit" class="edit-split">
+    <div class="article-list @(showTable ? string.Empty : "d-none")">
+        @if (posts == null)
+        {
+            <p><em>Loading posts...</em></p>
+        }
+        else
+        {
+            <div class="table-scroll">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Id</th>
+                            <th>Title</th>
+                            <th>Author</th>
                     <th>Status</th>
                     <th>Publication Date</th>
                     <th>Change Status</th>
@@ -126,18 +128,19 @@ else if (showTable)
                     </tr>
                 }
             </tbody>
-        </table>
+                </table>
+            </div>
+        }
     </div>
-}
-
-
-
-
-<Editor
-    Id="mainEditor"
-    ScriptSrc="libman/tinymce/tinymce.min.js"
-    LicenseKey="gpl"
-    JsConfSrc="myTinyMceConfig"
-    @bind-Value="_content"
-    @bind-Value:after="UpdateDirty" />
+    <div class="splitter @(showTable ? string.Empty : "d-none")"></div>
+    <div class="editor-pane">
+        <Editor
+            Id="mainEditor"
+            ScriptSrc="libman/tinymce/tinymce.min.js"
+            LicenseKey="gpl"
+            JsConfSrc="myTinyMceConfig"
+            @bind-Value="_content"
+            @bind-Value:after="UpdateDirty" />
+    </div>
+</div>
 

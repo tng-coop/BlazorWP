@@ -1,0 +1,15 @@
+.edit-split {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 10rem);
+}
+
+.article-list {
+    overflow-y: auto;
+}
+
+.splitter {
+    height: 6px;
+    background-color: #dee2e6;
+    cursor: row-resize;
+}
