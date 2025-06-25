@@ -60,6 +60,11 @@ public partial class Edit
             lastSavedTitle = postTitle;
             lastSavedContent = _content;
             await RemoveLocalDraftAsync(postId);
+            if (postId != null)
+            {
+                await LoadPostFromServerAsync(postId.Value);
+                await InvokeAsync(StateHasChanged);
+            }
         }
         else
         {
@@ -121,6 +126,11 @@ public partial class Edit
             lastSavedTitle = postTitle;
             lastSavedContent = _content;
             await RemoveLocalDraftAsync(postId);
+            if (postId != null)
+            {
+                await LoadPostFromServerAsync(postId.Value);
+                await InvokeAsync(StateHasChanged);
+            }
         }
         else
         {
@@ -158,6 +168,8 @@ public partial class Edit
             currentPage = 1;
             hasMore = true;
             await LoadPosts(currentPage);
+            await LoadPostFromServerAsync(postId.Value);
+            await InvokeAsync(StateHasChanged);
         }
         catch (Exception ex)
         {
