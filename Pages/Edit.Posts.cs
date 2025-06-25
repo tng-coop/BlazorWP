@@ -10,7 +10,7 @@ namespace BlazorWP.Pages;
 
 public partial class Edit
 {
-    private async Task LoadPosts(int page = 1, bool append = false)
+    private async Task LoadPosts(int page = 1, bool append = false, bool ignoreRefresh = false)
     {
         //Console.WriteLine($"[LoadPosts] page={page}, append={append}");
         if (page == 1 && !append)
@@ -18,7 +18,7 @@ public partial class Edit
             posts.Clear();
         }
 
-        var list = await PostService.GetPostsAsync(page);
+        var list = await PostService.GetPostsAsync(page, ignoreRefresh);
         foreach (var p in list)
         {
             posts.Add(p);
@@ -31,10 +31,10 @@ public partial class Edit
 
     private async Task PullMore()
     {
-        if (isLoading || !hasMore) return;
+        if (isLoading || isRefreshing || !hasMore) return;
         isLoading = true;
         currentPage++;
-        await LoadPosts(currentPage, append: true);
+        await LoadPosts(currentPage, append: true, ignoreRefresh: true);
         isLoading = false;
     }
 
@@ -176,6 +176,8 @@ public partial class Edit
     private async Task RefreshPosts()
     {
         //Console.WriteLine("[RefreshPosts] refreshing");
+        isRefreshing = true;
+        PostService.BeginRefresh();
         var pagesToLoad = currentPage;
         currentPage = 1;
         hasMore = true;
@@ -193,6 +195,8 @@ public partial class Edit
             await LoadPostFromServerAsync(postId.Value);
         }
 
+        PostService.EndRefresh();
+        isRefreshing = false;
         await ObserveScrollAsync();
     }
 }

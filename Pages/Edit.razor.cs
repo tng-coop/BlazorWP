@@ -24,6 +24,7 @@ public partial class Edit : IAsyncDisposable
     private bool hasMore = true;
     private int currentPage = 1;
     private bool isLoading = false;
+    private bool isRefreshing = false;
     private string _content = string.Empty;
     private bool showControls = true;
     private bool showTable = true;

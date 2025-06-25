@@ -12,6 +12,17 @@ public class PostService
     private WordPressClient? _client;
     private string? _baseUrl;
     private readonly SemaphoreSlim _lock = new(1, 1);
+    private bool _refreshing = false;
+
+    public void BeginRefresh()
+    {
+        _refreshing = true;
+    }
+
+    public void EndRefresh()
+    {
+        _refreshing = false;
+    }
 
     public PostService(JwtService jwtService, IJSRuntime js)
     {
@@ -39,11 +50,13 @@ public class PostService
         }
     }
 
-    public async Task<List<PostSummary>> GetPostsAsync(int page, CancellationToken ct = default)
+    public async Task<List<PostSummary>> GetPostsAsync(int page, bool ignoreIfRefreshing = false, CancellationToken ct = default)
     {
+        if (ignoreIfRefreshing && _refreshing) return new List<PostSummary>();
         await _lock.WaitAsync(ct);
         try
         {
+            if (ignoreIfRefreshing && _refreshing) return new List<PostSummary>();
             await EnsureClientAsync();
             var result = new List<PostSummary>();
             if (_client == null) return result;
