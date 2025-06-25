@@ -23,6 +23,7 @@ public partial class Edit
             ? $"Draft {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}"
             : postTitle;
 
+        bool success = false;
         try
         {
             if (postId == null)
@@ -49,15 +50,23 @@ public partial class Edit
                 await client.Posts.UpdateAsync(post);
                 status = "Draft updated";
             }
+            success = true;
         }
         catch (Exception ex)
         {
             status = $"Error: {ex.Message}";
         }
 
-        await SaveLocalDraftAsync();
-        lastSavedTitle = postTitle;
-        lastSavedContent = _content;
+        if (success)
+        {
+            lastSavedTitle = postTitle;
+            lastSavedContent = _content;
+            await RemoveLocalDraftAsync(postId);
+        }
+        else
+        {
+            await SaveLocalDraftAsync();
+        }
         UpdateDirty();
         showRetractReview = false;
         //Console.WriteLine("[SaveDraft] completed");
@@ -77,6 +86,7 @@ public partial class Edit
             ? $"Draft {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}"
             : postTitle;
 
+        bool success = false;
         try
         {
             if (postId == null)
@@ -103,15 +113,23 @@ public partial class Edit
                 await client.Posts.UpdateAsync(post);
                 status = "Updated and submitted for review";
             }
+            success = true;
         }
         catch (Exception ex)
         {
             status = $"Error: {ex.Message}";
         }
 
-        await SaveLocalDraftAsync();
-        lastSavedTitle = postTitle;
-        lastSavedContent = _content;
+        if (success)
+        {
+            lastSavedTitle = postTitle;
+            lastSavedContent = _content;
+            await RemoveLocalDraftAsync(postId);
+        }
+        else
+        {
+            await SaveLocalDraftAsync();
+        }
         UpdateDirty();
         currentPage = 1;
         hasMore = true;
@@ -158,9 +176,7 @@ public partial class Edit
         var closedId = postId;
         ResetEditorState();
         await SetEditorContentAsync(_content);
-        var list = await LoadDraftStatesAsync();
-        list.RemoveAll(d => d.PostId == closedId);
-        await SaveDraftStatesAsync(list);
+        await RemoveLocalDraftAsync(closedId);
         if (closedId != null)
         {
             var placeholder = posts.FirstOrDefault(p => p.Id == closedId && string.IsNullOrEmpty(p.Status));
@@ -188,6 +204,10 @@ public partial class Edit
         existing.LastUpdated = DateTime.UtcNow;
         list = list.OrderByDescending(d => d.LastUpdated).Take(3).ToList();
         await SaveDraftStatesAsync(list);
+        if (postId == existing.PostId)
+        {
+            hasPersistedContent = true;
+        }
     }
 
     private async Task<List<DraftInfo>> LoadDraftStatesAsync()
@@ -209,5 +229,18 @@ public partial class Edit
     {
         var json = JsonSerializer.Serialize(list);
         await JS.InvokeVoidAsync("localStorage.setItem", DraftsKey, json);
+    }
+
+    private async Task RemoveLocalDraftAsync(int? id)
+    {
+        var list = await LoadDraftStatesAsync();
+        if (list.RemoveAll(d => d.PostId == id) > 0)
+        {
+            await SaveDraftStatesAsync(list);
+        }
+        if (postId == id || postId == null)
+        {
+            hasPersistedContent = false;
+        }
     }
 }

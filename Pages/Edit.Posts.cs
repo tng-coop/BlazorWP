@@ -111,9 +111,11 @@ public partial class Edit
                     Content = _content
                 });
             }
+            hasPersistedContent = true;
             return true;
         }
         //Console.WriteLine("[TryLoadDraftAsync] no draft found");
+        hasPersistedContent = false;
         return false;
     }
 
@@ -136,6 +138,7 @@ public partial class Edit
             lastSavedTitle = postTitle;
             lastSavedContent = _content;
             await SetEditorContentAsync(_content);
+            hasPersistedContent = false;
             var existing = posts.FirstOrDefault(p => p.Id == id);
             if (existing == null)
             {
