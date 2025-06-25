@@ -80,7 +80,6 @@ public partial class Edit
             await module.InvokeVoidAsync("registerDotNetHelper", DotNetObjectReference.Create(this));
             StateHasChanged();
         }
-        await ObserveScrollAsync();
     }
 
     private async Task SetupWordPressClientAsync()

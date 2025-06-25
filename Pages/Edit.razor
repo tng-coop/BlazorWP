@@ -53,7 +53,6 @@
         <button class="btn btn-danger me-2" @onclick="CloseEditor">Close</button>
         <div class="ms-auto d-flex align-items-center">
             <span><strong>Status:</strong> @(isDirty ? "Dirty" : "Clean")</span>
-            <button class="btn btn-sm btn-outline-secondary ms-2" @onclick="RefreshPosts">Refresh</button>
         </div>
     </div>
 }
@@ -68,7 +67,7 @@ else if (showTable)
         <input class="form-check-input" type="checkbox" id="showTrashedToggle" @bind="showTrashed" @bind:after="OnShowTrashedChanged" />
         <label class="form-check-label" for="showTrashedToggle">Include trashed articles</label>
     </div>
-    <div class="table-scroll" @ref="scrollContainer">
+    <div class="table-scroll">
         <table class="table table-hover">
             <thead>
                 <tr>
@@ -111,7 +110,6 @@ else if (showTable)
                 }
             </tbody>
         </table>
-        <div @ref="scrollAnchor" class="scroll-anchor"></div>
     </div>
 }
 
