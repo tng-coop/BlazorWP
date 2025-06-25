@@ -19,9 +19,7 @@ public partial class Edit
             return;
         }
 
-        var title = string.IsNullOrWhiteSpace(postTitle)
-            ? $"Draft {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}"
-            : postTitle;
+        var title = postTitle;
 
         bool success = false;
         try
@@ -82,9 +80,7 @@ public partial class Edit
             return;
         }
 
-        var title = string.IsNullOrWhiteSpace(postTitle)
-            ? $"Draft {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}"
-            : postTitle;
+        var title = postTitle;
 
         bool success = false;
         try
