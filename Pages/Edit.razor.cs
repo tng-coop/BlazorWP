@@ -63,6 +63,8 @@ public partial class Edit : IAsyncDisposable
 
     private bool CanSaveDraft => isDirty || hasPersistedContent;
 
+    private bool EditorReadOnly => !ShowSaveDraftButton;
+
     private static bool IsSelected(PostSummary post, int? selectedId)
     {
         return selectedId != null && post.Id == selectedId;
