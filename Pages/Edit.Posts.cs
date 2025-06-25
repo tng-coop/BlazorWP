@@ -4,6 +4,7 @@ using System.Diagnostics;
 using WordPressPCL;
 using WordPressPCL.Models;
 using WordPressPCL.Utility;
+using BlazorWP.Data;
 
 namespace BlazorWP.Pages;
 
@@ -16,46 +17,13 @@ public partial class Edit
         {
             posts.Clear();
         }
-        if (client == null)
-        {
-            return;
-        }
 
-        var qb = new PostsQueryBuilder
+        var list = await PostService.GetPostsAsync(page);
+        foreach (var p in list)
         {
-            Context = Context.Edit,
-            Page = page,
-            PerPage = page == 1 && !append ? 10 : 20,
-            Embed = true,
-            Statuses = new List<Status> { Status.Publish, Status.Private, Status.Draft, Status.Pending, Status.Future, Status.Trash }
-        };
-
-        try
-        {
-            var list = await client.Posts.QueryAsync(qb, useAuth: true);
-            int count = 0;
-            foreach (var p in list)
-            {
-                posts.Add(new PostSummary
-                {
-                    Id = p.Id,
-                    Title = p.Title?.Rendered ?? string.Empty,
-                    Author = p.Author,
-                    AuthorName = p.Embedded?.Author?.FirstOrDefault()?.Name,
-                    Status = p.Status.ToString().ToLowerInvariant(),
-                    Date = DateTime.SpecifyKind(p.DateGmt, DateTimeKind.Utc).ToLocalTime(),
-                    Content = p.Content?.Rendered
-                });
-                count++;
-            }
-            //Console.WriteLine($"[LoadPosts] loaded {count} posts");
-            hasMore = count > 0;
+            posts.Add(p);
         }
-        catch
-        {
-            //Console.WriteLine("[LoadPosts] error fetching posts");
-            hasMore = false;
-        }
+        hasMore = list.Count > 0;
 
         showRetractReview = posts?.FirstOrDefault(p => p.Id == postId)?.Status == "pending";
         await InvokeAsync(StateHasChanged);

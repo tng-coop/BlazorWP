@@ -3,6 +3,7 @@ using Microsoft.JSInterop;
 using WordPressPCL;
 using WordPressPCL.Models;
 using WordPressPCL.Utility;
+using BlazorWP.Data;
 
 namespace BlazorWP.Pages;
 
