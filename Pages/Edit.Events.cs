@@ -88,6 +88,10 @@ public partial class Edit
                 await client.Posts.DeleteAsync(post.Id, true);
                 status = "Post moved to trash";
                 posts.Remove(post);
+                if (postsTable != null)
+                {
+                    await postsTable.RefreshAsync();
+                }
             }
             else
             {
@@ -95,6 +99,10 @@ public partial class Edit
                 await client.Posts.UpdateAsync(postUpdate);
                 status = $"Status changed to {newStatus}";
                 post.Status = newStatus;
+            }
+            if (postsTable != null)
+            {
+                await postsTable.RefreshAsync();
             }
             await InvokeAsync(StateHasChanged);
         }

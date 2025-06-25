@@ -50,6 +50,10 @@ public partial class Edit
             }
             //Console.WriteLine($"[LoadPosts] loaded {count} posts");
             hasMore = count > 0;
+            if (postsTable != null)
+            {
+                await postsTable.RefreshAsync();
+            }
         }
         catch
         {
@@ -97,6 +101,10 @@ public partial class Edit
                     Date = null,
                     Content = _content
                 });
+                if (postsTable != null)
+                {
+                    await postsTable.RefreshAsync();
+                }
             }
             return true;
         }
@@ -136,6 +144,10 @@ public partial class Edit
                     Date = DateTime.SpecifyKind(post.DateGmt, DateTimeKind.Utc).ToLocalTime(),
                     Content = post.Content?.Rendered
                 });
+                if (postsTable != null)
+                {
+                    await postsTable.RefreshAsync();
+                }
             }
             else
             {
@@ -145,6 +157,10 @@ public partial class Edit
                 existing.Status = post.Status.ToString().ToLowerInvariant();
                 existing.Date = DateTime.SpecifyKind(post.DateGmt, DateTimeKind.Utc).ToLocalTime();
                 existing.Content = post.Content?.Rendered;
+                if (postsTable != null)
+                {
+                    await postsTable.RefreshAsync();
+                }
             }
         }
         catch (Exception ex)
@@ -225,6 +241,10 @@ public partial class Edit
             await LoadPostFromServerAsync(postId.Value);
         }
 
+        if (postsTable != null)
+        {
+            await postsTable.RefreshAsync();
+        }
         await ObserveScrollAsync();
     }
 }
