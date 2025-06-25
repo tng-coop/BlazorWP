@@ -1,5 +1,6 @@
 using PanoramicData.Blazor.Interfaces;
 using PanoramicData.Blazor.Models;
+using BlazorWP.Pages;
 
 namespace BlazorWP.Data;
 
