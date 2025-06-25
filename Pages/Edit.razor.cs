@@ -84,7 +84,6 @@ public partial class Edit : IAsyncDisposable
 
     public ValueTask DisposeAsync()
     {
-        _ = DisconnectScrollAsync();
         return ValueTask.CompletedTask;
     }
 }

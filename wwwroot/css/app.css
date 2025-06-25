@@ -156,9 +156,6 @@ code {
     resize: vertical;
 }
 
-.scroll-anchor {
-    height: 1px;
-}
 
 .article-row {
     cursor: pointer;
