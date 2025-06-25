@@ -54,6 +54,19 @@ public partial class Edit : IAsyncDisposable
 
     private int DisplayCount => DisplayPosts.Count();
 
+    private string? CurrentPostStatus
+    {
+        get
+        {
+            return postId.HasValue
+                ? posts.FirstOrDefault(p => p.Id == postId.Value)?.Status
+                : null;
+        }
+    }
+
+    private bool ShowSaveDraftButton
+        => postId == null || string.Equals(CurrentPostStatus, "draft", StringComparison.OrdinalIgnoreCase) || string.IsNullOrEmpty(CurrentPostStatus);
+
     private static bool IsSelected(PostSummary post, int? selectedId)
     {
         return selectedId == null ? post.Id == -1 : post.Id == selectedId;
