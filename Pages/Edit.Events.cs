@@ -62,7 +62,8 @@ public partial class Edit
     private async Task OnShowTrashedChanged()
     {
         await JS.InvokeVoidAsync("localStorage.setItem", ShowTrashedKey, showTrashed.ToString().ToLowerInvariant());
-        await RefreshPosts();
+        // Only update the stored preference. Actual querying happens when
+        // the user explicitly clicks the Refresh button.
     }
 
     private async Task ChangeStatus(PostSummary post, string newStatus)
