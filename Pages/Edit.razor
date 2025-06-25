@@ -69,48 +69,41 @@ else if (showTable)
         <label class="form-check-label" for="showTrashedToggle">Include trashed articles</label>
     </div>
     <div class="table-scroll" @ref="scrollContainer">
-        <table class="table table-hover">
-            <thead>
-                <tr>
-                    <th>Id</th>
-                    <th>Title</th>
-                    <th>Author</th>
-                    <th>Status</th>
-                    <th>Publication Date</th>
-                    <th>Change Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var p in DisplayPosts)
-                {
-                    <tr @key="p.Id" class="article-row @(IsSelected(p, postId) ? "table-primary" : null)" @onclick="() => OpenPost(p)">
-                        <td>@(p.Id > 0 ? p.Id.ToString() : "")</td>
-                        <td>@p.Title</td>
-                        <td>@(string.IsNullOrEmpty(p.AuthorName) ? (p.Author > 0 ? p.Author.ToString() : "") : p.AuthorName)</td>
-                        <td>@p.Status</td>
-                        <td>@(p.Date.HasValue ? p.Date.Value.Humanize() : "")</td>
-                        <td>
-                            @if (p.Id > 0 && !string.IsNullOrEmpty(p.Status))
-                            {
-                                <div class="dropdown">
-                                    <button class="btn btn-sm @(GetStatusButtonClass(p.Status)) dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" @onclick:stopPropagation="true">
-                                        @p.Status
-                                    </button>
-                                    <ul class="dropdown-menu">
-                                        @foreach (var st in availableStatuses)
-                                        {
-                                            <li>
-                                                <button type="button" class="dropdown-item @(p.Status == st ? "active" : null)" @onclick="() => ChangeStatus(p, st)" @onclick:stopPropagation="true">@st</button>
-                                            </li>
-                                        }
-                                    </ul>
-                                </div>
-                            }
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+        <MudTable Items="DisplayPosts" Hover="true">
+            <HeaderContent>
+                <MudTh>Id</MudTh>
+                <MudTh>Title</MudTh>
+                <MudTh>Author</MudTh>
+                <MudTh>Status</MudTh>
+                <MudTh>Publication Date</MudTh>
+                <MudTh>Change Status</MudTh>
+            </HeaderContent>
+            <RowTemplate Context="p">
+                <MudTr @key="p.Id" Class="article-row @(IsSelected(p, postId) ? 'mud-selected' : null)" OnClick="@(() => OpenPost(p))">
+                    <MudTd DataLabel="Id">@((p.Id > 0 ? p.Id.ToString() : ""))</MudTd>
+                    <MudTd DataLabel="Title">@p.Title</MudTd>
+                    <MudTd DataLabel="Author">@(string.IsNullOrEmpty(p.AuthorName) ? (p.Author > 0 ? p.Author.ToString() : "") : p.AuthorName)</MudTd>
+                    <MudTd DataLabel="Status">@p.Status</MudTd>
+                    <MudTd DataLabel="Publication Date">@(p.Date.HasValue ? p.Date.Value.Humanize() : "")</MudTd>
+                    <MudTd DataLabel="Change Status">
+                        @if (p.Id > 0 && !string.IsNullOrEmpty(p.Status))
+                        {
+                            <MudMenu>
+                                <ActivatorContent>
+                                    <MudButton Variant="Variant.Outlined" Size="Size.Small" @onclick:stopPropagation="true">@p.Status</MudButton>
+                                </ActivatorContent>
+                                <ChildContent>
+                                    @foreach (var st in availableStatuses)
+                                    {
+                                        <MudMenuItem Disabled="p.Status == st" OnClick="@(() => ChangeStatus(p, st))">@st</MudMenuItem>
+                                    }
+                                </ChildContent>
+                            </MudMenu>
+                        }
+                    </MudTd>
+                </MudTr>
+            </RowTemplate>
+        </MudTable>
         <div @ref="scrollAnchor" class="scroll-anchor"></div>
     </div>
 }

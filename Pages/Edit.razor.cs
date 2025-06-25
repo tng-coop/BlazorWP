@@ -3,6 +3,7 @@ using Microsoft.JSInterop;
 using WordPressPCL;
 using WordPressPCL.Models;
 using WordPressPCL.Utility;
+using System.Threading;
 
 namespace BlazorWP.Pages;
 
@@ -23,6 +24,7 @@ public partial class Edit : IAsyncDisposable
     private bool hasMore = true;
     private int currentPage = 1;
     private bool isLoading = false;
+    private readonly SemaphoreSlim postsSemaphore = new(1, 1);
     private string _content = string.Empty;
     private bool showControls = true;
     private bool showTable = true;

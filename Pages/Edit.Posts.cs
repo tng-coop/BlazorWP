@@ -4,11 +4,67 @@ using System.Diagnostics;
 using WordPressPCL;
 using WordPressPCL.Models;
 using WordPressPCL.Utility;
+using System.Threading;
 
 namespace BlazorWP.Pages;
 
 public partial class Edit
 {
+    private async Task<List<PostSummary>> RetrievePostsPageAsync(int page, int perPage)
+    {
+        var result = new List<PostSummary>();
+        if (client == null)
+        {
+            return result;
+        }
+
+        await postsSemaphore.WaitAsync();
+        try
+        {
+            var qb = new PostsQueryBuilder
+            {
+                Context = Context.Edit,
+                Page = page,
+                PerPage = perPage,
+                Embed = true,
+                Statuses = new List<Status>
+                {
+                    Status.Publish,
+                    Status.Private,
+                    Status.Draft,
+                    Status.Pending,
+                    Status.Future,
+                    Status.Trash
+                }
+            };
+
+            var list = await client.Posts.QueryAsync(qb, useAuth: true);
+            foreach (var p in list)
+            {
+                result.Add(new PostSummary
+                {
+                    Id = p.Id,
+                    Title = p.Title?.Rendered ?? string.Empty,
+                    Author = p.Author,
+                    AuthorName = p.Embedded?.Author?.FirstOrDefault()?.Name,
+                    Status = p.Status.ToString().ToLowerInvariant(),
+                    Date = DateTime.SpecifyKind(p.DateGmt, DateTimeKind.Utc).ToLocalTime(),
+                    Content = p.Content?.Rendered
+                });
+            }
+        }
+        catch
+        {
+            // ignore errors
+        }
+        finally
+        {
+            postsSemaphore.Release();
+        }
+
+        return result;
+    }
+
     private async Task LoadPosts(int page = 1, bool append = false)
     {
         //Console.WriteLine($"[LoadPosts] page={page}, append={append}");
@@ -21,41 +77,14 @@ public partial class Edit
             return;
         }
 
-        var qb = new PostsQueryBuilder
+        var list = await RetrievePostsPageAsync(page, page == 1 && !append ? 10 : 20);
+        int count = 0;
+        foreach (var p in list)
         {
-            Context = Context.Edit,
-            Page = page,
-            PerPage = page == 1 && !append ? 10 : 20,
-            Embed = true,
-            Statuses = new List<Status> { Status.Publish, Status.Private, Status.Draft, Status.Pending, Status.Future, Status.Trash }
-        };
-
-        try
-        {
-            var list = await client.Posts.QueryAsync(qb, useAuth: true);
-            int count = 0;
-            foreach (var p in list)
-            {
-                posts.Add(new PostSummary
-                {
-                    Id = p.Id,
-                    Title = p.Title?.Rendered ?? string.Empty,
-                    Author = p.Author,
-                    AuthorName = p.Embedded?.Author?.FirstOrDefault()?.Name,
-                    Status = p.Status.ToString().ToLowerInvariant(),
-                    Date = DateTime.SpecifyKind(p.DateGmt, DateTimeKind.Utc).ToLocalTime(),
-                    Content = p.Content?.Rendered
-                });
-                count++;
-            }
-            //Console.WriteLine($"[LoadPosts] loaded {count} posts");
-            hasMore = count > 0;
+            posts.Add(p);
+            count++;
         }
-        catch
-        {
-            //Console.WriteLine("[LoadPosts] error fetching posts");
-            hasMore = false;
-        }
+        hasMore = count > 0;
 
         showRetractReview = posts?.FirstOrDefault(p => p.Id == postId)?.Status == "pending";
         await InvokeAsync(StateHasChanged);
@@ -217,28 +246,11 @@ public partial class Edit
 
         var target = posts.Count;
         var page = 1;
-        var all = new List<Post>();
+        var all = new List<PostSummary>();
 
         while (all.Count < target)
         {
-            var qb = new PostsQueryBuilder
-            {
-                Context = Context.Edit,
-                Page = page,
-                PerPage = 100,
-                Embed = true,
-                Statuses = new List<Status>
-                {
-                    Status.Publish,
-                    Status.Private,
-                    Status.Draft,
-                    Status.Pending,
-                    Status.Future,
-                    Status.Trash
-                }
-            };
-
-            var list = await client.Posts.QueryAsync(qb, useAuth: true);
+            var list = await RetrievePostsPageAsync(page, 100);
             all.AddRange(list);
             if (list.Count < 100)
             {
@@ -250,16 +262,7 @@ public partial class Edit
         var retrievedIds = all.Select(p => p.Id).ToList();
         await JS.InvokeVoidAsync("console.log", $"Retrieved IDs: {string.Join(',', retrievedIds)}");
 
-        var fresh = all.ToDictionary(p => p.Id, p => new PostSummary
-        {
-            Id = p.Id,
-            Title = p.Title?.Rendered ?? string.Empty,
-            Author = p.Author,
-            AuthorName = p.Embedded?.Author?.FirstOrDefault()?.Name,
-            Status = p.Status.ToString().ToLowerInvariant(),
-            Date = DateTime.SpecifyKind(p.DateGmt, DateTimeKind.Utc).ToLocalTime(),
-            Content = p.Content?.Rendered
-        });
+        var fresh = all.ToDictionary(p => p.Id);
 
         // Use a dictionary for fast lookups and avoid duplicate additions.
         var existing = posts.ToDictionary(p => p.Id);
