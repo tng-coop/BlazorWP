@@ -62,6 +62,7 @@ public partial class Edit
     private async Task OnShowTrashedChanged()
     {
         await JS.InvokeVoidAsync("localStorage.setItem", ShowTrashedKey, showTrashed.ToString().ToLowerInvariant());
+        await RefreshPosts();
     }
 
     private async Task ChangeStatus(PostSummary post, string newStatus)
