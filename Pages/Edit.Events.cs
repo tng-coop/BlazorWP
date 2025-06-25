@@ -80,7 +80,7 @@ public partial class Edit
         {
             if (string.Equals(newStatus, "trash", StringComparison.OrdinalIgnoreCase))
             {
-                await client.Posts.DeleteAsync(post.Id, true);
+                await client.Posts.DeleteAsync(post.Id, false);
                 status = "Post moved to trash";
                 posts.Remove(post);
             }
