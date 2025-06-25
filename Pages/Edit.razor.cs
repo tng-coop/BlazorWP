@@ -27,6 +27,8 @@ public partial class Edit : IAsyncDisposable
     private bool showControls = true;
     private bool showTable = true;
     private bool showTrashed = false;
+    private string selectedRefreshCount = "10";
+    private readonly string[] refreshOptions = new[] { "10", "25", "50", "100", "all" };
     private readonly string[] availableStatuses = new[] { "draft", "pending", "publish", "private", "trash" };
     private WordPressClient? client;
     private string? baseUrl;
