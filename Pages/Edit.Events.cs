@@ -1,5 +1,8 @@
 using System.Text.Json;
 using Microsoft.JSInterop;
+using Microsoft.AspNetCore.Components;
+using System.Collections.Generic;
+using System.Linq;
 using WordPressPCL;
 using WordPressPCL.Models;
 using WordPressPCL.Utility;
@@ -44,7 +47,9 @@ public partial class Edit
 
     private void UpdateDirty()
     {
-        isDirty = postTitle != lastSavedTitle || _content != lastSavedContent;
+        isDirty = postTitle != lastSavedTitle ||
+            _content != lastSavedContent ||
+            !selectedCategoryIds.SetEquals(lastSavedCategoryIds);
         //Console.WriteLine($"[UpdateDirty] isDirty={isDirty}");
     }
 
@@ -64,6 +69,20 @@ public partial class Edit
         await JS.InvokeVoidAsync("localStorage.setItem", ShowTrashedKey, showTrashed.ToString().ToLowerInvariant());
         // Only update the stored preference. Actual querying happens when
         // the user explicitly clicks the Refresh button.
+    }
+
+    private void OnCategoryCheckboxChanged(int id, ChangeEventArgs e)
+    {
+        var isChecked = e.Value as bool? == true;
+        if (isChecked)
+        {
+            selectedCategoryIds.Add(id);
+        }
+        else
+        {
+            selectedCategoryIds.Remove(id);
+        }
+        UpdateDirty();
     }
 
     private async Task ChangeStatus(PostSummary post, string newStatus)

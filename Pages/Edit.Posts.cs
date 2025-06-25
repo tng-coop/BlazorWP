@@ -1,6 +1,8 @@
 using System.Text.Json;
 using Microsoft.JSInterop;
 using System.Diagnostics;
+using System.Collections.Generic;
+using System.Linq;
 using WordPressPCL;
 using WordPressPCL.Models;
 using WordPressPCL.Utility;
@@ -57,7 +59,8 @@ public partial class Edit
                     AuthorName = p.Embedded?.Author?.FirstOrDefault()?.Name,
                     Status = p.Status.ToString().ToLowerInvariant(),
                     Date = DateTime.SpecifyKind(p.DateGmt, DateTimeKind.Utc).ToLocalTime(),
-                    Content = p.Content?.Rendered
+                    Content = p.Content?.Rendered,
+                    CategoryIds = p.Categories ?? new List<int>()
                 });
                 count++;
             }
@@ -97,6 +100,10 @@ public partial class Edit
             //Console.WriteLine($"[TryLoadDraftAsync] loaded draft title length={postTitle.Length}, content length={_content.Length}");
             lastSavedTitle = postTitle;
             lastSavedContent = _content;
+            selectedCategoryIds = item.Categories != null
+                ? item.Categories.ToHashSet()
+                : new HashSet<int>();
+            lastSavedCategoryIds = selectedCategoryIds.ToHashSet();
             await SetEditorContentAsync(_content);
             if (postId != null && !posts.Any(p => p.Id == postId))
             {
@@ -137,6 +144,10 @@ public partial class Edit
             //Console.WriteLine($"[LoadPostFromServerAsync] loaded title length={postTitle.Length}, content length={_content.Length}");
             lastSavedTitle = postTitle;
             lastSavedContent = _content;
+            selectedCategoryIds = post.Categories != null
+                ? post.Categories.ToHashSet()
+                : new HashSet<int>();
+            lastSavedCategoryIds = selectedCategoryIds.ToHashSet();
             await SetEditorContentAsync(_content);
             hasPersistedContent = false;
             var existing = posts.FirstOrDefault(p => p.Id == id);
@@ -150,7 +161,8 @@ public partial class Edit
                     AuthorName = post.Embedded?.Author?.FirstOrDefault()?.Name ?? string.Empty,
                     Status = post.Status.ToString().ToLowerInvariant(),
                     Date = DateTime.SpecifyKind(post.DateGmt, DateTimeKind.Utc).ToLocalTime(),
-                    Content = post.Content?.Rendered
+                    Content = post.Content?.Rendered,
+                    CategoryIds = post.Categories ?? new List<int>()
                 });
             }
             else
@@ -161,6 +173,7 @@ public partial class Edit
                 existing.Status = post.Status.ToString().ToLowerInvariant();
                 existing.Date = DateTime.SpecifyKind(post.DateGmt, DateTimeKind.Utc).ToLocalTime();
                 existing.Content = post.Content?.Rendered;
+                existing.CategoryIds = post.Categories ?? new List<int>();
             }
         }
         catch (Exception ex)
@@ -198,6 +211,8 @@ public partial class Edit
                     _content = post.Content;
                     lastSavedTitle = postTitle;
                     lastSavedContent = _content;
+                    selectedCategoryIds = post.CategoryIds.ToHashSet();
+                    lastSavedCategoryIds = selectedCategoryIds.ToHashSet();
                 }
                 else
                 {
