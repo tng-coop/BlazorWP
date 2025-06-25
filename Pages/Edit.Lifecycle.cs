@@ -80,8 +80,6 @@ public partial class Edit
             {
                 await JS.InvokeVoidAsync("setTinyMediaSource", selectedMediaSource);
             }
-            var module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/tinyMceHelper.js");
-            await module.InvokeVoidAsync("registerDotNetHelper", DotNetObjectReference.Create(this));
             StateHasChanged();
         }
     }
