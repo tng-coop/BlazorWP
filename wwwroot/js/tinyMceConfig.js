@@ -8,10 +8,6 @@ window.myTinyMceConfig = {
   toolbar: 'undo redo | bold italic | table | code mediaLibraryButton customButton showInfoButton fullscreen',
   mediaSource: null,
   setup: function (editor) {
-    // one-shot dynamic import, then hook all events
-    import('./tinyMceHelper.js').then(m => m.hookEditorEvents(editor));
-
-    // existing custom buttons…
     editor.ui.registry.addButton('customButton', {
       text: 'Alert',
       onAction: () => alert('Hello from TinyMCE!')
