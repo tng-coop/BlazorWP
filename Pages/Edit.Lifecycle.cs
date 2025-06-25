@@ -33,10 +33,12 @@ public partial class Edit
             _content = latestDraft.Content ?? string.Empty;
             lastSavedTitle = postTitle;
             lastSavedContent = _content;
+            hasPersistedContent = true;
         }
         else
         {
             ResetEditorState();
+            hasPersistedContent = false;
         }
 
         var trashedSetting = await JS.InvokeAsync<string?>("localStorage.getItem", ShowTrashedKey);

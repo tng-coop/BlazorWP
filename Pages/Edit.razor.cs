@@ -27,6 +27,7 @@ public partial class Edit : IAsyncDisposable
     private bool showControls = true;
     private bool showTable = true;
     private bool showTrashed = false;
+    private bool hasPersistedContent = false;
     private string selectedRefreshCount = "10";
     private readonly string[] refreshOptions = new[] { "10", "25", "50", "100", "all" };
     private readonly string[] availableStatuses = new[] { "draft", "pending", "publish", "private", "trash" };
@@ -66,6 +67,8 @@ public partial class Edit : IAsyncDisposable
 
     private bool ShowSaveDraftButton
         => postId == null || string.Equals(CurrentPostStatus, "draft", StringComparison.OrdinalIgnoreCase) || string.IsNullOrEmpty(CurrentPostStatus);
+
+    private bool CanSaveDraft => isDirty && hasPersistedContent;
 
     private static bool IsSelected(PostSummary post, int? selectedId)
     {
