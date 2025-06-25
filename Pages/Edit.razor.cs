@@ -57,6 +57,8 @@ public partial class Edit : IAsyncDisposable
         }
     }
 
+    private int DisplayCount => DisplayPosts.Count();
+
     private static bool IsSelected(PostSummary post, int? selectedId)
     {
         return selectedId == null ? post.Id == -1 : post.Id == selectedId;
