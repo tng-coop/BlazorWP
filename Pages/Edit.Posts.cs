@@ -208,14 +208,23 @@ public partial class Edit
     private async Task RefreshPosts()
     {
         //Console.WriteLine("[RefreshPosts] refreshing");
+        var pagesToLoad = currentPage;
         currentPage = 1;
         hasMore = true;
         await DisconnectScrollAsync();
         await LoadPosts(currentPage);
+
+        for (int p = 2; p <= pagesToLoad && hasMore; p++)
+        {
+            currentPage = p;
+            await LoadPosts(currentPage, append: true);
+        }
+
         if (postId != null && !posts.Any(p => p.Id == postId))
         {
             await LoadPostFromServerAsync(postId.Value);
         }
+
         await ObserveScrollAsync();
     }
 }
