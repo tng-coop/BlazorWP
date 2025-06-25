@@ -35,23 +35,8 @@ public partial class Edit : IAsyncDisposable
     private string? baseUrl;
     private int? postId;
 
-    private IEnumerable<PostSummary> DisplayPosts
-    {
-        get
-        {
-            IEnumerable<PostSummary> query = posts.OrderByDescending(p => p.Id);
-
-            if (postId == null)
-            {
-                var title = string.IsNullOrWhiteSpace(postTitle)
-                    ? "(Not saved yet)"
-                    : $"{postTitle} (not saved yet)";
-                return new[] { new PostSummary { Id = -1, Title = title, Author = 0, AuthorName = string.Empty } }.Concat(query);
-            }
-
-            return query;
-        }
-    }
+    private IEnumerable<PostSummary> DisplayPosts =>
+        posts.OrderByDescending(p => p.Id);
 
     private int DisplayCount => DisplayPosts.Count();
 
@@ -72,7 +57,7 @@ public partial class Edit : IAsyncDisposable
 
     private static bool IsSelected(PostSummary post, int? selectedId)
     {
-        return selectedId == null ? post.Id == -1 : post.Id == selectedId;
+        return selectedId != null && post.Id == selectedId;
     }
 
     private class DraftInfo
