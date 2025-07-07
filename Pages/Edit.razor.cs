@@ -41,7 +41,9 @@ public partial class Edit : IAsyncDisposable
     private int? postId;
 
     private IEnumerable<PostSummary> DisplayPosts =>
-        posts.OrderByDescending(p => p.Id);
+        posts
+            .OrderByDescending(p => p.Date ?? DateTime.MinValue)
+            .ThenByDescending(p => p.Id);
 
     private int DisplayCount => DisplayPosts.Count();
 

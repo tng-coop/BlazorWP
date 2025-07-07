@@ -42,7 +42,9 @@ public partial class Edit
             Page = page,
             PerPage = perPageOverride ?? (page == 1 && !append ? 10 : 20),
             Embed = true,
-            Statuses = statuses
+            Statuses = statuses,
+            OrderBy = PostsOrderBy.Date,
+            Order = Order.DESC
         };
 
         try
