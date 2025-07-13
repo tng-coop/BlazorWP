@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Linq;
 using System.Collections.Generic;
+using System.Net.Http;
 using Microsoft.JSInterop;
 using WordPressPCL;
 using WordPressPCL.Models;
@@ -119,12 +120,8 @@ public partial class Edit
 
         baseUrl = endpoint.TrimEnd('/') + "/wp-json/";
         //Console.WriteLine($"[SetupWordPressClientAsync] baseUrl={baseUrl}");
-        client = new WordPressClient(baseUrl);
-        var token = await JwtService.GetCurrentJwtAsync();
-        if (!string.IsNullOrEmpty(token))
-        {
-            client.Auth.SetJWToken(token);
-            //Console.WriteLine("[SetupWordPressClientAsync] token configured");
-        }
+        var handler = AuthHandler;
+        var httpClient = new HttpClient(handler) { BaseAddress = new Uri(baseUrl) };
+        client = new WordPressClient(httpClient);
     }
 }
