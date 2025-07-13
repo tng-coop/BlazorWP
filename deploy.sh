@@ -64,9 +64,9 @@ else
   exit 1
 fi
 
-# Deploy via rsync
+# Deploy via rsync (quiet mode to reduce verbosity)
 echo "→ Rsyncing to $REMOTE_HOST:$REMOTE_WEBPATH…"
-rsync -avz --delete \
+rsync -azq --delete \
   "$WWWROOT_DIR/" \
   "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_WEBPATH}/"
 
