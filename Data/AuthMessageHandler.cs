@@ -1,3 +1,4 @@
+using System;
 using System.Net.Http.Headers;
 using Microsoft.JSInterop;
 
@@ -7,12 +8,14 @@ public class AuthMessageHandler : DelegatingHandler
 {
     private readonly JwtService _jwtService;
     private readonly IJSRuntime _js;
+    private readonly HttpLogService _logService;
     private const string HostInWpKey = "hostInWp";
 
-    public AuthMessageHandler(JwtService jwtService, IJSRuntime js)
+    public AuthMessageHandler(JwtService jwtService, IJSRuntime js, HttpLogService logService)
     {
         _jwtService = jwtService;
         _js = js;
+        _logService = logService;
         InnerHandler = new HttpClientHandler();
     }
 
@@ -56,6 +59,21 @@ public class AuthMessageHandler : DelegatingHandler
             }
         }
 
-        return await base.SendAsync(request, cancellationToken);
+        var rawRequest = await HttpMessageUtils.FormatRawRequest(request);
+        _logService.Add($"-> {rawRequest}");
+        HttpResponseMessage response;
+        try
+        {
+            response = await base.SendAsync(request, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logService.Add($"!! {ex.Message}");
+            throw;
+        }
+
+        var rawResponse = await HttpMessageUtils.FormatRawResponse(response);
+        _logService.Add($"<- {rawResponse}");
+        return response;
     }
 }

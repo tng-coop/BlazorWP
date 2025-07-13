@@ -98,6 +98,12 @@ public partial class Edit : IAsyncDisposable
 
     public ValueTask DisposeAsync()
     {
+        LogService.LogsChanged -= OnLogsChanged;
         return ValueTask.CompletedTask;
+    }
+
+    private void OnLogsChanged()
+    {
+        InvokeAsync(StateHasChanged);
     }
 }

@@ -14,6 +14,8 @@ public partial class Edit
     protected override async Task OnInitializedAsync()
     {
         //Console.WriteLine("[OnInitializedAsync] starting");
+        LogService.LogsChanged += OnLogsChanged;
+        LogService.Clear();
         var draftsJson = await JS.InvokeAsync<string?>("localStorage.getItem", DraftsKey);
         DraftInfo? latestDraft = null;
         if (!string.IsNullOrEmpty(draftsJson))

@@ -157,4 +157,9 @@ public partial class Edit
             _ => "btn-outline-secondary",
         };
     }
+
+    private void ClearLogs()
+    {
+        LogService.Clear();
+    }
 }

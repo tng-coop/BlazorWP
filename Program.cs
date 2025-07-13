@@ -17,6 +17,7 @@ namespace BlazorWP
             builder.RootComponents.Add<HeadOutlet>("head::after");
 
             // 3) Your services
+            builder.Services.AddScoped<HttpLogService>();
             builder.Services.AddScoped<AuthMessageHandler>();
             builder.Services.AddScoped(sp =>
             {
