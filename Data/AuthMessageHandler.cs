@@ -1,18 +1,22 @@
 using System.Net.Http.Headers;
+using Microsoft.JSInterop;
 
 namespace BlazorWP;
 
-public class JwtAuthMessageHandler : DelegatingHandler
+public class AuthMessageHandler : DelegatingHandler
 {
     private readonly JwtService _jwtService;
+    private readonly IJSRuntime _js;
+    private const string HostInWpKey = "hostInWp";
 
-    public JwtAuthMessageHandler(JwtService jwtService)
+    public AuthMessageHandler(JwtService jwtService, IJSRuntime js)
     {
         _jwtService = jwtService;
+        _js = js;
         InnerHandler = new HttpClientHandler();
     }
 
-    private static bool ShouldSkipJwt(HttpRequestMessage request)
+    private static bool ShouldSkipAuth(HttpRequestMessage request)
     {
         var uri = request.RequestUri;
         if (uri == null)
@@ -27,7 +31,23 @@ public class JwtAuthMessageHandler : DelegatingHandler
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        if (!ShouldSkipJwt(request))
+        var hostPref = await _js.InvokeAsync<string?>("localStorage.getItem", HostInWpKey);
+        var useNonce = !string.IsNullOrEmpty(hostPref) && bool.TryParse(hostPref, out var hv) && hv;
+
+        if (useNonce)
+        {
+            var nonce = await _js.InvokeAsync<string?>("wpNonce.getNonce");
+            if (!string.IsNullOrWhiteSpace(nonce))
+            {
+                if (!ShouldSkipAuth(request))
+                {
+                    request.Headers.Remove("Authorization");
+                    request.Headers.Remove("X-WP-Nonce");
+                    request.Headers.Add("X-WP-Nonce", nonce);
+                }
+            }
+        }
+        else if (!ShouldSkipAuth(request))
         {
             var token = await _jwtService.GetCurrentJwtAsync();
             if (!string.IsNullOrWhiteSpace(token))

@@ -17,10 +17,10 @@ namespace BlazorWP
             builder.RootComponents.Add<HeadOutlet>("head::after");
 
             // 3) Your services
-            builder.Services.AddScoped<JwtAuthMessageHandler>();
+            builder.Services.AddScoped<AuthMessageHandler>();
             builder.Services.AddScoped(sp =>
             {
-                var handler = sp.GetRequiredService<JwtAuthMessageHandler>();
+                var handler = sp.GetRequiredService<AuthMessageHandler>();
                 return new HttpClient(handler) { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) };
             });
             builder.Services.AddMudServices();
