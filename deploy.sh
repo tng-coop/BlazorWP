@@ -20,24 +20,28 @@ REMOTE_USER="$Server__User"
 REMOTE_HOST="$Server__Host"
 REMOTE_WEBPATH="$Server__RemoteBlazorDir"
 
-# Clean previous publish
+# 1) Clean previous publish
 echo "→ Cleaning old publish…"
 rm -rf "$PUBLISH_DIR"
 
-# Perform publish and filter out specific WASM and optimization messages
-# (This removes WASM0001, WASM0060, WASM0062 and "Optimizing assemblies for size" messages)
+# 2) Restore client-side libraries into wwwroot/libman
+echo "→ Restoring client-side libraries…"
+libman restore
+
+# 3) Publish the project (implicit NuGet restore, build, and pack into PUBLISH_DIR)
 echo "→ Publishing $PROJECT_FILE to $PUBLISH_DIR…"
 set +o pipefail
 PUBLISH_OUTPUT=$(dotnet publish "$PROJECT_FILE" -c Release -o "$PUBLISH_DIR" 2>&1)
 PUBLISH_EXIT=$?
 set -o pipefail
-# Filter out only the specific messages
+
+# Filter out the specific WASM warnings/optimizations if desired
 echo "$PUBLISH_OUTPUT" | sed -E '/WASM0001|WASM0060|WASM0062|Optimizing assemblies for size/d'
 if [[ $PUBLISH_EXIT -ne 0 ]]; then
   exit $PUBLISH_EXIT
 fi
 
-# Patch base href in the generated index.html
+# 5) Patch <base> href in the generated index.html
 echo "→ Patching <base> href in $WWWROOT_DIR/index.html…"
 if [[ -f "$WWWROOT_DIR/index.html" ]]; then
   sed -i -E \
@@ -48,7 +52,7 @@ else
   exit 1
 fi
 
-# Deploy via rsync (quiet mode to reduce verbosity)
+# 6) Deploy via rsync (quiet mode to reduce verbosity)
 echo "→ Rsyncing to $REMOTE_HOST:$REMOTE_WEBPATH…"
 rsync -azq --delete \
   "$WWWROOT_DIR/" \
