@@ -20,37 +20,21 @@ REMOTE_USER="$Server__User"
 REMOTE_HOST="$Server__Host"
 REMOTE_WEBPATH="$Server__RemoteBlazorDir"
 
-# Detect wasm-tools workload version
-WASM_TOOLS_VER=$(dotnet workload list --no-cache | grep '^wasm-tools' | awk '{print $2}')
-
-# Build publish flags (always include base settings)
-PUBLISH_FLAGS=("-c" "Release" "-o" "$PUBLISH_DIR")
-# If version starts with 9.0.7, suppress WASM0001 warning via output filter
-if [[ "$WASM_TOOLS_VER" == 9.0.7* ]]; then
-  echo "→ Detected wasm-tools version $WASM_TOOLS_VER, will suppress WASM0001 warning via output filter"
-  SUPPRESS_WASM0001=true
-else
-  SUPPRESS_WASM0001=false
-fi
-
 # Clean previous publish
 echo "→ Cleaning old publish…"
 rm -rf "$PUBLISH_DIR"
 
-# Perform publish
+# Perform publish and filter out specific WASM and optimization messages
+# (This removes WASM0001, WASM0060, WASM0062 and "Optimizing assemblies for size" messages)
 echo "→ Publishing $PROJECT_FILE to $PUBLISH_DIR…"
-if [[ "$SUPPRESS_WASM0001" == true ]]; then
-  # Capture output and exit code, then filter out WASM0001 warnings
-  set +o pipefail
-  PUBLISH_OUTPUT=$(dotnet publish "$PROJECT_FILE" "${PUBLISH_FLAGS[@]}" 2>&1)
-  PUBLISH_EXIT=$?
-  set -o pipefail
-  echo "$PUBLISH_OUTPUT" | sed '/warning WASM0001/d'
-  if [[ $PUBLISH_EXIT -ne 0 ]]; then
-    exit $PUBLISH_EXIT
-  fi
-else
-  dotnet publish "$PROJECT_FILE" "${PUBLISH_FLAGS[@]}"
+set +o pipefail
+PUBLISH_OUTPUT=$(dotnet publish "$PROJECT_FILE" -c Release -o "$PUBLISH_DIR" 2>&1)
+PUBLISH_EXIT=$?
+set -o pipefail
+# Filter out only the specific messages
+echo "$PUBLISH_OUTPUT" | sed -E '/WASM0001|WASM0060|WASM0062|Optimizing assemblies for size/d'
+if [[ $PUBLISH_EXIT -ne 0 ]]; then
+  exit $PUBLISH_EXIT
 fi
 
 # Patch base href in the generated index.html
