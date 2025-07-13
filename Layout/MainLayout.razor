@@ -42,7 +42,7 @@
     private string? currentEndpoint;
     private string? currentUsername;
     private const string HostInWpKey = "hostInWp";
-    private bool hostInWp = false;
+    private bool hostInWp = true;
     private string? nonceMessage;
     private DotNetObjectReference<MainLayout>? _objRef;
 
@@ -67,7 +67,7 @@
             currentUsername = username;
             changed = true;
         }
-        var hostVal = !string.IsNullOrEmpty(hostPref) && bool.TryParse(hostPref, out var hv) ? hv : false;
+        var hostVal = !string.IsNullOrEmpty(hostPref) && bool.TryParse(hostPref, out var hv) ? hv : true;
         if (hostVal != hostInWp)
         {
             hostInWp = hostVal;
