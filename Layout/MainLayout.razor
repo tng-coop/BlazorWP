@@ -23,6 +23,10 @@
                 <input class="form-check-input" type="checkbox" id="hostInWpToggle" @bind="hostInWp" @bind:after="OnHostInWpChanged" />
                 <label class="form-check-label" for="hostInWpToggle">Hosted on WP</label>
             </div>
+            @if (hostInWp)
+            {
+                <span class="ms-2">Nonce: @nonceMessage</span>
+            }
         </div>
 
         <article class="content px-4">
@@ -39,6 +43,7 @@
     private string? currentUsername;
     private const string HostInWpKey = "hostInWp";
     private bool hostInWp = false;
+    private string? nonceMessage;
     private DotNetObjectReference<MainLayout>? _objRef;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -67,12 +72,24 @@
         {
             hostInWp = hostVal;
             changed = true;
+            if (hostInWp)
+            {
+                await FetchNonce();
+            }
+            else
+            {
+                nonceMessage = null;
+            }
         }
 
         if (firstRender)
         {
             _objRef = DotNetObjectReference.Create(this);
             await JS.InvokeVoidAsync("wpEndpointSync.register", _objRef);
+            if (hostInWp)
+            {
+                await FetchNonce();
+            }
         }
 
         if (changed)
@@ -118,6 +135,30 @@
     private async Task OnHostInWpChanged()
     {
         await JS.InvokeVoidAsync("localStorage.setItem", HostInWpKey, hostInWp.ToString().ToLowerInvariant());
+        if (hostInWp)
+        {
+            await FetchNonce();
+        }
+        else
+        {
+            nonceMessage = null;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task FetchNonce()
+    {
+        nonceMessage = "Loading...";
+        try
+        {
+            var nonce = await JS.InvokeAsync<string?>("wpNonce.getNonce");
+            nonceMessage = !string.IsNullOrEmpty(nonce) ? nonce : "Could not retrieve nonce";
+        }
+        catch
+        {
+            nonceMessage = "Could not retrieve nonce";
+        }
+        await InvokeAsync(StateHasChanged);
     }
 
     public async ValueTask DisposeAsync()
