@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>PDF → PNG Converter</title>
+  <style>
+    body { font-family: sans-serif; padding: 1rem; max-width: 600px; margin: auto; }
+    input, a { display: block; margin-top: 1rem; }
+    canvas { display: none; }
+    img { display: block; margin-top: 1rem; max-width: 100%; border: 1px solid #ccc; }
+  </style>
+</head>
+<body>
+  <h1>PDF → PNG Converter</h1>
+  <input type="file" id="file-input" accept="application/pdf"/>
+  <canvas id="canvas"></canvas>
+  <img id="output" alt="PNG preview"/>
+  <a id="download">Download as PNG</a>
+
+  <script type="module">
+    // 1. Load the core API
+    import pdfjsLib from 'https://esm.sh/pdfjs-dist@2.16.105/build/pdf.js';
+
+    // 2. Load the worker as a Web Worker module
+    import createWorker from 'https://esm.sh/pdfjs-dist@2.16.105/build/pdf.worker.js?worker';
+    //    esm.sh’s `?worker` flag will return a WorkerMessagePort you can pass straight in:
+    pdfjsLib.GlobalWorkerOptions.workerPort = createWorker();
+
+    const { getDocument } = pdfjsLib;
+
+    // 3. Wire up the file input
+    const fileInput = document.getElementById('file-input');
+    const canvas    = document.getElementById('canvas');
+    const outputImg = document.getElementById('output');
+    const download  = document.getElementById('download');
+
+    fileInput.addEventListener('change', async () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      // Load the PDF into memory
+      const arrayBuffer = await file.arrayBuffer();
+      const loadingTask = getDocument({ data: arrayBuffer });
+      const pdf = await loadingTask.promise;
+
+      // Render the first page at 2× scale
+      const page     = await pdf.getPage(1);
+      const viewport = page.getViewport({ scale: 2 });
+
+      canvas.width  = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext('2d');
+      await page.render({ canvasContext: ctx, viewport }).promise;
+
+      // Grab the PNG
+      const dataUrl = canvas.toDataURL('image/png');
+
+      // Show preview & set up download link
+      outputImg.src        = dataUrl;
+      download.href        = dataUrl;
+      download.download    = file.name.replace(/\.pdf$/i, '.png');
+      download.textContent = `Download ${download.download}`;
+    });
+  </script>
+</body>
+</html>
