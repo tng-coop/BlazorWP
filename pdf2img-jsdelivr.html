@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>PDF → PNG Converter</title>
+
+  <!-- Noto Sans SC for Chinese glyphs -->
+  <link rel="stylesheet" href="https://esm.sh/@fontsource/noto-sans-sc@5.2.6/index.css"/>
+
+  <style>
+    body {
+      /* use the loaded font first */
+      font-family: 'Noto Sans SC', sans-serif;
+      padding: 1rem;
+      max-width: 600px;
+      margin: auto;
+    }
+    input, a { display: block; margin-top: 1rem; }
+    canvas { display: none; }
+    img { display: block; margin-top: 1rem; max-width: 100%; border: 1px solid #ccc; }
+  </style>
+</head>
+<body>
+  <h1>PDF → PNG Converter</h1>
+  <input type="file" id="file-input" accept="application/pdf"/>
+  <canvas id="canvas"></canvas>
+  <img id="output" alt="PNG preview"/>
+  <a id="download">Download as PNG</a>
+
+  <script type="module">
+    import pdfjsLib from 'https://esm.sh/pdfjs-dist@2.16.105/build/pdf.js';
+    import createWorker from 'https://esm.sh/pdfjs-dist@2.16.105/build/pdf.worker.js?worker';
+
+    // point the worker
+    pdfjsLib.GlobalWorkerOptions.workerPort = createWorker();
+
+    // <- only change here: use jsDelivr GitHub proxy for CMaps
+    const cMapBaseUrl = 'https://cdn.jsdelivr.net/gh/mozilla/pdfjs-dist@v2.16.105/cmaps/';
+    const cMapPacked = true;
+
+    const { getDocument } = pdfjsLib;
+    const fileInput = document.getElementById('file-input');
+    const canvas    = document.getElementById('canvas');
+    const outputImg = document.getElementById('output');
+    const download  = document.getElementById('download');
+
+    fileInput.addEventListener('change', async () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      const arrayBuffer = await file.arrayBuffer();
+
+      // load with CMap support
+      const loadingTask = getDocument({
+        data: arrayBuffer,
+        cMapUrl: cMapBaseUrl,
+        cMapPacked
+      });
+      const pdf = await loadingTask.promise;
+
+      const page     = await pdf.getPage(1);
+      const viewport = page.getViewport({ scale: 2 });
+
+      canvas.width  = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext('2d');
+      await page.render({ canvasContext: ctx, viewport }).promise;
+
+      const dataUrl = canvas.toDataURL('image/png');
+      outputImg.src        = dataUrl;
+      download.href        = dataUrl;
+      download.download    = file.name.replace(/\.pdf$/i, '.png');
+      download.textContent = `Download ${download.download}`;
+    });
+  </script>
+</body>
+</html>
