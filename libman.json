@@ -14,6 +14,19 @@
     {
       "library": "tinymce@7.9.1",
       "destination": "wwwroot/libman/tinymce/"
+    },
+    {
+      "library": "@fontsource/noto-sans-sc@5.2.6",
+      "destination": "wwwroot/libman/noto-sans-sc/"
+    },
+    {
+      "library": "pdfjs-dist@2.16.105",
+      "destination": "wwwroot/libman/pdfjs-dist/",
+      "files": [
+        "build/pdf.js",
+        "build/pdf.worker.js",
+        "cmaps/**"
+      ]
     }
   ]
 }
