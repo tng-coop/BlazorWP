@@ -9,7 +9,6 @@
 
   <style>
     body {
-      /* use the loaded font first */
       font-family: 'Noto Sans SC', sans-serif;
       padding: 1rem;
       max-width: 600px;
@@ -31,13 +30,12 @@
     import pdfjsLib from 'https://esm.sh/pdfjs-dist@2.16.105/build/pdf.js';
     import createWorker from 'https://esm.sh/pdfjs-dist@2.16.105/build/pdf.worker.js?worker';
 
-    // point the worker
+    // wire up the PDF.js worker
     pdfjsLib.GlobalWorkerOptions.workerPort = createWorker();
 
-    // tell PDF.js where to fetch the .bcmap files
-    // (these live on GitHub raw so we avoid unpkg/jsdelivr)
-    const cMapBaseUrl = 'https://raw.githubusercontent.com/mozilla/pdfjs-dist/v2.16.105/cmaps/';
-    const cMapPacked = true;
+    // ← only change here: use jsDelivr GitHub proxy for CMaps
+    const cMapBaseUrl = 'https://cdn.jsdelivr.net/gh/mozilla/pdfjs-dist@v2.16.105/cmaps/';
+    const cMapPacked  = true;
 
     const { getDocument } = pdfjsLib;
     const fileInput = document.getElementById('file-input');
@@ -50,11 +48,9 @@
       if (!file) return;
 
       const arrayBuffer = await file.arrayBuffer();
-
-      // load with CMap support
       const loadingTask = getDocument({
         data: arrayBuffer,
-        cMapUrl: cMapBaseUrl,
+        cMapUrl:  cMapBaseUrl,
         cMapPacked
       });
       const pdf = await loadingTask.promise;
