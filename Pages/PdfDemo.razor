@@ -2,7 +2,7 @@
 
 <PageTitle>PDF → PNG Converter</PageTitle>
 
-<link rel="stylesheet" href="https://esm.sh/@fontsource/noto-sans-sc@5.2.6/index.css" />
+<link rel="stylesheet" href="libman/noto-sans-sc/index.css" />
 
 <style>
     body {
@@ -23,13 +23,13 @@
 <a id="download">Download as PNG</a>
 
 <script type="module">
-    import pdfjsLib from 'https://esm.sh/pdfjs-dist@2.16.105/build/pdf.js';
-    import createWorker from 'https://esm.sh/pdfjs-dist@2.16.105/build/pdf.worker.js?worker';
+    import pdfjsLib from 'libman/pdfjs-dist/build/pdf.js';
+    import createWorker from 'libman/pdfjs-dist/build/pdf.worker.js?worker';
 
     // wire up the PDF.js worker
     pdfjsLib.GlobalWorkerOptions.workerPort = createWorker();
 
-    const cMapBaseUrl = 'https://cdn.jsdelivr.net/gh/mozilla/pdfjs-dist@v2.16.105/cmaps/';
+    const cMapBaseUrl = 'libman/pdfjs-dist/cmaps/';
     const cMapPacked  = true;
 
     const { getDocument } = pdfjsLib;
