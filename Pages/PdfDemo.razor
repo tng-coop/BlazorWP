@@ -2,12 +2,12 @@
 
 <PageTitle>PDF → PNG Converter</PageTitle>
 
-<!-- Fontsource CSS -->
-<link rel="stylesheet" href="./libman/noto-sans-sc/index.css" />
+<!-- Noto Sans JP CJK font via LibMan -->
+<link rel="stylesheet" href="./libman/noto-sans-jp/index.css" />
 
 <style>
     body {
-        font-family: 'Noto Sans SC', sans-serif;
+        font-family: 'Noto Sans JP', sans-serif;
         padding: 1rem;
         max-width: 600px;
         margin: auto;
@@ -23,16 +23,12 @@
 <img id="output" alt="PNG preview" />
 <a id="download">Download as PNG</a>
 
+@* PDF.js rendering *@
 <script type="module">
     // ESM core build
-    import * as pdfjsLib
-      from './libman/pdfjs-dist/build/pdf.mjs';
-    // Worker URL bundle
-    import pdfWorkerUrl
-      from './libman/pdfjs-dist/build/pdf.worker.mjs?url';
-
-    // Point PDF.js at the worker
-    pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
+    import * as pdfjsLib from './libman/pdfjs-dist/build/pdf.mjs';
+    // Tell PDF.js where to find its worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc = './libman/pdfjs-dist/build/pdf.worker.mjs';
 
     const cMapBaseUrl = './libman/pdfjs-dist/cmaps/';
     const cMapPacked  = true;
