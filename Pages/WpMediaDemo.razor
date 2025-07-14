@@ -1,0 +1,40 @@
+@page "/wp-media-demo"
+@inject IJSRuntime JS
+@implements IDisposable
+
+<PageTitle>WP Media Demo</PageTitle>
+
+<h1>WordPress Media Popup</h1>
+
+<button class="btn btn-primary mb-3" @onclick="OpenMedia">Open Media Library</button>
+
+@if (!string.IsNullOrEmpty(selectedAttachment))
+{
+    <p>Selected attachment:</p>
+    <pre class="json-view">@selectedAttachment</pre>
+}
+
+@code {
+    private string? selectedAttachment;
+
+    protected override void OnInitialized()
+    {
+        MediaInterop.MediaSelected += HandleMediaSelected;
+    }
+
+    private async Task OpenMedia()
+    {
+        await JS.InvokeVoidAsync("launchWpMedia");
+    }
+
+    private void HandleMediaSelected(string json)
+    {
+        selectedAttachment = json;
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        MediaInterop.MediaSelected -= HandleMediaSelected;
+    }
+}

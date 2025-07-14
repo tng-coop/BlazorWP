@@ -16,6 +16,31 @@
     <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- WordPress media scripts -->
+    <script src="https://yasuaki.com/wp-admin/load-scripts.php?load=jquery-core,underscore,backbone,media-models,media-views,media-editor"></script>
+    <script>
+        window.wpApiSettings = { root: '/wp-json/', nonce: '' };
+        window.launchWpMedia = async () => {
+            if (window.wpNonce && !window.wpApiSettings.nonce) {
+                const n = await window.wpNonce.getNonce();
+                if (n) {
+                    window.wpApiSettings.nonce = n;
+                }
+            }
+            const frame = wp.media({
+                title: 'Select or Upload Media',
+                library: { type: 'image' },
+                button: { text: 'Insert Image' },
+                multiple: false
+            });
+            frame.on('select', () => {
+                const attachment = frame.state().get('selection').first().toJSON();
+                DotNet.invokeMethodAsync('BlazorWP', 'OnMediaSelected', JSON.stringify(attachment));
+            });
+            frame.open();
+        };
+    </script>
 </head>
 
 <body>
