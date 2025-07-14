@@ -1,0 +1,16 @@
+@page "/media"
+@inject IJSRuntime JS
+
+<h3>WordPress Media Library</h3>
+<p>Loading…</p>
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // call our JS helper to append the iframe
+            await JS.InvokeVoidAsync("wpMedia.showUploadIframe");
+        }
+    }
+}
