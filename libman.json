@@ -20,11 +20,11 @@
       "destination": "wwwroot/libman/noto-sans-sc/"
     },
     {
-      "library": "pdfjs-dist@2.16.105",
+      "library": "pdfjs-dist@5.3.93",
       "destination": "wwwroot/libman/pdfjs-dist/",
       "files": [
-        "build/pdf.js",
-        "build/pdf.worker.js",
+        "build/pdf.mjs",
+        "build/pdf.worker.mjs",
         "cmaps/**"
       ]
     }
