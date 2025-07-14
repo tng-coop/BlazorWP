@@ -16,8 +16,8 @@
       "destination": "wwwroot/libman/tinymce/"
     },
     {
-      "library": "@fontsource/noto-sans-sc@5.2.6",
-      "destination": "wwwroot/libman/noto-sans-sc/"
+      "library": "@fontsource/noto-sans-jp@5.2.6",
+      "destination": "wwwroot/libman/noto-sans-jp/"
     },
     {
       "library": "pdfjs-dist@5.3.93",
