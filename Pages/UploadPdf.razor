@@ -16,18 +16,24 @@ else
 {
     <div class="mb-3">
         <InputFile id="file-input" class="form-control" accept="application/pdf" OnChange="HandleFileChange" />
-
-
     </div>
-    <button id="upload-btn" class="btn btn-primary mb-3" @onclick="UploadAsync" disabled="@(_file == null)">Upload to WordPress</button>
+    <div class="d-flex align-items-center gap-2 mb-3">
+        <button id="upload-btn" class="btn btn-primary" @onclick="UploadAsync" disabled="@(_file == null)">Upload to WordPress</button>
+        @if (!string.IsNullOrEmpty(status))
+        {
+            <span>@status</span>
+        }
+    </div>
+    @if (isUploading)
+    {
+        <div class="progress mb-3">
+            <div class="progress-bar" role="progressbar" style="width: @uploadProgress%" aria-valuenow="@uploadProgress" aria-valuemin="0" aria-valuemax="100">@uploadProgress%</div>
+        </div>
+    }
     <canvas id="canvas" style="display:none;"></canvas>
     <div class="preview-wrapper">
         <img id="preview" class="preview-image mb-3" alt="PDF preview" />
     </div>
-    @if (!string.IsNullOrEmpty(status))
-    {
-        <div class="mt-2">@status</div>
-    }
 }
 
 <script type="module">
@@ -84,6 +90,8 @@ else
     private WordPressClient? client;
     private IBrowserFile? _file;
     private string? status;
+    private int uploadProgress;
+    private bool isUploading;
 
     protected override async Task OnInitializedAsync()
     {
@@ -109,16 +117,28 @@ else
             return;
         }
 
-        status = "Uploading...";
+        status = null;
+        uploadProgress = 0;
+        isUploading = true;
         try
         {
             using var stream = _file.OpenReadStream(long.MaxValue);
-            var media = await client.Media.CreateAsync(stream, _file.Name, "application/pdf");
+            using var progressStream = new ProgressStream(stream, (sent, total) =>
+            {
+                uploadProgress = (int)(sent * 100 / total);
+                InvokeAsync(StateHasChanged);
+            });
+            var media = await client.Media.CreateAsync(progressStream, _file.Name, "application/pdf");
             status = $"Uploaded media ID: {media.Id}";
+            uploadProgress = 100;
         }
         catch (Exception ex)
         {
             status = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            isUploading = false;
         }
     }
 }
