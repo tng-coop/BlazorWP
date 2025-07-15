@@ -15,8 +15,6 @@
   private ElementReference iframeEl;
   private ElementReference overlayEl;
 
-  private string status = "Loading…";
-
   protected override async Task OnAfterRenderAsync(bool firstRender)
   {
     if (firstRender)
@@ -26,6 +24,4 @@
   }
 
 
-  public void Dispose()
-    => dotnetRef?.Dispose();
 }
