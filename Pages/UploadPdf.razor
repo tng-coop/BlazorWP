@@ -1,0 +1,67 @@
+@page "/upload-pdf"
+@using WordPressPCL
+@inject IJSRuntime JS
+@inject AuthMessageHandler AuthHandler
+
+<PageTitle>Upload PDF</PageTitle>
+
+<h1>Upload PDF</h1>
+
+@if (client == null)
+{
+    <p>No WordPress endpoint verified. Visit <NavLink href="/">Home</NavLink> first.</p>
+}
+else
+{
+    <div class="mb-3">
+        <input type="file" class="form-control" accept="application/pdf" @onchange="HandleFileChange" />
+    </div>
+    <button class="btn btn-primary" @onclick="UploadAsync" disabled="@(_file == null)">Upload to WordPress</button>
+    @if (!string.IsNullOrEmpty(status))
+    {
+        <div class="mt-2">@status</div>
+    }
+}
+
+@code {
+    private WordPressClient? client;
+    private IBrowserFile? _file;
+    private string? status;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var endpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
+        if (string.IsNullOrEmpty(endpoint))
+        {
+            return;
+        }
+        var baseUrl = endpoint.TrimEnd('/') + "/wp-json/";
+        var httpClient = new HttpClient(AuthHandler) { BaseAddress = new Uri(baseUrl) };
+        client = new WordPressClient(httpClient);
+    }
+
+    private void HandleFileChange(InputFileChangeEventArgs e)
+    {
+        _file = e.File;
+    }
+
+    private async Task UploadAsync()
+    {
+        if (client == null || _file == null)
+        {
+            return;
+        }
+
+        status = "Uploading...";
+        try
+        {
+            using var stream = _file.OpenReadStream(long.MaxValue);
+            var media = await client.Media.CreateAsync(stream, _file.Name, "application/pdf");
+            status = $"Uploaded media ID: {media.Id}";
+        }
+        catch (Exception ex)
+        {
+            status = $"Error: {ex.Message}";
+        }
+    }
+}
