@@ -3,6 +3,7 @@
 @using Microsoft.AspNetCore.Components.Forms
 @using System.IO
 @using System.Text.RegularExpressions
+@using System.Collections.Generic
 @inject IJSRuntime JS
 @inject AuthMessageHandler AuthHandler
 
@@ -144,7 +145,13 @@ else
                 var bytes = Convert.FromBase64String(base64);
                 using var imageStream = new MemoryStream(bytes);
                 var thumb = await client.Media.CreateAsync(imageStream, Path.ChangeExtension(_file.Name, ".png"), "image/png");
-                media.Meta = new { _thumbnail_id = thumb.Id };
+                thumb.Post = media.Id;
+                await client.Media.UpdateAsync(thumb);
+
+                media.Meta = new Dictionary<string, object>
+                {
+                    ["_thumbnail_id"] = thumb.Id
+                };
                 await client.Media.UpdateAsync(media);
                 status = $"Uploaded media ID: {media.Id} (thumbnail {thumb.Id})";
             }
