@@ -15,7 +15,8 @@
 else
 {
     <div class="mb-3">
-        <InputFile class="form-control" accept="application/pdf" OnChange="HandleFileChange" />
+        <InputFile id="file-input" class="form-control" accept="application/pdf" OnChange="HandleFileChange" />
+
 
     </div>
     <canvas id="canvas" style="display:none;"></canvas>
@@ -32,11 +33,11 @@ else
     pdfjsLib.GlobalWorkerOptions.workerSrc = './libman/pdfjs-dist/build/pdf.worker.mjs';
 
     const cMapBaseUrl = './libman/pdfjs-dist/cmaps/';
-    const cMapPacked  = true;
+    const cMapPacked = true;
 
     const { getDocument } = pdfjsLib;
     const fileInput = document.getElementById('file-input');
-    const canvas    = document.getElementById('canvas');
+    const canvas = document.getElementById('canvas');
     const outputImg = document.getElementById('preview');
 
     fileInput?.addEventListener('change', async () => {
@@ -46,15 +47,15 @@ else
         const arrayBuffer = await file.arrayBuffer();
         const loadingTask = getDocument({
             data: arrayBuffer,
-            cMapUrl:  cMapBaseUrl,
+            cMapUrl: cMapBaseUrl,
             cMapPacked
         });
         const pdf = await loadingTask.promise;
 
-        const page     = await pdf.getPage(1);
+        const page = await pdf.getPage(1);
         const viewport = page.getViewport({ scale: 2 });
 
-        canvas.width  = viewport.width;
+        canvas.width = viewport.width;
         canvas.height = viewport.height;
         const ctx = canvas.getContext('2d');
         await page.render({ canvasContext: ctx, viewport }).promise;
