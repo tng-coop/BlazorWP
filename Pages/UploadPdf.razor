@@ -1,6 +1,8 @@
 @page "/upload-pdf"
 @using WordPressPCL
 @using Microsoft.AspNetCore.Components.Forms
+@using System.IO
+@using System.Text.RegularExpressions
 @inject IJSRuntime JS
 @inject AuthMessageHandler AuthHandler
 
@@ -48,6 +50,8 @@ else
     const canvas = document.getElementById('canvas');
     const outputImg = document.getElementById('preview');
     const uploadBtn = document.getElementById('upload-btn');
+    let previewDataUrl = "";
+    window.getPreviewDataUrl = () => previewDataUrl;
 
     function adjustPreview() {
         if (!outputImg) return;
@@ -81,7 +85,8 @@ else
         const ctx = canvas.getContext('2d');
         await page.render({ canvasContext: ctx, viewport }).promise;
 
-        outputImg.src = canvas.toDataURL('image/png');
+        previewDataUrl = canvas.toDataURL('image/png');
+        outputImg.src = previewDataUrl;
         adjustPreview();
     });
 </script>
@@ -129,8 +134,24 @@ else
                 InvokeAsync(StateHasChanged);
             });
             var media = await client.Media.CreateAsync(progressStream, _file.Name, "application/pdf");
-            status = $"Uploaded media ID: {media.Id}";
+
             uploadProgress = 100;
+
+            var dataUrl = await JS.InvokeAsync<string>("getPreviewDataUrl");
+            if (!string.IsNullOrEmpty(dataUrl))
+            {
+                var base64 = Regex.Replace(dataUrl, "^data:image\\/png;base64,", string.Empty, RegexOptions.IgnoreCase);
+                var bytes = Convert.FromBase64String(base64);
+                using var imageStream = new MemoryStream(bytes);
+                var thumb = await client.Media.CreateAsync(imageStream, Path.ChangeExtension(_file.Name, ".png"), "image/png");
+                media.Meta = new { _thumbnail_id = thumb.Id };
+                await client.Media.UpdateAsync(media);
+                status = $"Uploaded media ID: {media.Id} (thumbnail {thumb.Id})";
+            }
+            else
+            {
+                status = $"Uploaded media ID: {media.Id}";
+            }
         }
         catch (Exception ex)
         {
