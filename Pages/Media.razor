@@ -1,89 +1,50 @@
 @page "/media"
+@inject IJSRuntime JS
 
-<!-- Overlay to hide the UI until the iframe has injected its styles -->
-<div id="overlay">Loading Media Library…</div>
+<div class="d-flex flex-column vh-100 p-0">
+  <div class="top-row"></div>
 
-<div class="app-layout" id="app-layout">
-  <nav class="sidebar">
-    <!-- your existing nav links here -->
-  </nav>
+  <div class="media-container d-flex flex-column flex-fill overflow-hidden">
+    <h3 class="px-4 mb-2">Media Library</h3>
 
-  <main class="content">
-    <h3>Media Library</h3>
+    <!-- overlay sits on top until we call JS to hide it -->
+    <div @ref="overlayEl" class="media-overlay d-flex align-items-center justify-content-center">
+      <div class="spinner-border" role="status">
+        <span class="visually-hidden">Loading…</span>
+      </div>
+    </div>
+
     <iframe
+      @ref="iframeEl"
       src="/wp-admin/upload.php"
-      class="media-iframe"
-      onload="handleIframeLoad(this)"
-    ></iframe>
-  </main>
+      class="media-iframe flex-fill w-100 border-0">
+    </iframe>
+  </div>
 </div>
 
-<style>
-  /* Full-screen white overlay */
-  #overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.25rem;
-    z-index: 9999;
+@code {
+  private ElementReference iframeEl;
+  private ElementReference overlayEl;
+  private DotNetObjectReference<Media>? dotnetRef;
+
+  protected override async Task OnAfterRenderAsync(bool firstRender)
+  {
+    if (firstRender)
+    {
+      dotnetRef = DotNetObjectReference.Create(this);
+      await JS.InvokeVoidAsync("wpMedia.initMediaPage", iframeEl, overlayEl, dotnetRef);
+    }
   }
 
-  .app-layout {
-    display: flex;
-    height: 100vh;
-    visibility: hidden; /* hide until iframe ready */
-  }
-  .sidebar {
-    width: 250px; /* or your desired nav width */
-  }
-  .content {
-    flex: 1;
-    overflow: hidden;
-    position: relative;
+  [JSInvokable]
+  public Task IframeHasLoaded()
+  {
+    // you can do any further .NET-side logic here if needed
+    return Task.CompletedTask;
   }
 
-  .media-iframe {
-    width: 100%;
-    height: 100%;
-    border: none;
-    display: block;
+  public void Dispose()
+  {
+    dotnetRef?.Dispose();
   }
-</style>
-
-<script>
-  function handleIframeLoad(iframe) {
-    // Inject CSS to hide WP admin chrome inside the iframe
-    const doc = iframe.contentDocument || iframe.contentWindow.document;
-    const style = doc.createElement('style');
-    style.textContent = `
-      /* hide WP admin chrome */
-      #wpadminbar,
-      #adminmenumain,
-      #adminmenuwrap,
-      #wpfooter,
-      .wrap > h1 {
-        display: none !important;
-      }
-
-      /* let the media grid fill the frame */
-      html, body, #wpbody-content, .wrap {
-        margin: 0 !important;
-        padding: 0 !important;
-        height: 100% !important;
-      }
-    `;
-    doc.head.appendChild(style);
-
-    // Once styles are applied, remove overlay and show the layout
-    const overlay = document.getElementById('overlay');
-    if (overlay) overlay.remove();
-    const layout = document.getElementById('app-layout');
-    if (layout) layout.style.visibility = 'visible';
-  }
-</script>
+}

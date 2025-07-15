@@ -1,44 +1,45 @@
 window.wpMedia = {
-  showUploadIframe: () => {
-    // hide the parent admin bar (if present)
-    const bar = document.getElementById('wpadminbar');
-    if (bar) bar.style.display = 'none';
+  initMediaPage: function(iframeEl, overlayEl, dotnetRef) {
+    console.log("↪ wpMedia.initMediaPage called");         // <-- for sanity-checking
 
-    // create & style the iframe
-    const iframe = document.createElement('iframe');
-    iframe.src = `${location.origin}/wp-admin/upload.php?TB_iframe=1`;
-    Object.assign(iframe.style, {
-      position:   'fixed',
-      top:        '0',
-      left:       '0',
-      width:      '100vw',
-      height:     '100vh',
-      border:     'none',
-      zIndex:     '2147483647',
-      background: '#fff'
-    });
-
-    // inject CSS into the iframe to hide any WP chrome inside it
-    iframe.onload = () => {
+    // 1) hide the overlay only once the iframe really loads
+    iframeEl.addEventListener("load", () => {
+      // inject your WP-stripping CSS
       try {
-        const d = iframe.contentDocument || iframe.contentWindow.document;
-        const s = d.createElement('style');
-        s.textContent = `
-          #wpadminbar, .wrap > h1, #adminmenuwrap, #adminmenumain, #wpfooter {
-            display: none !important;
+        const doc = iframeEl.contentDocument || iframeEl.contentWindow.document;
+        const style = doc.createElement("style");
+        style.textContent = `
+          #wpadminbar, #adminmenumain, #adminmenuwrap, #wpfooter, .wrap > h1 {
+            display: none!important;
           }
           html, body, #wpbody-content, .wrap {
-            margin: 0 !important;
-            padding: 0 !important;
-            height: 100% !important;
+            margin:0!important;
+            padding:0!important;
+            height:100%!important;
           }
         `;
-        d.head.appendChild(s);
-      } catch(e) {
-        console.warn('Couldn’t inject CSS into upload.php iframe:', e);
+        doc.head.appendChild(style);
+      } catch (e) {
+        console.warn("Failed to inject CSS:", e);
       }
-    };
 
-    document.body.appendChild(iframe);
+      // hide your overlay
+      overlayEl.style.display = "none";
+
+      // notify Blazor
+      dotnetRef.invokeMethodAsync("IframeHasLoaded");
+    });
+
+    // 2) wire up resizing (if you still need it)
+    function adjustMediaHeight() {
+      const header = document.querySelector(".top-row");
+      if (!header) return;
+      const h = window.innerHeight - header.getBoundingClientRect().height;
+      // stretch the iframe itself
+      iframeEl.style.height = h + "px";
+      console.log("↪ resized iframe to", h);
+    }
+    window.addEventListener("resize", adjustMediaHeight);
+    adjustMediaHeight();
   }
 };
