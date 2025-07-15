@@ -18,15 +18,6 @@
     font-weight: bold;
     font-size: 1.25rem;
   }
-  /* keep your overlay if you still want to mask the page until ready */
-  .media-overlay {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: rgba(255,255,0,0.9) !important;
-    outline: 2px dashed red;
-    z-index: 10;
-  }
 </style>
 
 
@@ -36,9 +27,7 @@
     <div class="center-green-box">@status</div>
 
     <!-- overlay (no spinner any more) -->
-    <div @ref="overlayEl" class="media-overlay"></div>
-
-    <iframe
+    <iframe style="display: none;"
       @ref="iframeEl"
       src="/wp-admin/upload.php"
       class="media-iframe">
