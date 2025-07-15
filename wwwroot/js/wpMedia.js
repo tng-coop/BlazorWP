@@ -34,17 +34,39 @@ window.wpMedia = {
       console.log(`Distance from top of page to iframe top: ${pageOffsetTop}px`);
     });
 
-    // 2) wire up resizing based solely on iframe’s page offset
-    function adjustMediaHeight() {
+    // 2) wire up resizing for both iframe and overlay
+    function adjustMedia() {
       if (!iframeEl) return;
-      const rect          = iframeEl.getBoundingClientRect();
-      const pageOffsetTop = rect.top + window.scrollY;
-      const h             = window.innerHeight - pageOffsetTop;
+
+      // measure iframe position and size
+      const rect           = iframeEl.getBoundingClientRect();
+      const pageOffsetTop  = rect.top + window.scrollY;
+      const pageOffsetLeft = rect.left + window.scrollX;
+
+      // compute new height to fill remaining viewport
+      const h = window.innerHeight - pageOffsetTop;
+
+      // resize the iframe
       iframeEl.style.height = h + "px";
-      console.log("↪ resized iframe to", h);
+
+      // position and size the overlay to match the iframe
+      overlayEl.style.position = "absolute";
+      overlayEl.style.top      = pageOffsetTop  + "px";
+      overlayEl.style.left     = pageOffsetLeft + "px";
+      overlayEl.style.width    = rect.width     + "px";
+      overlayEl.style.height   = h               + "px";
+
+      console.log("↪ resized iframe to", h, "and overlay to", {
+        top: overlayEl.style.top,
+        left: overlayEl.style.left,
+        width: overlayEl.style.width,
+        height: overlayEl.style.height
+      });
     }
 
-    window.addEventListener("resize", adjustMediaHeight);
-    adjustMediaHeight();
+    // listen for window resizes and adjust accordingly
+    window.addEventListener("resize", adjustMedia);
+    // initial sizing
+    adjustMedia();
   }
 };
