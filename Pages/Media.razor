@@ -1,6 +1,9 @@
 @page "/media"
 
-<div class="app-layout">
+<!-- Overlay to hide the UI until the iframe has injected its styles -->
+<div id="overlay">Loading Media Library…</div>
+
+<div class="app-layout" id="app-layout">
   <nav class="sidebar">
     <!-- your existing nav links here -->
   </nav>
@@ -10,35 +13,40 @@
     <iframe
       src="/wp-admin/upload.php"
       class="media-iframe"
-      onload="(function(doc){
-        const style = doc.createElement('style');
-        style.textContent = `
-          /* hide WP admin chrome */
-          #wpadminbar,
-          #adminmenumain,
-          #adminmenuwrap,
-          #wpfooter,
-          .wrap > h1 {
-            display: none !important;
-          }
-
-          /* let the media grid fill the frame */
-          html, body, #wpbody-content, .wrap {
-            margin: 0 !important;
-            padding: 0 !important;
-            height: 100% !important;
-          }
-        `;
-        doc.head.appendChild(style);
-      })(this.contentDocument || this.contentWindow.document)"
+      onload="handleIframeLoad(this)"
     ></iframe>
   </main>
 </div>
 
 <style>
-  .app-layout { display: flex; height: 100vh; }
-  .sidebar   { width: 250px; /* or your desired nav width */ }
-  .content   { flex: 1; overflow: hidden; position: relative; }
+  /* Full-screen white overlay */
+  #overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    z-index: 9999;
+  }
+
+  .app-layout {
+    display: flex;
+    height: 100vh;
+    visibility: hidden; /* hide until iframe ready */
+  }
+  .sidebar {
+    width: 250px; /* or your desired nav width */
+  }
+  .content {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+  }
 
   .media-iframe {
     width: 100%;
@@ -47,3 +55,35 @@
     display: block;
   }
 </style>
+
+<script>
+  function handleIframeLoad(iframe) {
+    // Inject CSS to hide WP admin chrome inside the iframe
+    const doc = iframe.contentDocument || iframe.contentWindow.document;
+    const style = doc.createElement('style');
+    style.textContent = `
+      /* hide WP admin chrome */
+      #wpadminbar,
+      #adminmenumain,
+      #adminmenuwrap,
+      #wpfooter,
+      .wrap > h1 {
+        display: none !important;
+      }
+
+      /* let the media grid fill the frame */
+      html, body, #wpbody-content, .wrap {
+        margin: 0 !important;
+        padding: 0 !important;
+        height: 100% !important;
+      }
+    `;
+    doc.head.appendChild(style);
+
+    // Once styles are applied, remove overlay and show the layout
+    const overlay = document.getElementById('overlay');
+    if (overlay) overlay.remove();
+    const layout = document.getElementById('app-layout');
+    if (layout) layout.style.visibility = 'visible';
+  }
+</script>
