@@ -27,7 +27,8 @@
     <div class="center-green-box">@status</div>
 
     <!-- overlay (no spinner any more) -->
-    <iframe style="display: none;"
+    <div @ref="overlayEl" class="media-overlay"></div>
+    <iframe
       @ref="iframeEl"
       src="/wp-admin/upload.php"
       class="media-iframe">
