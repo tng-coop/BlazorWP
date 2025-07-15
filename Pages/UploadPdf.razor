@@ -1,5 +1,6 @@
 @page "/upload-pdf"
 @using WordPressPCL
+@using Microsoft.AspNetCore.Components.Forms
 @inject IJSRuntime JS
 @inject AuthMessageHandler AuthHandler
 
@@ -14,7 +15,8 @@
 else
 {
     <div class="mb-3">
-        <input id="file-input" type="file" class="form-control" accept="application/pdf" @onchange="HandleFileChange" />
+        <InputFile class="form-control" accept="application/pdf" OnChange="HandleFileChange" />
+
     </div>
     <canvas id="canvas" style="display:none;"></canvas>
     <img id="preview" class="img-fluid mb-3" alt="PDF preview" />
