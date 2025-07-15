@@ -1,31 +1,55 @@
 @page "/media"
 @inject IJSRuntime JS
 
-<div class="d-flex flex-column vh-100 p-0">
-  <div class="top-row"></div>
+<style>
+  .center-green-box {
+    position: absolute;
+    width: 150px;
+    height: 150px;
+    background-color: green;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 1.25rem;
+  }
+  /* keep your overlay if you still want to mask the page until ready */
+  .media-overlay {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(255,255,0,0.9) !important;
+    outline: 2px dashed red;
+    z-index: 10;
+  }
+</style>
 
-  <div class="media-container d-flex flex-column flex-fill overflow-hidden">
-    <h3 class="px-4 mb-2">Media Library</h3>
 
-    <!-- overlay sits on top until we call JS to hide it -->
-    <div @ref="overlayEl" class="media-overlay d-flex align-items-center justify-content-center">
-      <div class="spinner-border" role="status">
-        <span class="visually-hidden">Loading…</span>
-      </div>
-    </div>
+    <h3 id="media-library-label" class="px-4 mb-2">Media Library</h3>
+
+    <!-- green box now shows @status -->
+    <div class="center-green-box">@status</div>
+
+    <!-- overlay (no spinner any more) -->
+    <div @ref="overlayEl" class="media-overlay"></div>
 
     <iframe
       @ref="iframeEl"
       src="/wp-admin/upload.php"
-      class="media-iframe flex-fill w-100 border-0">
+      class="media-iframe">
     </iframe>
-  </div>
-</div>
 
 @code {
   private ElementReference iframeEl;
   private ElementReference overlayEl;
   private DotNetObjectReference<Media>? dotnetRef;
+
+  private string status = "Loading…";
 
   protected override async Task OnAfterRenderAsync(bool firstRender)
   {
@@ -39,12 +63,11 @@
   [JSInvokable]
   public Task IframeHasLoaded()
   {
-    // you can do any further .NET-side logic here if needed
+    status = "Done";
+    StateHasChanged();
     return Task.CompletedTask;
   }
 
   public void Dispose()
-  {
-    dotnetRef?.Dispose();
-  }
+    => dotnetRef?.Dispose();
 }

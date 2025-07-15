@@ -1,10 +1,9 @@
 window.wpMedia = {
   initMediaPage: function(iframeEl, overlayEl, dotnetRef) {
-    console.log("↪ wpMedia.initMediaPage called");         // <-- for sanity-checking
+    console.log("↪ wpMedia.initMediaPage called");
 
-    // 1) hide the overlay only once the iframe really loads
+    // 1) hide the overlay once the iframe really loads
     iframeEl.addEventListener("load", () => {
-      // inject your WP-stripping CSS
       try {
         const doc = iframeEl.contentDocument || iframeEl.contentWindow.document;
         const style = doc.createElement("style");
@@ -23,22 +22,28 @@ window.wpMedia = {
         console.warn("Failed to inject CSS:", e);
       }
 
-      // hide your overlay
+      // hide the yellow overlay
       overlayEl.style.display = "none";
 
       // notify Blazor
       dotnetRef.invokeMethodAsync("IframeHasLoaded");
+
+      // measure distance from top of PAGE to top of iframe
+      const rect          = iframeEl.getBoundingClientRect();
+      const pageOffsetTop = rect.top + window.scrollY;
+      console.log(`Distance from top of page to iframe top: ${pageOffsetTop}px`);
     });
 
-    // 2) wire up resizing (if you still need it)
+    // 2) wire up resizing based solely on iframe’s page offset
     function adjustMediaHeight() {
-      const header = document.querySelector(".top-row");
-      if (!header) return;
-      const h = window.innerHeight - header.getBoundingClientRect().height;
-      // stretch the iframe itself
+      if (!iframeEl) return;
+      const rect          = iframeEl.getBoundingClientRect();
+      const pageOffsetTop = rect.top + window.scrollY;
+      const h             = window.innerHeight - pageOffsetTop;
       iframeEl.style.height = h + "px";
       console.log("↪ resized iframe to", h);
     }
+
     window.addEventListener("resize", adjustMediaHeight);
     adjustMediaHeight();
   }
