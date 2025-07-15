@@ -8,20 +8,21 @@
   <main class="content">
     <h3>Media Library</h3>
     <iframe
-      src="/wp-admin/upload.php?TB_iframe=1"    <!-- ← absolute root path -->
+      src="/wp-admin/upload.php"
       class="media-iframe"
       onload="(function(doc){
-        /* hide WP admin bar & header inside the iframe */
         const style = doc.createElement('style');
         style.textContent = `
+          /* hide WP admin chrome */
           #wpadminbar,
-          #adminmenuwrap,
           #adminmenumain,
-          .wrap > h1,
-          #wpfooter {
+          #adminmenuwrap,
+          #wpfooter,
+          .wrap > h1 {
             display: none !important;
           }
-          /* pull the media grid right to the top */
+
+          /* let the media grid fill the frame */
           html, body, #wpbody-content, .wrap {
             margin: 0 !important;
             padding: 0 !important;
@@ -36,8 +37,9 @@
 
 <style>
   .app-layout { display: flex; height: 100vh; }
-  .sidebar   { width: 250px; /* your nav width */ }
-  .content   { flex: 1; position: relative; overflow: hidden; }
+  .sidebar   { width: 250px; /* or your desired nav width */ }
+  .content   { flex: 1; overflow: hidden; position: relative; }
+
   .media-iframe {
     width: 100%;
     height: 100%;
