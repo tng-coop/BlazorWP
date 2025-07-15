@@ -1,5 +1,7 @@
 @page "/upload-pdf"
 @using WordPressPCL
+@using WordPressPCL.Models
+@using System.IO
 @using Microsoft.AspNetCore.Components.Forms
 @inject IJSRuntime JS
 @inject AuthMessageHandler AuthHandler
@@ -48,6 +50,7 @@ else
     const canvas = document.getElementById('canvas');
     const outputImg = document.getElementById('preview');
     const uploadBtn = document.getElementById('upload-btn');
+    let previewDataUrl = '';
 
     function adjustPreview() {
         if (!outputImg) return;
@@ -81,9 +84,11 @@ else
         const ctx = canvas.getContext('2d');
         await page.render({ canvasContext: ctx, viewport }).promise;
 
-        outputImg.src = canvas.toDataURL('image/png');
+        previewDataUrl = canvas.toDataURL('image/png');
+        outputImg.src = previewDataUrl;
         adjustPreview();
     });
+    window.getPreviewDataUrl = () => previewDataUrl;
 </script>
 
 @code {
@@ -122,14 +127,50 @@ else
         isUploading = true;
         try
         {
+            var previewUrl = await JS.InvokeAsync<string>("getPreviewDataUrl");
+            byte[] previewBytes = Array.Empty<byte>();
+            if (!string.IsNullOrEmpty(previewUrl))
+            {
+                var commaIndex = previewUrl.IndexOf(',');
+                if (commaIndex >= 0)
+                {
+                    previewUrl = previewUrl[(commaIndex + 1)..];
+                }
+                previewBytes = Convert.FromBase64String(previewUrl);
+            }
+
+            var previewFileName = Path.GetFileNameWithoutExtension(_file.Name) + ".png";
+            MediaItem? previewMedia = null;
+            if (previewBytes.Length > 0)
+            {
+                using var previewStream = new MemoryStream(previewBytes);
+                previewMedia = await client.Media.CreateAsync(previewStream, previewFileName, "image/png");
+            }
+
             using var stream = _file.OpenReadStream(long.MaxValue);
             using var progressStream = new ProgressStream(stream, (sent, total) =>
             {
                 uploadProgress = (int)(sent * 100 / total);
                 InvokeAsync(StateHasChanged);
             });
-            var media = await client.Media.CreateAsync(progressStream, _file.Name, "application/pdf");
-            status = $"Uploaded media ID: {media.Id}";
+            var pdfMedia = await client.Media.CreateAsync(progressStream, _file.Name, "application/pdf");
+
+            if (previewMedia != null)
+            {
+                var post = new Post
+                {
+                    Title = new Title(Path.GetFileNameWithoutExtension(_file.Name)),
+                    Content = new Content($"<a href=\"{pdfMedia.SourceUrl}\">{_file.Name}</a>"),
+                    Status = Status.Publish,
+                    FeaturedMedia = previewMedia.Id
+                };
+                var created = await client.Posts.CreateAsync(post);
+                status = $"Uploaded post ID: {created.Id}";
+            }
+            else
+            {
+                status = $"Uploaded media ID: {pdfMedia.Id}";
+            }
             uploadProgress = 100;
         }
         catch (Exception ex)
