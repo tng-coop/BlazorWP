@@ -1,30 +1,7 @@
 @page "/media"
 @inject IJSRuntime JS
 
-<style>
-  .center-green-box {
-    position: absolute;
-    width: 150px;
-    height: 150px;
-    background-color: green;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 100;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: bold;
-    font-size: 1.25rem;
-  }
-</style>
-
-
     <h3 id="media-library-label" class="px-4 mb-2">Media Library</h3>
-
-    <!-- green box now shows @status -->
-    <div class="center-green-box">@status</div>
 
     <!-- overlay (no spinner any more) -->
     <div @ref="overlayEl" class="media-overlay"></div>
@@ -37,7 +14,6 @@
 @code {
   private ElementReference iframeEl;
   private ElementReference overlayEl;
-  private DotNetObjectReference<Media>? dotnetRef;
 
   private string status = "Loading…";
 
@@ -45,18 +21,10 @@
   {
     if (firstRender)
     {
-      dotnetRef = DotNetObjectReference.Create(this);
-      await JS.InvokeVoidAsync("wpMedia.initMediaPage", iframeEl, overlayEl, dotnetRef);
+      await JS.InvokeVoidAsync("wpMedia.initMediaPage", iframeEl, overlayEl);
     }
   }
 
-  [JSInvokable]
-  public Task IframeHasLoaded()
-  {
-    status = "Done";
-    StateHasChanged();
-    return Task.CompletedTask;
-  }
 
   public void Dispose()
     => dotnetRef?.Dispose();

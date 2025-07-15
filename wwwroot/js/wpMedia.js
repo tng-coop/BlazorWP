@@ -1,5 +1,5 @@
 window.wpMedia = {
-  initMediaPage: function(iframeEl, overlayEl, dotnetRef) {
+  initMediaPage: function(iframeEl, overlayEl) {
     console.log("↪ wpMedia.initMediaPage called");
 
     // 1) hide the overlay once the iframe really loads
@@ -24,9 +24,6 @@ window.wpMedia = {
 
       // hide the yellow overlay
       overlayEl.style.display = "none";
-
-      // notify Blazor
-      dotnetRef.invokeMethodAsync("IframeHasLoaded");
 
       // measure distance from top of PAGE to top of iframe
       const rect          = iframeEl.getBoundingClientRect();
