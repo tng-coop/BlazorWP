@@ -16,9 +16,11 @@ else
     <div class="mb-3">
         <input id="file-input" type="file" class="form-control" accept="application/pdf" @onchange="HandleFileChange" />
     </div>
+    <button id="upload-btn" class="btn btn-primary mb-3" @onclick="UploadAsync" disabled="@(_file == null)">Upload to WordPress</button>
     <canvas id="canvas" style="display:none;"></canvas>
-    <img id="preview" class="img-fluid mb-3" alt="PDF preview" />
-    <button class="btn btn-primary" @onclick="UploadAsync" disabled="@(_file == null)">Upload to WordPress</button>
+    <div class="preview-wrapper">
+        <img id="preview" class="preview-image mb-3" alt="PDF preview" />
+    </div>
     @if (!string.IsNullOrEmpty(status))
     {
         <div class="mt-2">@status</div>
@@ -36,6 +38,19 @@ else
     const fileInput = document.getElementById('file-input');
     const canvas    = document.getElementById('canvas');
     const outputImg = document.getElementById('preview');
+    const uploadBtn = document.getElementById('upload-btn');
+
+    function adjustPreview() {
+        if (!outputImg) return;
+        const rect = outputImg.getBoundingClientRect();
+        const top  = rect.top + window.scrollY;
+        const h    = window.innerHeight - top - 20;
+        outputImg.style.maxHeight = h + 'px';
+    }
+
+    window.addEventListener('resize', adjustPreview);
+
+    outputImg?.addEventListener('load', adjustPreview);
 
     fileInput?.addEventListener('change', async () => {
         const file = fileInput.files[0];
@@ -58,6 +73,7 @@ else
         await page.render({ canvasContext: ctx, viewport }).promise;
 
         outputImg.src = canvas.toDataURL('image/png');
+        adjustPreview();
     });
 </script>
 
