@@ -1,13 +1,13 @@
 @page "/upload-pdf"
 @using WordPressPCL
 @using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.JSInterop
 @inject IJSRuntime JS
 @inject AuthMessageHandler AuthHandler
 
 <PageTitle>Upload PDF</PageTitle>
 
 <h1>Upload PDF</h1>
-
 @if (client == null)
 {
     <p>No WordPress endpoint verified. Visit <NavLink href="/">Home</NavLink> first.</p>
@@ -15,14 +15,11 @@
 else
 {
     <div class="mb-3">
-        <InputFile id="file-input" class="form-control" accept="application/pdf" OnChange="HandleFileChange" />
+        <InputFile id="file-input" class="form-control" accept="application/pdf" OnChange="OnFileSelected" />
     </div>
     <div class="d-flex align-items-center gap-2 mb-3">
-        <button id="upload-btn" class="btn btn-primary" @onclick="UploadAsync" disabled="@(_file == null)">Upload to WordPress</button>
-        @if (!string.IsNullOrEmpty(status))
-        {
-            <span>@status</span>
-        }
+        <button class="btn btn-primary" @onclick="UploadAsync" disabled="@(_file == null)">Upload to WordPress</button>
+        @if (!string.IsNullOrEmpty(status)) { <span>@status</span> }
     </div>
     @if (isUploading)
     {
@@ -36,90 +33,54 @@ else
     </div>
 }
 
-<script type="module">
-    import * as pdfjsLib from './libman/pdfjs-dist/build/pdf.mjs';
-    pdfjsLib.GlobalWorkerOptions.workerSrc = './libman/pdfjs-dist/build/pdf.worker.mjs';
-
-    const cMapBaseUrl = './libman/pdfjs-dist/cmaps/';
-    const cMapPacked = true;
-
-    const { getDocument } = pdfjsLib;
-    const fileInput = document.getElementById('file-input');
-    const canvas = document.getElementById('canvas');
-    const outputImg = document.getElementById('preview');
-    const uploadBtn = document.getElementById('upload-btn');
-
-    function adjustPreview() {
-        if (!outputImg) return;
-        const rect = outputImg.getBoundingClientRect();
-        const top  = rect.top + window.scrollY;
-        const h    = window.innerHeight - top - 20;
-        outputImg.style.maxHeight = h + 'px';
-    }
-
-    window.addEventListener('resize', adjustPreview);
-
-    outputImg?.addEventListener('load', adjustPreview);
-
-    fileInput?.addEventListener('change', async () => {
-        const file = fileInput.files[0];
-        if (!file) return;
-
-        const arrayBuffer = await file.arrayBuffer();
-        const loadingTask = getDocument({
-            data: arrayBuffer,
-            cMapUrl: cMapBaseUrl,
-            cMapPacked
-        });
-        const pdf = await loadingTask.promise;
-
-        const page = await pdf.getPage(1);
-        const viewport = page.getViewport({ scale: 2 });
-
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-        const ctx = canvas.getContext('2d');
-        await page.render({ canvasContext: ctx, viewport }).promise;
-
-        outputImg.src = canvas.toDataURL('image/png');
-        adjustPreview();
-    });
-</script>
-
 @code {
     private WordPressClient? client;
     private IBrowserFile? _file;
     private string? status;
     private int uploadProgress;
     private bool isUploading;
+    private IJSObjectReference? _pdfModule;
+    private DotNetStreamReference? _fileStreamRef;
 
     protected override async Task OnInitializedAsync()
     {
         var endpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
-        if (string.IsNullOrEmpty(endpoint))
-        {
-            return;
-        }
+        if (string.IsNullOrEmpty(endpoint)) return;
         var baseUrl = endpoint.TrimEnd('/') + "/wp-json/";
         var httpClient = new HttpClient(AuthHandler) { BaseAddress = new Uri(baseUrl) };
         client = new WordPressClient(httpClient);
     }
 
-    private void HandleFileChange(InputFileChangeEventArgs e)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _pdfModule = await JS.InvokeAsync<IJSObjectReference>("import", "./js/upload-pdf.js");
+            if (_pdfModule != null)
+                await _pdfModule.InvokeVoidAsync("initialize", "canvas", "preview");
+        }
+    }
+
+    private async Task OnFileSelected(InputFileChangeEventArgs e)
     {
         _file = e.File;
+        if (_pdfModule != null && _file != null)
+        {
+            // Wrap the .NET file stream in a JS-readable stream reference
+            _fileStreamRef = new(_file.OpenReadStream(long.MaxValue));
+            await _pdfModule.InvokeVoidAsync(
+                "renderFirstPageFromStream",
+                _fileStreamRef,
+                "canvas",
+                "preview"
+            );
+        }
     }
 
     private async Task UploadAsync()
     {
-        if (client == null || _file == null)
-        {
-            return;
-        }
-
-        status = null;
-        uploadProgress = 0;
-        isUploading = true;
+        if (client == null || _file == null) return;
+        status = null; uploadProgress = 0; isUploading = true;
         try
         {
             using var stream = _file.OpenReadStream(long.MaxValue);
@@ -136,9 +97,11 @@ else
         {
             status = $"Error: {ex.Message}";
         }
-        finally
-        {
-            isUploading = false;
-        }
+        finally { isUploading = false; }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_pdfModule != null) await _pdfModule.DisposeAsync();
     }
 }
