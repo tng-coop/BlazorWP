@@ -7,12 +7,14 @@ public class AuthMessageHandler : DelegatingHandler
 {
     private readonly JwtService _jwtService;
     private readonly IJSRuntime _js;
+    private readonly WpNonceJsInterop _nonceJs;
     private const string HostInWpKey = "hostInWp";
 
-    public AuthMessageHandler(JwtService jwtService, IJSRuntime js)
+    public AuthMessageHandler(JwtService jwtService, IJSRuntime js, WpNonceJsInterop nonceJs)
     {
         _jwtService = jwtService;
         _js = js;
+        _nonceJs = nonceJs;
         InnerHandler = new HttpClientHandler();
     }
 
@@ -36,7 +38,7 @@ public class AuthMessageHandler : DelegatingHandler
 
         if (useNonce)
         {
-            var nonce = await _js.InvokeAsync<string?>("wpNonce.getNonce");
+            var nonce = await _nonceJs.GetNonceAsync();
             if (!string.IsNullOrWhiteSpace(nonce))
             {
                 if (!ShouldSkipAuth(request))
