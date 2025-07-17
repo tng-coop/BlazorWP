@@ -3,6 +3,7 @@
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.JSInterop
 @inject IJSRuntime JS
+@inject UploadPdfJsInterop PdfJs
 @inject AuthMessageHandler AuthHandler
 
 <PageTitle>Upload PDF</PageTitle>
@@ -39,7 +40,6 @@ else
     private string? status;
     private int uploadProgress;
     private bool isUploading;
-    private IJSObjectReference? _pdfModule;
     private DotNetStreamReference? _fileStreamRef;
 
     protected override async Task OnInitializedAsync()
@@ -55,25 +55,20 @@ else
     {
         if (firstRender)
         {
-            _pdfModule = await JS.InvokeAsync<IJSObjectReference>("import", "./js/upload-pdf.js");
-            if (_pdfModule != null)
-                await _pdfModule.InvokeVoidAsync("initialize", "canvas", "preview");
+            await PdfJs.InitializeAsync("canvas", "preview");
         }
     }
 
     private async Task OnFileSelected(InputFileChangeEventArgs e)
     {
         _file = e.File;
-        if (_pdfModule != null && _file != null)
+        if (_file != null)
         {
-            // Wrap the .NET file stream in a JS-readable stream reference
             _fileStreamRef = new(_file.OpenReadStream(long.MaxValue));
-            await _pdfModule.InvokeVoidAsync(
-                "renderFirstPageFromStream",
+            await PdfJs.RenderFirstPageAsync(
                 _fileStreamRef,
                 "canvas",
-                "preview"
-            );
+                "preview");
         }
     }
 
@@ -102,6 +97,6 @@ else
 
     public async ValueTask DisposeAsync()
     {
-        if (_pdfModule != null) await _pdfModule.DisposeAsync();
+        await PdfJs.DisposeAsync();
     }
 }

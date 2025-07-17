@@ -27,6 +27,7 @@ namespace BlazorWP
             builder.Services.AddPanoramicDataBlazor();
             builder.Services.AddAntDesign();
             builder.Services.AddScoped<JwtService>();
+            builder.Services.AddScoped<UploadPdfJsInterop>();
 
             // 5) Build the host (this hooks up the logging provider)
             var host = builder.Build();
