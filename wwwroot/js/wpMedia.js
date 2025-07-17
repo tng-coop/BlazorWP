@@ -1,5 +1,4 @@
-window.wpMedia = {
-  initMediaPage: function(iframeEl, overlayEl) {
+export function initMediaPage(iframeEl, overlayEl) {
     console.log("↪ wpMedia.initMediaPage called");
 
     // 1) hide the overlay once the iframe really loads
@@ -65,5 +64,4 @@ window.wpMedia = {
     window.addEventListener("resize", adjustMedia);
     // initial sizing
     adjustMedia();
-  }
-};
+}
