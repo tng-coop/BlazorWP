@@ -15,11 +15,11 @@ public partial class Edit
     {
         if (string.IsNullOrEmpty(selectedMediaSource))
         {
-            await JS.InvokeVoidAsync("localStorage.removeItem", "mediaSource");
+            await StorageJs.DeleteAsync("mediaSource");
         }
         else
         {
-            await JS.InvokeVoidAsync("localStorage.setItem", "mediaSource", selectedMediaSource);
+            await StorageJs.SetItemAsync("mediaSource", selectedMediaSource);
         }
         //Console.WriteLine($"[OnMediaSourceChanged] source='{selectedMediaSource}'");
         await JS.InvokeVoidAsync("setTinyMediaSource", selectedMediaSource);
@@ -66,7 +66,7 @@ public partial class Edit
 
     private async Task OnShowTrashedChanged()
     {
-        await JS.InvokeVoidAsync("localStorage.setItem", ShowTrashedKey, showTrashed.ToString().ToLowerInvariant());
+        await StorageJs.SetItemAsync(ShowTrashedKey, showTrashed.ToString().ToLowerInvariant());
         // Only update the stored preference. Actual querying happens when
         // the user explicitly clicks the Refresh button.
     }

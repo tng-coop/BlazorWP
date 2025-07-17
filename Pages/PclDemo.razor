@@ -1,5 +1,6 @@
 @page "/pcl-demo"
 @using WordPressPCL
+@inject LocalStorageJsInterop StorageJs
 @inject IJSRuntime JS
 @inject JwtService JwtService
 
@@ -48,7 +49,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        var endpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
+        var endpoint = await StorageJs.GetItemAsync("wpEndpoint");
         if (string.IsNullOrEmpty(endpoint))
         {
             return;

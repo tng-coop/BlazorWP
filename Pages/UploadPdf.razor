@@ -2,7 +2,7 @@
 @using WordPressPCL
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.JSInterop
-@inject IJSRuntime JS
+@inject LocalStorageJsInterop StorageJs
 @inject UploadPdfJsInterop PdfJs
 @inject AuthMessageHandler AuthHandler
 
@@ -44,7 +44,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        var endpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
+        var endpoint = await StorageJs.GetItemAsync("wpEndpoint");
         if (string.IsNullOrEmpty(endpoint)) return;
         var baseUrl = endpoint.TrimEnd('/') + "/wp-json/";
         var httpClient = new HttpClient(AuthHandler) { BaseAddress = new Uri(baseUrl) };

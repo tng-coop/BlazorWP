@@ -1,7 +1,7 @@
 @page "/api-ant"
 @using System.Text.Json
 @inject HttpClient Http
-@inject IJSRuntime JS
+@inject LocalStorageJsInterop StorageJs
 
 <PageTitle>Ant Design API Viewer</PageTitle>
 
@@ -45,14 +45,14 @@ else
     private async Task ToggleFavorite(AntJsonNode node)
     {
         //Console.WriteLine($"[ToggleFavorite] Toggling {node.Path}");
-        var endpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
+        var endpoint = await StorageJs.GetItemAsync("wpEndpoint");
         //Console.WriteLine($"[ToggleFavorite] Endpoint: {endpoint}");
         if (string.IsNullOrEmpty(endpoint))
         {
             return;
         }
 
-        var json = await JS.InvokeAsync<string?>("localStorage.getItem", "favoriteApis");
+        var json = await StorageJs.GetItemAsync("favoriteApis");
         //Console.WriteLine($"[ToggleFavorite] Current JSON: {json}");
         Dictionary<string, List<string>> data;
         if (!string.IsNullOrEmpty(json))
@@ -91,13 +91,13 @@ else
         }
 
         var serialized = JsonSerializer.Serialize(data);
-        await JS.InvokeVoidAsync("localStorage.setItem", "favoriteApis", serialized);
+        await StorageJs.SetItemAsync("favoriteApis", serialized);
         await InvokeAsync(StateHasChanged);
     }
 
     protected override async Task OnInitializedAsync()
     {
-        var endpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
+        var endpoint = await StorageJs.GetItemAsync("wpEndpoint");
         if (string.IsNullOrEmpty(endpoint))
         {
             loading = false;
@@ -124,7 +124,7 @@ else
             var root = BuildNode(doc.RootElement, "root", "");
             rootNodes = root.Children;
 
-            var favJson = await JS.InvokeAsync<string?>("localStorage.getItem", "favoriteApis");
+            var favJson = await StorageJs.GetItemAsync("favoriteApis");
             if (!string.IsNullOrEmpty(favJson) &&
                 JsonSerializer.Deserialize<Dictionary<string, List<string>>>(favJson) is { } favData &&
                 favData.TryGetValue(endpoint, out var favs))

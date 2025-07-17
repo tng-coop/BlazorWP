@@ -229,7 +229,7 @@ public partial class Edit
 
     private async Task<List<DraftInfo>> LoadDraftStatesAsync()
     {
-        var json = await JS.InvokeAsync<string?>("localStorage.getItem", DraftsKey);
+        var json = await StorageJs.GetItemAsync(DraftsKey);
         if (!string.IsNullOrEmpty(json))
         {
             try
@@ -245,7 +245,7 @@ public partial class Edit
     private async Task SaveDraftStatesAsync(List<DraftInfo> list)
     {
         var json = JsonSerializer.Serialize(list);
-        await JS.InvokeVoidAsync("localStorage.setItem", DraftsKey, json);
+        await StorageJs.SetItemAsync(DraftsKey, json);
     }
 
     private async Task RemoveLocalDraftAsync(int? id)
