@@ -32,6 +32,32 @@ else
     <div class="preview-wrapper">
         <img id="preview" class="preview-image mb-3" alt="PDF preview" />
     </div>
+    @if (wpSizes != null)
+    {
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th>Size name</th>
+                    <th>Width (px)</th>
+                    <th>Height (px)</th>
+                    <th>Crop mode</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var s in wpSizes)
+                {
+                    <tr>
+                        <td>@s.Name</td>
+                        <td>@s.Width</td>
+                        <td>@s.Height</td>
+                        <td>@s.CropMode</td>
+                        <td>@s.Notes</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
 }
 
 @code {
@@ -41,6 +67,37 @@ else
     private int uploadProgress;
     private bool isUploading;
     private DotNetStreamReference? _fileStreamRef;
+    private PdfDimensions? pageInfo;
+    private List<WpSize>? wpSizes;
+
+    private record WpSize(string Name, int Width, int Height, string CropMode, string Notes);
+
+    private static (int width, int height) SoftScale(int w, int h, int maxW, int maxH)
+    {
+        double ratio = 1;
+        if (maxW > 0) ratio = Math.Min(ratio, (double)maxW / w);
+        if (maxH > 0) ratio = Math.Min(ratio, (double)maxH / h);
+        ratio = Math.Min(ratio, 1);
+        return ((int)Math.Round(w * ratio), (int)Math.Round(h * ratio));
+    }
+
+    private void CalculateWpSizes()
+    {
+        if (pageInfo == null) return;
+        var (w, h) = (pageInfo.Value.Width, pageInfo.Value.Height);
+        var medium = SoftScale(w, h, 300, 300);
+        var mediumLarge = SoftScale(w, h, 768, 0);
+        var large = SoftScale(w, h, 1024, 1024);
+
+        wpSizes = new()
+        {
+            new("thumbnail", 150, 150, "hard (exact)", "Square crop by default"),
+            new("medium", medium.width, medium.height, "soft (max)", "Proportional—won’t exceed either axis"),
+            new("medium_large", mediumLarge.width, mediumLarge.height, "soft (max)", "Max width 768, unlimited height"),
+            new("large", large.width, large.height, "soft (max)", "Proportional—won’t exceed either axis"),
+            new("full", w, h, "n/a", "The original uploaded file")
+        };
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -65,10 +122,12 @@ else
         if (_file != null)
         {
             _fileStreamRef = new(_file.OpenReadStream(long.MaxValue));
-            await PdfJs.RenderFirstPageAsync(
+            pageInfo = await PdfJs.RenderFirstPageAsync(
                 _fileStreamRef,
                 "canvas",
                 "preview");
+            CalculateWpSizes();
+            StateHasChanged();
         }
     }
 
