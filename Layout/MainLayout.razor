@@ -38,6 +38,8 @@
 @code {
     [Inject]
     private IJSRuntime JS { get; set; } = default!;
+    [Inject]
+    private WpNonceJsInterop NonceJs { get; set; } = default!;
 
     private string? currentEndpoint;
     private string? currentUsername;
@@ -151,7 +153,7 @@
         nonceMessage = "Loading...";
         try
         {
-            var nonce = await JS.InvokeAsync<string?>("wpNonce.getNonce");
+            var nonce = await NonceJs.GetNonceAsync();
             nonceMessage = !string.IsNullOrEmpty(nonce) ? nonce : "Could not retrieve nonce";
         }
         catch
