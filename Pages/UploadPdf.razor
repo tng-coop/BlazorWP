@@ -84,7 +84,7 @@ else
     private void CalculateWpSizes()
     {
         if (pageInfo == null) return;
-        var (w, h) = (pageInfo.Value.Width, pageInfo.Value.Height);
+        var (w, h) = (pageInfo.Width, pageInfo.Height);
         var medium = SoftScale(w, h, 300, 300);
         var mediumLarge = SoftScale(w, h, 768, 0);
         var large = SoftScale(w, h, 1024, 1024);
