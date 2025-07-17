@@ -1,5 +1,5 @@
 @page "/media"
-@inject IJSRuntime JS
+@inject WpMediaJsInterop MediaJs
 
     <h3 id="media-library-label" class="px-4 mb-2">Media Library</h3>
 
@@ -19,8 +19,13 @@
   {
     if (firstRender)
     {
-      await JS.InvokeVoidAsync("wpMedia.initMediaPage", iframeEl, overlayEl);
+      await MediaJs.InitMediaPageAsync(iframeEl, overlayEl);
     }
+  }
+
+  public async ValueTask DisposeAsync()
+  {
+    await MediaJs.DisposeAsync();
   }
 
 

@@ -31,6 +31,7 @@ namespace BlazorWP
             builder.Services.AddScoped<WpNonceJsInterop>();
             builder.Services.AddScoped<WpEndpointSyncJsInterop>();
             builder.Services.AddScoped<LocalStorageJsInterop>();
+            builder.Services.AddScoped<WpMediaJsInterop>();
 
             // 5) Build the host (this hooks up the logging provider)
             var host = builder.Build();
