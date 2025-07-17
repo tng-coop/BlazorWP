@@ -42,23 +42,24 @@
     private WpEndpointSyncJsInterop EndpointSync { get; set; } = default!;
     [Inject]
     private WpNonceJsInterop NonceJs { get; set; } = default!;
+    [Inject]
+    private HostInWpJsInterop HostJs { get; set; } = default!;
 
     private string? currentEndpoint;
     private string? currentUsername;
-    private const string HostInWpKey = "hostInWp";
     private bool hostInWp = true;
     private string? nonceMessage;
     private DotNetObjectReference<MainLayout>? _objRef;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        var endpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
+        var endpoint = await EndpointSync.GetAsync();
         string? username = null;
         if (!string.IsNullOrEmpty(endpoint))
         {
             username = await GetUsernameAsync(endpoint);
         }
-        var hostPref = await JS.InvokeAsync<string?>("localStorage.getItem", HostInWpKey);
+        var hostPref = await HostJs.GetAsync();
 
         var changed = false;
         if (endpoint != currentEndpoint)
@@ -71,7 +72,7 @@
             currentUsername = username;
             changed = true;
         }
-        var hostVal = !string.IsNullOrEmpty(hostPref) && bool.TryParse(hostPref, out var hv) ? hv : true;
+        var hostVal = hostPref ?? true;
         if (hostVal != hostInWp)
         {
             hostInWp = hostVal;
@@ -138,7 +139,7 @@
 
     private async Task OnHostInWpChanged()
     {
-        await JS.InvokeVoidAsync("localStorage.setItem", HostInWpKey, hostInWp.ToString().ToLowerInvariant());
+        await HostJs.SetAsync(hostInWp);
         if (hostInWp)
         {
             await FetchNonce();
