@@ -33,6 +33,18 @@ public class LocalStorageJsInterop : IAsyncDisposable
         return await module.InvokeAsync<LocalStorageItemInfo>("itemInfo", key);
     }
 
+    public async ValueTask<string?> GetItemAsync(string key)
+    {
+        var module = await GetModuleAsync();
+        return await module.InvokeAsync<string?>("getItem", key);
+    }
+
+    public async ValueTask SetItemAsync(string key, string value)
+    {
+        var module = await GetModuleAsync();
+        await module.InvokeVoidAsync("setItem", key, value);
+    }
+
     public async ValueTask DeleteAsync(string key)
     {
         var module = await GetModuleAsync();
