@@ -2,7 +2,7 @@ using Microsoft.JSInterop;
 
 namespace BlazorWP;
 
-public record PdfDimensions(int Width, int Height);
+public record PdfRenderInfo(int Width, int Height, string DataUrl);
 
 public class UploadPdfJsInterop : IAsyncDisposable
 {
@@ -29,10 +29,16 @@ public class UploadPdfJsInterop : IAsyncDisposable
         await module.InvokeVoidAsync("initialize", canvasId, imgId);
     }
 
-    public async ValueTask<PdfDimensions> RenderFirstPageAsync(DotNetStreamReference streamRef, string canvasId, string imgId)
+    public async ValueTask<PdfRenderInfo> RenderFirstPageAsync(DotNetStreamReference streamRef, string canvasId, string imgId)
     {
         var module = await GetModuleAsync();
-        return await module.InvokeAsync<PdfDimensions>("renderFirstPageFromStream", streamRef, canvasId, imgId);
+        return await module.InvokeAsync<PdfRenderInfo>("renderFirstPageFromStream", streamRef, canvasId, imgId);
+    }
+
+    public async ValueTask<string?> GetCurrentDataUrlAsync()
+    {
+        var module = await GetModuleAsync();
+        return await module.InvokeAsync<string?>("getCurrentDataUrl");
     }
 
     public async ValueTask DisposeAsync()

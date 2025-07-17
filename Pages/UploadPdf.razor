@@ -57,6 +57,19 @@ else
                 }
             </tbody>
         </table>
+
+        @if (previewDataUrl != null)
+        {
+            <div class="wp-size-previews d-flex flex-wrap gap-3">
+                @foreach (var s in wpSizes)
+                {
+                    <div class="text-center">
+                        <img src="@previewDataUrl" width="@s.Width" height="@s.Height" class="border" style="object-fit:@(s.Name == "thumbnail" ? "cover" : "contain");" />
+                        <div class="small text-muted">@s.Name</div>
+                    </div>
+                }
+            </div>
+        }
     }
 }
 
@@ -67,7 +80,8 @@ else
     private int uploadProgress;
     private bool isUploading;
     private DotNetStreamReference? _fileStreamRef;
-    private PdfDimensions? pageInfo;
+    private PdfRenderInfo? pageInfo;
+    private string? previewDataUrl;
     private List<WpSize>? wpSizes;
 
     private record WpSize(string Name, int Width, int Height, string CropMode, string Notes);
@@ -126,6 +140,7 @@ else
                 _fileStreamRef,
                 "canvas",
                 "preview");
+            previewDataUrl = pageInfo.DataUrl;
             CalculateWpSizes();
             StateHasChanged();
         }
