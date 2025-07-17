@@ -1,5 +1,5 @@
 @page "/data-storage"
-@inject IJSRuntime JS
+@inject LocalStorageJsInterop StorageJs
 
 <PageTitle>Data Storage</PageTitle>
 
@@ -50,10 +50,10 @@ else
     protected override async Task OnInitializedAsync()
     {
         items = new();
-        var keys = await JS.InvokeAsync<string[]>("blazorwpStorage.keys");
+        var keys = await StorageJs.KeysAsync();
         foreach (var key in keys)
         {
-            var info = await JS.InvokeAsync<ItemInfo>("blazorwpStorage.itemInfo", key);
+            var info = await StorageJs.ItemInfoAsync(key);
             items.Add(new StoredItem
             {
                 Key = key,
@@ -68,13 +68,8 @@ else
         {
             items.RemoveAll(i => i.Key == key);
         }
-        await JS.InvokeVoidAsync("blazorwpStorage.delete", key);
+        await StorageJs.DeleteAsync(key);
         await InvokeAsync(StateHasChanged);
-    }
-
-    private class ItemInfo
-    {
-        public string? Value { get; set; }
     }
 
     private class StoredItem
