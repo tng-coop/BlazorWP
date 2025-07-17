@@ -4,6 +4,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = './pdf.worker.mjs';
 const cMapBaseUrl = 'libman/pdfjs-dist/cmaps/';
 const cMapPacked = true;
 const { getDocument } = pdfjsLib;
+let lastDataUrl = null;
 
 // Initialize image resizing behavior on component mount
 export function initialize(canvasId, imgId) {
@@ -32,13 +33,19 @@ export async function renderFirstPageFromStream(streamRef, canvasId, imgId) {
   await page.render({ canvasContext: ctx, viewport }).promise;
 
   const outputImg = document.getElementById(imgId);
-  outputImg.src = canvas.toDataURL('image/png');
+  lastDataUrl = canvas.toDataURL('image/png');
+  outputImg.src = lastDataUrl;
   adjustPreview(outputImg);
 
   return {
     width: Math.floor(originalViewport.width),
-    height: Math.floor(originalViewport.height)
+    height: Math.floor(originalViewport.height),
+    dataUrl: lastDataUrl
   };
+}
+
+export function getCurrentDataUrl() {
+  return lastDataUrl;
 }
 
 function adjustPreview(outputImg) {
