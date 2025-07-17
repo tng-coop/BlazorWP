@@ -2,17 +2,36 @@ using Microsoft.JSInterop;
 
 namespace BlazorWP;
 
-public class WpNonceJsInterop
+public class WpNonceJsInterop : IAsyncDisposable
 {
     private readonly IJSRuntime _jsRuntime;
+    private IJSObjectReference? _module;
 
     public WpNonceJsInterop(IJSRuntime jsRuntime)
     {
         _jsRuntime = jsRuntime;
     }
 
-    public ValueTask<string?> GetNonceAsync()
+    private async ValueTask<IJSObjectReference> GetModuleAsync()
     {
-        return _jsRuntime.InvokeAsync<string?>("wpNonce.getNonce");
+        if (_module == null)
+        {
+            _module = await _jsRuntime.InvokeAsync<IJSObjectReference>("import", "./js/wpNonce.js");
+        }
+        return _module;
+    }
+
+    public async ValueTask<string?> GetNonceAsync()
+    {
+        var module = await GetModuleAsync();
+        return await module.InvokeAsync<string?>("getNonce");
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_module != null)
+        {
+            await _module.DisposeAsync();
+        }
     }
 }
