@@ -29,6 +29,7 @@ namespace BlazorWP
             builder.Services.AddScoped<JwtService>();
             builder.Services.AddScoped<UploadPdfJsInterop>();
             builder.Services.AddScoped<WpNonceJsInterop>();
+            builder.Services.AddScoped<WpEndpointSyncJsInterop>();
 
             // 5) Build the host (this hooks up the logging provider)
             var host = builder.Build();
