@@ -26,6 +26,7 @@ namespace BlazorWP
             builder.Services.AddMudServices();
             builder.Services.AddPanoramicDataBlazor();
             builder.Services.AddAntDesign();
+            builder.Services.AddScoped<IJsService, JsService>();
             builder.Services.AddScoped<JwtService>();
 
             // 5) Build the host (this hooks up the logging provider)

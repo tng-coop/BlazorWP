@@ -6,11 +6,11 @@ namespace BlazorWP;
 
 public class JwtService
 {
-    private readonly IJSRuntime _js;
+    private readonly IJsService _js;
     private const string WpEndpointKey = "wpEndpoint";
     private const string SiteInfoKey = "siteinfo";
 
-    public JwtService(IJSRuntime js)
+    public JwtService(IJsService js)
     {
         _js = js;
     }
