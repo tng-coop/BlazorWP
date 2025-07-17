@@ -1,7 +1,7 @@
-import * as pdfjsLib from '/libman/pdfjs-dist/build/pdf.mjs';
-pdfjsLib.GlobalWorkerOptions.workerSrc = '/libman/pdfjs-dist/build/pdf.worker.mjs';
+import * as pdfjsLib from '../libman/pdfjs-dist/build/pdf.mjs';
+pdfjsLib.GlobalWorkerOptions.workerSrc = './pdf.worker.mjs';
 
-const cMapBaseUrl = '/libman/pdfjs-dist/cmaps/';
+const cMapBaseUrl = 'libman/pdfjs-dist/cmaps/';
 const cMapPacked = true;
 const { getDocument } = pdfjsLib;
 
