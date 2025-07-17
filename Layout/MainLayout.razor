@@ -40,13 +40,15 @@
     private IJSRuntime JS { get; set; } = default!;
     [Inject]
     private WpNonceJsInterop NonceJs { get; set; } = default!;
+    [Inject]
+    private WpEndpointSyncJsInterop EndpointSyncJs { get; set; } = default!;
 
     private string? currentEndpoint;
     private string? currentUsername;
     private const string HostInWpKey = "hostInWp";
     private bool hostInWp = true;
     private string? nonceMessage;
-    private DotNetObjectReference<MainLayout>? _objRef;
+    private DotNetObjectReference<object>? _objRef;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -86,8 +88,8 @@
 
         if (firstRender)
         {
-            _objRef = DotNetObjectReference.Create(this);
-            await JS.InvokeVoidAsync("wpEndpointSync.register", _objRef);
+            _objRef = DotNetObjectReference.Create<object>(this);
+            await EndpointSyncJs.RegisterAsync(_objRef);
             if (hostInWp)
             {
                 await FetchNonce();
@@ -167,7 +169,7 @@
     {
         if (_objRef != null)
         {
-            await JS.InvokeVoidAsync("wpEndpointSync.unregister");
+            await EndpointSyncJs.UnregisterAsync();
             _objRef.Dispose();
         }
     }
