@@ -23,3 +23,7 @@ export function set(value) {
     dotNetHelper.invokeMethodAsync('UpdateEndpoint', value);
   }
 }
+
+export function get() {
+  return localStorage.getItem('wpEndpoint');
+}

@@ -7,12 +7,13 @@ namespace BlazorWP;
 public class JwtService
 {
     private readonly IJSRuntime _js;
-    private const string WpEndpointKey = "wpEndpoint";
+    private readonly WpEndpointSyncJsInterop _endpointSync;
     private const string SiteInfoKey = "siteinfo";
 
-    public JwtService(IJSRuntime js)
+    public JwtService(IJSRuntime js, WpEndpointSyncJsInterop endpointSync)
     {
         _js = js;
+        _endpointSync = endpointSync;
     }
 
     private class JwtInfo
@@ -104,7 +105,7 @@ public class JwtService
 
     public async Task<string?> GetCurrentJwtAsync()
     {
-        var endpoint = await _js.InvokeAsync<string?>("localStorage.getItem", WpEndpointKey);
+        var endpoint = await _endpointSync.GetAsync();
         if (string.IsNullOrEmpty(endpoint))
         {
             return null;
