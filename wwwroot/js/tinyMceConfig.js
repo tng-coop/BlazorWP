@@ -1,5 +1,5 @@
-// Classic script for TinyMCE.Blazor to read via JsConfSrc
-window.myTinyMceConfig = {
+// Classic script for TinyMCE.Blazor converted to ESM
+const myTinyMceConfig = {
   promotion: false,
   branding: false,
   statusbar: true,
@@ -109,31 +109,33 @@ window.myTinyMceConfig = {
   }
 };
 
-window.setTinyMediaSource = function (url) {
-  window.myTinyMceConfig.mediaSource = url || null;
-};
+window.myTinyMceConfig = myTinyMceConfig;
 
-window.setTinyEditorContent = function (html) {
+export function setTinyMediaSource(url) {
+  myTinyMceConfig.mediaSource = url || null;
+}
+
+export function setTinyEditorContent(html) {
   if (window.tinymce && tinymce.get('articleEditor')) {
     tinymce.get('articleEditor').setContent(html || '');
   }
-};
+}
 
-window.getTinyEditorContent = function () {
+export function getTinyEditorContent() {
   if (window.tinymce && tinymce.get('articleEditor')) {
     return tinymce.get('articleEditor').getContent();
   }
   return '';
-};
+}
 
-window.getTinyEditorContentLength = function () {
+export function getTinyEditorContentLength() {
   if (window.tinymce && tinymce.get('articleEditor')) {
     return tinymce.get('articleEditor').getContent().length;
   }
   return 0;
-};
+}
 
-window.registerTinyEditorCallbacks = function (dotNetHelper) {
+export function registerTinyEditorCallbacks(dotNetHelper) {
   if (window.tinymce && tinymce.get('articleEditor')) {
     const editor = tinymce.get('articleEditor');
     editor.on('blur', function () {
@@ -145,4 +147,4 @@ window.registerTinyEditorCallbacks = function (dotNetHelper) {
     };
     editor.on('change', changeHandler);
   }
-};
+}

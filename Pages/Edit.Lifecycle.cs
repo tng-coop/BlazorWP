@@ -14,6 +14,7 @@ public partial class Edit
     protected override async Task OnInitializedAsync()
     {
         //Console.WriteLine("[OnInitializedAsync] starting");
+        await TinyJs.InitializeAsync();
         var draftsJson = await JS.InvokeAsync<string?>("localStorage.getItem", DraftsKey);
         DraftInfo? latestDraft = null;
         if (!string.IsNullOrEmpty(draftsJson))
@@ -92,7 +93,7 @@ public partial class Edit
             selectedMediaSource = await JS.InvokeAsync<string?>("localStorage.getItem", "mediaSource");
             if (!string.IsNullOrEmpty(selectedMediaSource))
             {
-                await JS.InvokeVoidAsync("setTinyMediaSource", selectedMediaSource);
+                await TinyJs.SetMediaSourceAsync(selectedMediaSource);
             }
             if (client != null)
             {

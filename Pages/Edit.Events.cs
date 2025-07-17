@@ -22,7 +22,7 @@ public partial class Edit
             await JS.InvokeVoidAsync("localStorage.setItem", "mediaSource", selectedMediaSource);
         }
         //Console.WriteLine($"[OnMediaSourceChanged] source='{selectedMediaSource}'");
-        await JS.InvokeVoidAsync("setTinyMediaSource", selectedMediaSource);
+        await TinyJs.SetMediaSourceAsync(selectedMediaSource);
     }
 
     private void OnTitleChanged()

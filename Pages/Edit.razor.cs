@@ -98,6 +98,6 @@ public partial class Edit : IAsyncDisposable
 
     public ValueTask DisposeAsync()
     {
-        return ValueTask.CompletedTask;
+        return TinyJs.DisposeAsync();
     }
 }
