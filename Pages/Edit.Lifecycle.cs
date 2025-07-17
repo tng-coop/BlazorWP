@@ -14,7 +14,7 @@ public partial class Edit
     protected override async Task OnInitializedAsync()
     {
         //Console.WriteLine("[OnInitializedAsync] starting");
-        var draftsJson = await JS.InvokeAsync<string?>("localStorage.getItem", DraftsKey);
+        var draftsJson = await StorageJs.GetItemAsync(DraftsKey);
         DraftInfo? latestDraft = null;
         if (!string.IsNullOrEmpty(draftsJson))
         {
@@ -44,7 +44,7 @@ public partial class Edit
             hasPersistedContent = false;
         }
 
-        var trashedSetting = await JS.InvokeAsync<string?>("localStorage.getItem", ShowTrashedKey);
+        var trashedSetting = await StorageJs.GetItemAsync(ShowTrashedKey);
         if (!string.IsNullOrEmpty(trashedSetting) && bool.TryParse(trashedSetting, out var trashed))
         {
             showTrashed = trashed;
@@ -89,7 +89,7 @@ public partial class Edit
         {
             //Console.WriteLine("[OnAfterRenderAsync] firstRender");
             mediaSources = await JwtService.GetSiteInfoKeysAsync();
-            selectedMediaSource = await JS.InvokeAsync<string?>("localStorage.getItem", "mediaSource");
+            selectedMediaSource = await StorageJs.GetItemAsync("mediaSource");
             if (!string.IsNullOrEmpty(selectedMediaSource))
             {
                 await JS.InvokeVoidAsync("setTinyMediaSource", selectedMediaSource);
@@ -109,7 +109,7 @@ public partial class Edit
 
     private async Task SetupWordPressClientAsync()
     {
-        var endpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
+        var endpoint = await StorageJs.GetItemAsync("wpEndpoint");
         if (string.IsNullOrEmpty(endpoint))
         {
             client = null;

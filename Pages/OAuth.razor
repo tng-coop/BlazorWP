@@ -1,7 +1,7 @@
 @page "/oauth"
 @using Microsoft.AspNetCore.WebUtilities
 @inject NavigationManager Nav
-@inject IJSRuntime JS
+@inject SessionStorageJsInterop SessionJs
 @inject IConfiguration Config
 
 <!--
@@ -22,9 +22,9 @@
 else
 {
     <p>Select a provider to begin OAuth login.</p>
-    <button class="btn btn-primary me-2" @onclick="() => StartOAuth(Google)">Google</button>
-    <button class="btn btn-secondary me-2" @onclick="() => StartOAuth(GitHub)">GitHub</button>
-    <button class="btn btn-success" @onclick="() => StartOAuth(Line)">LINE</button>
+    <button class="btn btn-primary me-2" @onclick="async () => await StartOAuth(Google)">Google</button>
+    <button class="btn btn-secondary me-2" @onclick="async () => await StartOAuth(GitHub)">GitHub</button>
+    <button class="btn btn-success" @onclick="async () => await StartOAuth(Line)">LINE</button>
 }
 
 @code {
@@ -59,13 +59,13 @@ else
             "profile openid");
     }
 
-    private void StartOAuth(OAuthProvider provider)
+    private async Task StartOAuth(OAuthProvider provider)
     {
         var pkce = PkceUtil.Create();
         var state = Guid.NewGuid().ToString("N");
         var redirectUri = Nav.BaseUri.TrimEnd('/') + "/oauth";
         var url = provider.BuildAuthorizeUrl(pkce.CodeChallenge, redirectUri, state);
-        JS.InvokeVoidAsync("sessionStorage.setItem", "pkce_" + state, pkce.CodeVerifier);
+        await SessionJs.SetItemAsync("pkce_" + state, pkce.CodeVerifier);
         //Console.WriteLine($"OAuth authorize URL:\n{url}");
 
         Nav.NavigateTo(url, true);

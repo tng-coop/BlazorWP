@@ -37,7 +37,7 @@
 
 @code {
     [Inject]
-    private IJSRuntime JS { get; set; } = default!;
+    private LocalStorageJsInterop StorageJs { get; set; } = default!;
     [Inject]
     private WpNonceJsInterop NonceJs { get; set; } = default!;
     [Inject]
@@ -52,13 +52,13 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        var endpoint = await JS.InvokeAsync<string?>("localStorage.getItem", "wpEndpoint");
+        var endpoint = await StorageJs.GetItemAsync("wpEndpoint");
         string? username = null;
         if (!string.IsNullOrEmpty(endpoint))
         {
             username = await GetUsernameAsync(endpoint);
         }
-        var hostPref = await JS.InvokeAsync<string?>("localStorage.getItem", HostInWpKey);
+        var hostPref = await StorageJs.GetItemAsync(HostInWpKey);
 
         var changed = false;
         if (endpoint != currentEndpoint)
@@ -114,7 +114,7 @@
 
     private async Task<string?> GetUsernameAsync(string endpoint)
     {
-        var json = await JS.InvokeAsync<string?>("localStorage.getItem", "siteinfo");
+        var json = await StorageJs.GetItemAsync("siteinfo");
         if (string.IsNullOrEmpty(json))
         {
             return null;
@@ -138,7 +138,7 @@
 
     private async Task OnHostInWpChanged()
     {
-        await JS.InvokeVoidAsync("localStorage.setItem", HostInWpKey, hostInWp.ToString().ToLowerInvariant());
+        await StorageJs.SetItemAsync(HostInWpKey, hostInWp.ToString().ToLowerInvariant());
         if (hostInWp)
         {
             await FetchNonce();
