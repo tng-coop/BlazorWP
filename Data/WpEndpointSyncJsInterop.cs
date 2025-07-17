@@ -39,6 +39,12 @@ public class WpEndpointSyncJsInterop : IAsyncDisposable
         await module.InvokeVoidAsync("set", value);
     }
 
+    public async ValueTask<string?> GetAsync()
+    {
+        var module = await GetModuleAsync();
+        return await module.InvokeAsync<string?>("get");
+    }
+
     public async ValueTask DisposeAsync()
     {
         if (_module != null)
