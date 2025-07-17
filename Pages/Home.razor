@@ -182,6 +182,8 @@ This token was minted by https://yasuaki.com at 2025-06-19 06:43:23 UTC (15:43 J
 
     [Inject]
     private IJSRuntime JS { get; set; } = default!;
+    [Inject]
+    private WpEndpointSyncJsInterop EndpointSync { get; set; } = default!;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -332,7 +334,7 @@ This token was minted by https://yasuaki.com at 2025-06-19 06:43:23 UTC (15:43 J
                     var root = baseUri.ToString().TrimEnd('/');
                     verifiedEndpoint = root;
                     userUrl = root;
-                    await JS.InvokeVoidAsync("wpEndpointSync.set", root);
+                    await EndpointSync.SetAsync(root);
 
                     var siteInfo = await LoadSiteInfoAsync();
                     if (!siteInfo.ContainsKey(root))

@@ -38,6 +38,10 @@
 @code {
     [Inject]
     private IJSRuntime JS { get; set; } = default!;
+    [Inject]
+    private WpEndpointSyncJsInterop EndpointSync { get; set; } = default!;
+    [Inject]
+    private WpNonceJsInterop NonceJs { get; set; } = default!;
 
     private string? currentEndpoint;
     private string? currentUsername;
@@ -85,7 +89,7 @@
         if (firstRender)
         {
             _objRef = DotNetObjectReference.Create(this);
-            await JS.InvokeVoidAsync("wpEndpointSync.register", _objRef);
+            await EndpointSync.RegisterAsync(_objRef);
             if (hostInWp)
             {
                 await FetchNonce();
@@ -151,7 +155,7 @@
         nonceMessage = "Loading...";
         try
         {
-            var nonce = await JS.InvokeAsync<string?>("wpNonce.getNonce");
+            var nonce = await NonceJs.GetNonceAsync();
             nonceMessage = !string.IsNullOrEmpty(nonce) ? nonce : "Could not retrieve nonce";
         }
         catch
@@ -165,7 +169,7 @@
     {
         if (_objRef != null)
         {
-            await JS.InvokeVoidAsync("wpEndpointSync.unregister");
+            await EndpointSync.UnregisterAsync();
             _objRef.Dispose();
         }
     }
