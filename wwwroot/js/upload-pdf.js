@@ -22,6 +22,7 @@ export async function renderFirstPageFromStream(streamRef, canvasId, imgId) {
   const loadingTask = getDocument({ data: arrayBuffer, cMapUrl: cMapBaseUrl, cMapPacked });
   const pdf = await loadingTask.promise;
   const page = await pdf.getPage(1);
+  const originalViewport = page.getViewport({ scale: 1 });
   const viewport = page.getViewport({ scale: 2 });
 
   const canvas = document.getElementById(canvasId);
@@ -33,6 +34,11 @@ export async function renderFirstPageFromStream(streamRef, canvasId, imgId) {
   const outputImg = document.getElementById(imgId);
   outputImg.src = canvas.toDataURL('image/png');
   adjustPreview(outputImg);
+
+  return {
+    width: Math.floor(originalViewport.width),
+    height: Math.floor(originalViewport.height)
+  };
 }
 
 function adjustPreview(outputImg) {
