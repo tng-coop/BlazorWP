@@ -1,18 +1,17 @@
 using System.Text.Json;
-using Microsoft.JSInterop;
 using System.Linq;
 
 namespace BlazorWP;
 
 public class JwtService
 {
-    private readonly IJSRuntime _js;
+    private readonly LocalStorageJsInterop _storage;
     private const string WpEndpointKey = "wpEndpoint";
     private const string SiteInfoKey = "siteinfo";
 
-    public JwtService(IJSRuntime js)
+    public JwtService(LocalStorageJsInterop storage)
     {
-        _js = js;
+        _storage = storage;
     }
 
     private class JwtInfo
@@ -28,7 +27,7 @@ public class JwtService
 
     private async Task<Dictionary<string, JwtInfo>> LoadSiteInfoAsync()
     {
-        var json = await _js.InvokeAsync<string?>("localStorage.getItem", SiteInfoKey);
+        var json = await _storage.GetItemAsync(SiteInfoKey);
         if (string.IsNullOrEmpty(json))
         {
             return new();
@@ -52,7 +51,7 @@ public class JwtService
     private Task SaveSiteInfoAsync(Dictionary<string, JwtInfo> data)
     {
         var json = JsonSerializer.Serialize(data);
-        return _js.InvokeVoidAsync("localStorage.setItem", SiteInfoKey, json).AsTask();
+        return _storage.SetItemAsync(SiteInfoKey, json).AsTask();
     }
 
     private async Task<JwtInfo?> LoadJwtInfoAsync(string endpoint)
@@ -64,16 +63,16 @@ public class JwtService
         }
 
         var key = GetJwtInfoKey(endpoint);
-        var json = await _js.InvokeAsync<string?>("localStorage.getItem", key);
+        var json = await _storage.GetItemAsync(key);
         if (string.IsNullOrEmpty(json))
         {
             var oldKey = GetOldJwtInfoKey(endpoint);
-            json = await _js.InvokeAsync<string?>("localStorage.getItem", oldKey);
+            json = await _storage.GetItemAsync(oldKey);
         }
 
         if (string.IsNullOrEmpty(json))
         {
-            var token = await _js.InvokeAsync<string?>("localStorage.getItem", GetJwtTokenKey(endpoint));
+            var token = await _storage.GetItemAsync(GetJwtTokenKey(endpoint));
             if (!string.IsNullOrEmpty(token))
             {
                 info = new JwtInfo { Token = token };
@@ -104,7 +103,7 @@ public class JwtService
 
     public async Task<string?> GetCurrentJwtAsync()
     {
-        var endpoint = await _js.InvokeAsync<string?>("localStorage.getItem", WpEndpointKey);
+        var endpoint = await _storage.GetItemAsync(WpEndpointKey);
         if (string.IsNullOrEmpty(endpoint))
         {
             return null;
@@ -115,11 +114,11 @@ public class JwtService
 
         if (!string.IsNullOrEmpty(token))
         {
-            await _js.InvokeVoidAsync("localStorage.setItem", "jwtToken", token);
+            await _storage.SetItemAsync("jwtToken", token);
         }
         else
         {
-            await _js.InvokeVoidAsync("localStorage.removeItem", "jwtToken");
+            await _storage.DeleteAsync("jwtToken");
         }
 
         return token;
