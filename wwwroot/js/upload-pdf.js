@@ -11,7 +11,7 @@ const { getDocument } = pdfjsLib;
 let lastDataUrl = null;
 
 // Initialize image resizing behavior on component mount
-export function initialize(canvasId, imgId) {
+export function initialize(imgId) {
   const outputImg = document.getElementById(imgId);
   window.addEventListener('resize', () => adjustPreview(outputImg));
   outputImg?.addEventListener('load', () => adjustPreview(outputImg));

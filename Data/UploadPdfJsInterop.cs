@@ -23,10 +23,10 @@ public class UploadPdfJsInterop : IAsyncDisposable
         return _module;
     }
 
-    public async ValueTask InitializeAsync(string canvasId, string imgId)
+    public async ValueTask InitializeAsync(string imgId)
     {
         var module = await GetModuleAsync();
-        await module.InvokeVoidAsync("initialize", canvasId, imgId);
+        await module.InvokeVoidAsync("initialize", imgId);
     }
 
     public async ValueTask<PdfRenderInfo> RenderFirstPageAsync(DotNetStreamReference streamRef, string canvasId, string imgId)
