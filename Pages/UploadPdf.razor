@@ -62,18 +62,6 @@ else
             </tbody>
         </table>
 
-        @if (previewDataUrl != null && sizePreviews != null)
-        {
-            <div class="wp-size-previews d-flex flex-wrap gap-3">
-                @foreach (var s in wpSizes)
-                {
-                    <div class="text-center">
-                        <img src="@sizePreviews[s.Name]" width="@s.Width" height="@s.Height" class="border" style="object-fit:@(s.Name == "thumbnail" ? "cover" : "contain");" />
-                        <div class="small text-muted">@s.Name</div>
-                    </div>
-                }
-            </div>
-        }
     }
 }
 
