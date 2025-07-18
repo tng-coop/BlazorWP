@@ -41,6 +41,12 @@ public class UploadPdfJsInterop : IAsyncDisposable
         return await module.InvokeAsync<string?>("getCurrentDataUrl");
     }
 
+    public async ValueTask<string?> GetScaledPreviewAsync(int width, int height, bool cover)
+    {
+        var module = await GetModuleAsync();
+        return await module.InvokeAsync<string?>("getScaledPreview", width, height, cover);
+    }
+
     public async ValueTask DisposeAsync()
     {
         if (_module != null)
