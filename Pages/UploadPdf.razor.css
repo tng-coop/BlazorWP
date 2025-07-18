@@ -14,3 +14,12 @@
   display: block;
   max-width: 100%;
 }
+
+/* Hide all details except the main preview image */
+#file-input,
+.d-flex.align-items-center.gap-2.mb-3,
+.progress,
+table.table,
+.wp-size-previews {
+  display: none;
+}
