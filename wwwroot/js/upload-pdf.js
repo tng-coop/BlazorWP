@@ -1,7 +1,11 @@
 import * as pdfjsLib from '../libman/pdfjs-dist/build/pdf.mjs';
-pdfjsLib.GlobalWorkerOptions.workerSrc = './pdf.worker.mjs';
+// resolve the worker based on this module’s own URL
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  new URL('../libman/pdfjs-dist/build/pdf.worker.mjs', import.meta.url).href;
 
-const cMapBaseUrl = 'libman/pdfjs-dist/cmaps/';
+// resolve your CMap directory the same way
+const cMapBaseUrl =
+  new URL('../libman/pdfjs-dist/cmaps/', import.meta.url).href;
 const cMapPacked = true;
 const { getDocument } = pdfjsLib;
 let lastDataUrl = null;
