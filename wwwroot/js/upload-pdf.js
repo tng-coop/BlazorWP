@@ -48,6 +48,42 @@ export function getCurrentDataUrl() {
   return lastDataUrl;
 }
 
+// Return a resized preview data URL using the current rendered page
+export async function getScaledPreview(width, height, cover) {
+  if (!lastDataUrl) return null;
+  const img = new Image();
+  img.src = lastDataUrl;
+  await img.decode();
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+
+  if (cover) {
+    const srcRatio = img.width / img.height;
+    const dstRatio = width / height;
+    let sx = 0, sy = 0, sw = img.width, sh = img.height;
+    if (srcRatio > dstRatio) {
+      sw = img.height * dstRatio;
+      sx = (img.width - sw) / 2;
+    } else {
+      sh = img.width / dstRatio;
+      sy = (img.height - sh) / 2;
+    }
+    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, width, height);
+  } else {
+    const ratio = Math.min(width / img.width, height / img.height, 1);
+    const dw = img.width * ratio;
+    const dh = img.height * ratio;
+    const dx = (width - dw) / 2;
+    const dy = (height - dh) / 2;
+    ctx.drawImage(img, 0, 0, img.width, img.height, dx, dy, dw, dh);
+  }
+
+  return canvas.toDataURL('image/jpeg');
+}
+
 function adjustPreview(outputImg) {
   if (!outputImg) return;
   const rect = outputImg.getBoundingClientRect();
