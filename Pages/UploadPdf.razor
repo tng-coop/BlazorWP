@@ -96,18 +96,26 @@ else
     {
         if (pageInfo == null) return;
         var (w, h) = (pageInfo.Width, pageInfo.Height);
-        double ratio = w >= h ? (double)w / h : (double)h / w;
-        int ScaledHeight(int width) => (int)Math.Round(width / ratio);
-        var longSide = Math.Max(w, h);
-        var shortSide = Math.Min(w, h);
+
+        int ScaledWidth(int targetLong)
+        {
+            double factor = (double)targetLong / Math.Max(w, h);
+            return (int)Math.Round(w * factor);
+        }
+
+        int ScaledHeight(int targetLong)
+        {
+            double factor = (double)targetLong / Math.Max(w, h);
+            return (int)Math.Round(h * factor);
+        }
 
         wpSizes = new()
         {
-            new("thumbnail", 150, ScaledHeight(150), "hard (cover)", "Preview thumbnail"),
-            new("medium", 300, ScaledHeight(300), "soft (max)", "Scaled preview"),
-            new("medium_large", 768, ScaledHeight(768), "soft (max)", "Max width 768"),
-            new("large", 1024, ScaledHeight(1024), "soft (max)", "Max width 1024"),
-            new("full", longSide, shortSide, "n/a", "Full first page")
+            new("thumbnail", 150, 150, "hard (cover)", "Preview thumbnail"),
+            new("medium", ScaledWidth(300), ScaledHeight(300), "soft (max)", "Scaled preview"),
+            new("medium_large", ScaledWidth(768), ScaledHeight(768), "soft (max)", "Max width 768"),
+            new("large", ScaledWidth(1024), ScaledHeight(1024), "soft (max)", "Max width 1024"),
+            new("full", w, h, "n/a", "Full first page")
         };
     }
 
