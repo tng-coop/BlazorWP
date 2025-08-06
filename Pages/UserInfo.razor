@@ -1,0 +1,67 @@
+@page "/user-info"
+@using WordPressPCL
+@using WordPressPCL.Models
+@inject LocalStorageJsInterop StorageJs
+@inject JwtService JwtService
+
+<PageTitle>User Info</PageTitle>
+
+<h1>User Info</h1>
+
+@if (client == null)
+{
+    <p>No WordPress endpoint verified. Visit <NavLink href="/">Home</NavLink> first.</p>
+}
+else if (!string.IsNullOrEmpty(error))
+{
+    <p class="text-danger">@error</p>
+}
+else if (user == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <dl>
+        <dt>Username</dt>
+        <dd>@user.UserName</dd>
+        <dt>Name</dt>
+        <dd>@user.Name</dd>
+        <dt>Email</dt>
+        <dd>@user.Email</dd>
+    </dl>
+}
+
+@code {
+    private WordPressClient? client;
+    private User? user;
+    private string? jwtToken;
+    private string? error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var endpoint = await StorageJs.GetItemAsync("wpEndpoint");
+        if (string.IsNullOrEmpty(endpoint))
+        {
+            return;
+        }
+
+        var baseUrl = endpoint.TrimEnd('/') + "/wp-json/";
+        client = new WordPressClient(baseUrl);
+
+        jwtToken = await JwtService.GetCurrentJwtAsync();
+        if (!string.IsNullOrEmpty(jwtToken))
+        {
+            client.Auth.SetJWToken(jwtToken);
+        }
+
+        try
+        {
+            user = await client.Users.GetCurrentUserAsync();
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+    }
+}
