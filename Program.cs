@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using MudBlazor.Services;
 using PanoramicData.Blazor.Extensions;
+using Tavenem.Blazor.IndexedDB;
 
 namespace BlazorWP
 {
@@ -33,6 +34,8 @@ namespace BlazorWP
             builder.Services.AddScoped<LocalStorageJsInterop>();
             builder.Services.AddScoped<SessionStorageJsInterop>();
             builder.Services.AddScoped<WpMediaJsInterop>();
+            builder.Services.AddIndexedDbService();
+            builder.Services.AddIndexedDb("BlazorWPDB", objectStores: new[] { "notes" }, version: 1);
 
             // 5) Build the host (this hooks up the logging provider)
             var host = builder.Build();
