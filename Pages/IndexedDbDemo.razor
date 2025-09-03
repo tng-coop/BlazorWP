@@ -1,0 +1,122 @@
+@page "/indexeddb-demo"
+@using Microsoft.AspNetCore.Components
+@using Tavenem.Blazor.IndexedDB
+@using Tavenem.DataStore
+<PageTitle>IndexedDB Demo</PageTitle>
+
+<h3>IndexedDB Demo – Notes</h3>
+
+<!-- Note entry form (for adding or editing) -->
+<div class="mb-3">
+    <label class="form-label"><strong>Name:</strong></label>
+    <input @bind="currentNote.Name" class="form-control" placeholder="Enter note name" />
+</div>
+<div class="mb-3">
+    <label class="form-label"><strong>Description:</strong></label>
+    <textarea @bind="currentNote.Description" class="form-control" placeholder="Enter description"></textarea>
+</div>
+<button class="btn btn-primary me-2" @onclick="SaveNote">
+    @if (isEditing) { <span>Update Note</span> } else { <span>Add Note</span> }
+</button>
+@if (isEditing)
+{
+    <button class="btn btn-secondary" @onclick="CancelEdit">Cancel</button>
+}
+
+<hr />
+
+<!-- Notes list display -->
+@if (notes.Count == 0)
+{
+    <p><em>No notes available.</em></p>
+}
+else
+{
+    <table class="table align-middle">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Description</th>
+                <th style="width:150px;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var note in notes)
+        {
+            <tr>
+                <td>@note.Name</td>
+                <td>@note.Description</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-secondary me-1" @onclick="@(() => EditNote(note))">Edit</button>
+                    <button class="btn btn-sm btn-danger" @onclick="@(() => DeleteNote(note))">Delete</button>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+
+@code {
+    [Inject(Key = "BlazorWPDB")] private IndexedDb NotesDb { get; set; } = default!;
+
+    private List<Note> notes = new();
+    private Note currentNote = new();
+    private bool isEditing = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadNotesAsync();
+    }
+
+    private async Task LoadNotesAsync()
+    {
+        var store = NotesDb["notes"];
+        var allNotes = await store.GetAllAsync<Note>();
+        notes = allNotes?.ToList() ?? new List<Note>();
+    }
+
+    private async Task SaveNote()
+    {
+        var store = NotesDb["notes"];
+        if (!isEditing)
+        {
+            currentNote.Id = Guid.NewGuid().ToString();
+        }
+        await store.StoreItemAsync(currentNote);
+        await LoadNotesAsync();
+        currentNote = new Note();
+        isEditing = false;
+    }
+
+    private void EditNote(Note note)
+    {
+        currentNote = new Note
+        {
+            Id = note.Id,
+            Name = note.Name,
+            Description = note.Description
+        };
+        isEditing = true;
+    }
+
+    private async Task DeleteNote(Note note)
+    {
+        var store = NotesDb["notes"];
+        await store.RemoveItemAsync(note);
+        await LoadNotesAsync();
+    }
+
+    private void CancelEdit()
+    {
+        currentNote = new Note();
+        isEditing = false;
+    }
+
+    private class Note : IIdItem
+    {
+        public string Id { get; set; } = Guid.NewGuid().ToString();
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+    }
+}
+
