@@ -7,6 +7,7 @@
 <h3>PDTree Drag-and-Drop Demo</h3>
 <p class="text-muted">Drag nodes to reorder or move between folders. This sample demonstrates a simple hierarchical structure.</p>
 
+<div class="drag-tree-demo">
 <PDDragContext>
     <PDTree @ref="_tree"
             TItem="TreeItem"
@@ -25,6 +26,7 @@
             Ready="OnReady">
     </PDTree>
 </PDDragContext>
+</div>
 
 @if (actionLogs.Any())
 {
